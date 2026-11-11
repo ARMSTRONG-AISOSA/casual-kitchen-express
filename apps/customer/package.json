@@ -1,0 +1,48 @@
+{
+  "name": "@cke/customer",
+  "version": "1.0.0",
+  "private": true,
+  "license": "MIT",
+  "main": "expo-router/entry",
+  "scripts": {
+    "dev": "expo start --dev-client",
+    "android": "expo run:android",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@cke/api-client": "*",
+    "@cke/brand-tokens": "*",
+    "@cke/types": "*",
+    "@cke/validation": "*",
+    "@expo-google-fonts/inter": "0.4.2",
+    "@expo-google-fonts/nunito": "0.4.2",
+    "@tanstack/react-query": "5.105.0",
+    "expo": "58.0.21",
+    "expo-build-properties": "58.0.11",
+    "expo-constants": "58.0.14",
+    "expo-dev-client": "58.0.17",
+    "expo-font": "58.0.11",
+    "expo-linking": "58.0.15",
+    "expo-router": "58.0.28",
+    "expo-splash-screen": "58.0.12",
+    "expo-status-bar": "58.0.4",
+    "expo-system-ui": "58.0.7",
+    "lucide-react-native": "1.63.0",
+    "react": "19.3.0",
+    "react-native": "0.88.1",
+    "react-native-gesture-handler": "3.3.0",
+    "react-native-reanimated": "4.7.1",
+    "react-native-safe-area-context": "5.10.1",
+    "react-native-screens": "4.30.0",
+    "react-native-svg": "15.16.0",
+    "react-native-worklets": "0.13.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "eslint": "9.39.5",
+    "eslint-config-expo": "58.0.4",
+    "typescript": "6.0.3"
+  }
+}

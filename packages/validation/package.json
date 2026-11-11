@@ -1,0 +1,16 @@
+{
+  "name": "@cke/validation",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@cke/types": "*",
+    "zod": "4.6.7"
+  }
+}

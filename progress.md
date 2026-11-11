@@ -1,0 +1,277 @@
+# CKE Progress
+
+The working memory for Casual Kitchen Express (CKE). Read this first, then the documents it points to. The top half is the current state; the **Log** at the bottom is append-only history.
+
+**Last updated:** 11 November 2026
+**Stage:** planning, design, prototypes, and version locking are complete. **Build step 0 (repository setup) is done:** the monorepo installs, typechecks, lints, and passes its first API test. Next: JDK 17 and the Android SDK, then the backend foundation.
+
+---
+
+## 1. What CKE is
+
+A fast-casual, home-style Nigerian food business in Ugbowo, Benin City, near the University of Benin. It has three Android apps and a promotional website:
+
+| Part | Users | Purpose |
+|---|---|---|
+| Customer app | Customers | Browse, order, pay (simulated), track, reorder |
+| Business and Kitchen app | Kitchen staff and managers (tablet and phones) | Order board, walk-in orders at the counter, menu, people, reports, settings |
+| Rider app | CKE riders | Queue, pickup, delivery with a 4-digit code, earnings |
+| Website | Visitors | Promotes the business and mainly the customer app, hosts the download |
+
+Everything is **simulated**: payments, refunds, delivery, rider payouts, and two months of seeded history.
+
+---
+
+## 2. Read in this order
+
+| File | What it is | Authority |
+|---|---|---|
+| `progress.md` | This file: status, rules, next steps, log | Start here |
+| `docs/architecture.md` (v0.20) | Functions, 109 feature IDs (CUS, RID, KIT, MGR, WEB), order lifecycle, data model, decisions, free-tier limits, **locked versions (section 15)**, build order (16), **16.1 to verify at build**, seed data | Wins on anything technical |
+| `docs/design.md` (v0.17) | UI rules per app, screens, page flows, colours, components | Wins on anything visual or UX |
+| `docs/Casual-Kitchen-Express.md` (v1.8) | Brand and business, surface level only | Wins on brand (name, colours, logo, tone, menu, packaging) |
+| `docs/list-of-areas.md` | Delivery areas, boundary, landmarks, neighbourhood list | Areas still to confirm on a map |
+| `design/prototypes/*.html` | Clickable prototypes of every screen (open in a browser) | Illustrations only. If they disagree with the docs, **the docs win.** |
+| `brand/cke-logo-package/` | Logo SVG and PNG files, app icons, favicons, brand tokens (CSS and JSON), web snippet, build script | Use these files, never redraw the logo |
+
+**Online copies** (private to the owner's claude.ai account):
+- Customer app prototype: https://claude.ai/artifact/RXfsSGhjbwigTZW2ceEzEx
+- Rider app prototype: https://claude.ai/artifact/BSwcoPXourynJSCubLaQLu
+- Kitchen and manager app prototype: https://claude.ai/artifact/FMjuLN4uQ2iGMxxiUHpF3e
+- Website prototype: https://claude.ai/artifact/9HoYMikzFns3U2v6dJHK25
+- Design canvas (logo boards, typography, packaging, social): https://claude.ai/artifact/91n1XQU3A6o49zEQGssCTy
+
+---
+
+## 3. Rules to follow (from the owner)
+
+1. **Never mention in `docs/Casual-Kitchen-Express.md` that this is a portfolio or research project.** The technical docs may say payments are simulated.
+2. **The business document stays surface level.** Depth goes in `architecture.md` and `design.md`.
+3. **Fewest taps wins.** Every task should take as few taps as possible, with sensible defaults and nothing asked twice.
+4. **Decided means decided.** Don't change anything marked **Decided** without asking the owner. When something new is decided, update the status in the right document and add a change log row.
+5. **Everything is simulated**, and the apps say so quietly ("Demo payment. No money is taken." and a "Demo" chip in the manager app).
+6. **Licence and attribution:** all code is MIT. Claude Code is credited in exactly two places: one line in the repository README and one small line on the website's About page. Nowhere else, including inside the apps. Claude Code's automatic commit credit can be switched off in its settings.
+7. **Android first, Android 10 (API 29) and above.** iOS comes later. No Play Store for now: APKs are released on GitHub Releases and linked from the website.
+8. **Copy style:** plain, short, friendly English in sentence case. Use typographic apostrophes and quotes (’ “ ”) in user-facing text. Avoid all-caps labels and arrows on buttons.
+9. **Footer and contact details:** LinkedIn https://www.linkedin.com/in/armstrong-omoregie-02367a271/, email ammycan6@gmail.com (labelled Google), WhatsApp https://wa.me/2349095466063, developer site https://bossstrong-dev.vercel.app/, GitHub https://github.com/ARMSTRONG-AISOSA.
+10. **Ask before adding scope.** Record proposals as "Proposal" until the owner confirms.
+11. **Use only the locked versions** in `docs/architecture.md`, section 15. Install Expo packages with `npx expo install`, commit the lockfile, and ask the owner before upgrading anything.
+
+---
+
+## 4. Decided stack (details and exact versions in `architecture.md`, sections 14 and 15)
+
+| Area | Decision |
+|---|---|
+| Apps | React Native 0.88.1 with Expo SDK 58 and React 19.3.0, TypeScript 6.0.3, three separate apps in one repository with shared packages |
+| Repository | npm workspaces (npm 11.17.0, bundled with Node.js 24) and Turborepo 2.11.10, on Node.js 24 LTS. GitHub: ARMSTRONG-AISOSA/casual-kitchen-express |
+| App libraries | Expo Router, TanStack Query, Zod, lucide-react-native icons, Gifted Charts (business app), and React Native styles with the shared brand tokens (no UI kit) |
+| API | Hono 4.13.14 on Cloudflare Workers (free plan, Wrangler 4.155.0), REST first (GraphQL only if needed) |
+| Database | Neon Postgres, through Cloudflare Hyperdrive with `pg` 8.23.1, and Drizzle ORM 0.45.4 (Drizzle Kit 0.31.11 for migrations) |
+| Real-time | Cloudflare Durable Objects (WebSockets with hibernation) |
+| Background jobs | Cron Triggers and Durable Object alarms |
+| Images | Cloudflare R2. Files in object storage, links in the database. Compressed on the device before upload. |
+| Auth | Better Auth 1.7.14 in the Worker, with its Expo plugin. Customers and managers use Google sign-in. Riders and kitchen staff use a username and password set by a manager (PBKDF2, about 50,000 iterations, rate-limited). No forgot-password anywhere. |
+| Maps | Customer app only: MapLibre with OpenFreeMap tiles. The rider app has no map and hands off to the phone's navigation app. |
+| Push | Expo push service with Firebase for Android. No email or SMS. |
+| Website | Plain HTML, CSS, and JavaScript on GitHub Pages, with no packages |
+| Distribution | APKs on GitHub Releases, linked from the website. Signing keys backed up and never changed. |
+| Analytics | Minimal: Cloudflare Workers Logs |
+| Testing and quality | Vitest 5.0.5 with `@cloudflare/vitest-plugin` 1.4.10, Playwright 1.64.1 for the website, ESLint 9.39.5 with eslint-config-expo, and Prettier 3.9.10 |
+
+---
+
+## 5. Key business rules (quick reference; full rules in the docs)
+
+- **Hours:** online orders and delivery 8:00 am to 6:00 pm. Walk-in service until 8:30 pm. The kitchen tablet signs out at 8:30 pm.
+- **Delivery area:** from Uselu to Oluku Market. Nothing beyond Oluku Market. Pins are checked against a boundary polygon, and pickup is offered outside it.
+- **Prices:** a flat delivery fee, ₦1,500 by default, and rider pay ₦1,000 per delivery by default. Managers can edit both, and the changes show in the customer and rider apps for new orders. Rider pay can't exceed the fee.
+- **Riders:** all deliveries by CKE's own riders. They pick from a queue (first to accept wins), carry one order by default and up to three when the load fits (light 1, medium 2, heavy 3, budget 6), and confirm delivery with the customer's 4-digit code.
+- **Walk-in orders:** entered on the kitchen tablet, paid at the counter in cash (with change due) or online, W- order numbers, a separate channel in all data and reports.
+- **Attribution:** every action is recorded against a staff ID. On the shared tablet, actions belong to whoever is signed in.
+- **Cancellation:** a quiet link, a required reason, and a confirmation tick. Free cancel before the kitchen acknowledges, a request after that, and none once ready. After 3 cancellations in 7 days, request only (managers can set the limit from 3 to 7).
+- **Accounts:** customers can deactivate (reversible) or delete (Danger zone, tick, and typing DELETE ACCOUNT). Managers can deactivate any account except the owner's. Every customer and staff member has a unique ID (C-00418, R-001, K-002, M-001).
+- **Order numbers:** online numbers run continuously from O-0001 on the first seeded day, and walk-in numbers restart at W-001 each day.
+- **Manager order list:** today, yesterday, or any date range back to the first order, with search by order number or customer ID and paging for long ranges.
+- **Seed data:** 60 days of history at about 40 online and 13 walk-in orders on a weekday and 25 and 8 at weekends, respecting the hours (`architecture.md`, 18.3).
+
+---
+
+## 6. What has been done
+
+| Area | Result |
+|---|---|
+| Brand | Name, positioning, audience, menu with mock prices, personality, palette, tagline "Tastes like home. Arrives fast.", social media direction |
+| Logo | The forward-leaning pot with speed lines, plus a simplified small-size icon, delivered as a production package |
+| Typography | Nunito for headings, Inter for body and interface. Fraunces is used in the logo artwork only. |
+| Packaging | Kraft and red print: delivery bag, compartment rice box, cylindrical soup bowls (short for takeaway, tall sealed for delivery), wrapped swallow |
+| Technical plan | The full architecture, verified against free tiers on 10 November 2026, including an auth compatibility check |
+| Design plan | Philosophy per app (customer expressive, kitchen practical, rider functional and black-and-white), screens, and flows |
+| Areas | Scouted area list, with the boundary at Oluku Market (the road there is reported clear) |
+| Prototypes | 22 customer screens, 16 rider screens, 19 kitchen and manager screens, and 5 website pages, all automatically click-tested |
+
+---
+
+## 7. Open items
+
+**Owner to provide or confirm**
+1. **Food photos (approach decided).** Every dish is a "Photo to come" placeholder. Free libraries first (Unsplash, Pexels, Pixabay, Wikimedia Commons) with each source recorded, then AI images based on real references only where nothing suitable exists. Raise this when building the screens.
+2. **Delivery areas.** Which areas are in range is decided (both sides of Oluku, Isihor, Iguosa, and the Oluku villages, all up to Oluku Market). Still to do: draw the boundary polygon from map pins (Uselu to Oluku Market) and confirm spellings. Extra landmarks between Uselu and Oluku may be researched, but each needs the owner’s approval before it is added.
+3. **GitHub repository (decided):** https://github.com/ARMSTRONG-AISOSA/casual-kitchen-express. The website's download button should point to its `releases/latest` once it exists.
+4. **Versions:** all locked in `architecture.md`, section 15. Re-check them for security advisories just before installing.
+5. **Machine setup:** the owner installs JDK 17 (`sudo apt install -y openjdk-17-jdk`); then the Android SDK goes in `~/Android/Sdk` (no sudo needed). Expo’s docs ask for Android SDK Platform 36.
+6. **Prototypes lag the docs** on the 11 November decisions (cart, cash amounts, load display, kitchen theme, website cancel line). The docs win, and the prototypes are not being updated.
+
+**To verify at build** (the full list is in `architecture.md`, 16.1)
+- Better Auth's username plugin, admin create-user, and custom password-hash setting.
+- PBKDF2 timing on a deployed Worker (it must fit 10 ms of CPU).
+- Durable Object alarms and hibernation on the free plan.
+- Background location and the rider battery target (about 10% an hour or less).
+- Google sign-in console setup (package name, release-key SHA-1, consent screen, privacy link).
+- Hyperdrive caching (off for live order data) and Neon's free storage.
+- OpenFreeMap usage terms and the map credit.
+- Re-check every free allowance just before building.
+
+---
+
+## 8. What comes next: the build
+
+Follow `architecture.md`, section 16 (build order). In short:
+
+1. **Done (11 November 2026).** **Set up the repository** (`ARMSTRONG-AISOSA/casual-kitchen-express`) with npm workspaces and Turborepo, using only the locked versions: apps (customer, rider, business), the API Worker, shared packages (types, Zod validation, API client, brand tokens), the website, `docs/`, `design/`, and `brand/`. Add the MIT `LICENSE` and a README with the single Claude Code credit line.
+2. **Backend foundation:** the Hono Worker, Drizzle schema from `architecture.md` section 9, Neon through Hyperdrive, Better Auth, roles, menu, orders, and order statuses. Run the verification checks in 16.1 early.
+3. **Seed script:** two months of demo data per `architecture.md`, 18.3, as soon as the schema exists.
+4. **Business and Kitchen app:** the board, acknowledge and ready, walk-in entry and payment, menu management with image compression, people, and settings.
+5. **Customer app:** browse, order, simulated payment, tracking, and account screens.
+6. **Rider app:** queue, accept, pickup, delivery code, and earnings, with the battery rules from `architecture.md` section 7.
+7. **Capacity rules, batching, and the demo simulator.**
+8. **Website:** turn `design/prototypes/cke-website.html` into the static GitHub Pages site.
+9. **Reports, rider payouts, and polish,** then release APKs on GitHub.
+
+The prototypes are the visual reference for every screen. Reuse their copy, layout, and flows, but write production code fresh rather than copying prototype code.
+
+---
+
+## 9. Log
+
+Append a new dated entry after each work session. Never edit or delete earlier entries.
+
+## [2026-11-11] Planning, design, and prototypes complete
+
+**What was done:**
+- Wrote and refined the brand document from v1.0 to v1.7, and created `architecture.md` (v0.18), `design.md` (v0.15), and `list-of-areas.md`.
+- Designed the logo, typography, packaging, and social direction on the design canvas, and produced the logo package with tokens.
+- Made and verified every stack decision against current free tiers.
+- Built and published clickable prototypes of all three apps and the website.
+- Latest changes: cancellation friction, the Orders tabs, customer deactivation and Danger zone deletion, the More tab, customer IDs and the leaderboard, editable delivery fee and rider pay, owner-protected staff deactivation, value columns in reports, and a custom report range.
+
+**Files created/updated:**
+- `docs/Casual-Kitchen-Express.md` — brand and business, surface level (v1.7)
+- `docs/architecture.md` — technical source of truth (v0.18)
+- `docs/design.md` — UI and UX source of truth (v0.15)
+- `docs/list-of-areas.md` — delivery areas and boundary
+- `design/prototypes/` — four clickable HTML prototypes
+- `brand/cke-logo-package/` — logo files, icons, tokens, web snippet
+- `progress.md` and `CLAUDE.md` — this handoff
+
+**Decisions locked in:**
+- See sections 4 and 5 above, and the decision tables in `architecture.md` (section 14) and `design.md` (section 10).
+
+**Open questions / not yet decided:**
+- Food photos, delivery areas on a map, the boundary polygon, the GitHub releases URL, the package manager and monorepo tool, and the Expo SDK version.
+
+**Next step:**
+- Set up the repository (section 8, step 1), then build the backend foundation and run the 16.1 verification checks.
+
+---
+
+## [2026-11-11] Versions locked and final review
+
+**What was done:**
+- Locked every version in `docs/architecture.md`, section 15: Expo SDK 58 (58.0.21), React Native 0.88.1, React 19.3.0, TypeScript 6.0.3, Node.js 26 LTS, pnpm 12.16.1, Turborepo 2.11.10, Hono 4.13.14, Drizzle ORM 0.45.4, Better Auth 1.7.14, and all other libraries. The rule is the newest stable release at least two weeks old (published on or before 28 October 2026).
+- Decided pnpm with Turborepo, TanStack Query, Gifted Charts, React Native styles with brand tokens (no UI kit), the browser-based Google sign-in, and a website with no packages.
+- Manager Orders screen: any date range back to the first order, search by order number or customer ID, count and total value, and paging.
+- Order numbering fixed: online numbers run continuously from O-0001, and walk-in numbers restart at W-001 each day. All examples in the prototypes and docs were renumbered to match.
+- Final uniformity review of all documents: the flat delivery fee is editable, the build is in development (not on hold), a single People screen replaces separate Riders and Staff screens, and missing screens were added to `design.md`.
+
+**Files created/updated:**
+- `docs/architecture.md` — v0.19: locked versions, build order with repository setup, historic orders, numbering
+- `docs/design.md` — v0.16: locked libraries, historic orders flow, missing screens, uniformity fixes
+- `docs/Casual-Kitchen-Express.md` — v1.8: in development, button colours by app, uniformity fixes
+- `design/prototypes/` — all four rebuilt with the new numbering and the historic orders range
+- `progress.md` and `CLAUDE.md` — updated for the locked versions
+
+**Decisions locked in:**
+- Versions are fixed. Upgrades need the owner’s approval and a change log entry.
+
+**Open questions / not yet decided:**
+- Food photos, delivery areas on a map, the boundary polygon, and the GitHub releases URL.
+
+**Next step:**
+- Set up the repository with the locked versions (section 8, step 1), then build the backend foundation and run the 16.1 verification checks.
+
+---
+
+## [2026-11-11] Full context review and owner decisions on gaps
+
+**What was done:**
+- Read every document, the brand package, and all four prototypes end to end, and listed the gaps between the prototypes and the docs.
+- The owner answered each gap. Decisions are recorded in the documents below.
+
+**Files created/updated:**
+- `docs/architecture.md` — v0.20: Node.js 24 LTS, npm workspaces, MGR-35 cancellation limit (3 to 7), order load display, planned CancellationRequest, HelpRequest, and Alert records, two new settings, delivery range wording, repository URL
+- `docs/design.md` — v0.17: Your order screen, rider tabs, kitchen side rail, walk-in cash amounts, load display, decisions table rows
+- `docs/list-of-areas.md` — areas in range decided, neighbourhood list updated, landmark research added to the to-confirm list
+- `progress.md` — stack, rules, open items, and this entry
+
+**Decisions locked in:**
+- Node.js 24 LTS (not 26). npm workspaces with Turborepo (not pnpm).
+- Cancellation limit: 3 in 7 days by default, managers can set 3 to 7.
+- Rider queue shows load as "Load 5 of 6", with no light, medium, or heavy labels on orders.
+- Walk-in cash buttons: Exact, then ₦500, ₦1,000, ₦2,000, ₦5,000, showing only amounts above the total.
+- Kitchen and manager app gets Follow phone in its theme choice.
+- Customer app keeps a separate Your order screen before checkout.
+- Rider bottom tabs (Home, Queue, Earnings, Me) and the kitchen side rail are adopted.
+- The website feature list doesn’t mention cancelling.
+- Delivery range: both sides of Oluku, Isihor, Iguosa, and the Oluku villages, all up to Oluku Market.
+- Repository: ARMSTRONG-AISOSA/casual-kitchen-express. Food photos: free libraries first, then AI.
+
+**Open questions / not yet decided:**
+- The boundary polygon from map pins, name spellings, and any extra landmarks (owner approval needed for each).
+
+**Next step:**
+- Install JDK 17 and the Android SDK, then set up the repository (section 8, step 1).
+
+---
+
+## [2026-11-11] Landmarks, version check, and repository setup (build step 0)
+
+**What was done:**
+- Researched landmarks between Uselu and Oluku Market in OpenStreetMap. The owner approved all seven landmarks, two new areas (Uwelu, Idunmwowina), and two corrections (UNIBEN coordinates, Utekon’s position).
+- Checked every locked version against npm: all exist and are on or before the 28 October cutoff. Found two locked pairs that don’t work together and fixed them with the owner’s approval.
+- Set up the monorepo: npm workspaces and Turborepo, three Expo apps (Expo Router, fonts, brand icon, Android 10 minimum), the Hono API Worker with a `/health` route and a Workers-runtime test, four shared packages (types, validation, API client, brand tokens), and a placeholder website. Added the MIT `LICENSE`, the README with its single Claude Code credit line, Prettier, and ESLint.
+- Checks: typecheck, lint, and test all pass (12 of 12 Turborepo tasks), and Prettier is clean.
+- Git repository started on `main`, with the first commit. Nothing pushed.
+
+**Files created/updated:**
+- `package.json`, `package-lock.json`, `turbo.json`, `tsconfig.base.json`, `.npmrc`, `.nvmrc`, `.gitignore`, Prettier files, `LICENSE`, `README.md`
+- `apps/customer`, `apps/rider`, `apps/business`, `apps/api`, `apps/website`, `packages/*`
+- `docs/architecture.md` — vitest-plugin swap, ESLint 9.39.5, exact Expo pins, install scripts, security check, package IDs
+- `docs/list-of-areas.md` — landmarks, new areas, corrections, OpenStreetMap source
+
+**Decisions locked in:**
+- `@cloudflare/vitest-plugin` 1.4.10 replaces the deprecated `@cloudflare/vitest-pool-workers` 0.23.0 (it only supported Vitest 4).
+- ESLint 9.39.5 replaces 10.13.0 (Expo’s React rules don’t support ESLint 10 yet).
+- Android package IDs: `com.armstrongaisosa.casualkitchenexpress.customer`, `.rider`, `.business`.
+- MIT licence holder: Armstrong Omoregie.
+- Expo packages pinned exactly to the lock table, because `npx expo install` picks newer patches.
+- `npm audit`: 14 moderate findings, all in development-machine tools, accepted for now (architecture.md 15).
+
+**Open questions / not yet decided:**
+- None new. Feature libraries (maps, Better Auth, image tools, location, notifications, charts) are installed when their features are built.
+
+**Next step:**
+- The owner runs `sudo apt install -y openjdk-17-jdk`. Then install the Android SDK and do a first local Android build, then start the backend foundation (section 8, step 2).
+
+---
+

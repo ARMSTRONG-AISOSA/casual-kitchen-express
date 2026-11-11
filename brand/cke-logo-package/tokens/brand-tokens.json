@@ -1,0 +1,74 @@
+{
+  "color": {
+    "red": "#C83F2D",
+    "yellow": "#F2B544",
+    "cream": "#FFF3DF",
+    "charcoal": "#292522",
+    "kraft": "#E2C9A3",
+    "kraftShade": "#CDAE84",
+    "mutedText": "#5B534E",
+    "border": "#D9CDB8",
+    "white": "#FFFFFF"
+  },
+  "font": {
+    "heading": {
+      "family": "Nunito",
+      "weights": [
+        700,
+        800
+      ]
+    },
+    "body": {
+      "family": "Inter",
+      "weights": [
+        400,
+        500,
+        600,
+        700
+      ]
+    }
+  },
+  "typeScale": {
+    "display": 48,
+    "h1": 36,
+    "h2": 28,
+    "h3": 22,
+    "body": 16,
+    "small": 14,
+    "price": 18
+  },
+  "minTapTarget": 44,
+  "rules": {
+    "yellowText": "Yellow is never used for text on cream. Yellow text is allowed only on charcoal.",
+    "redOnKraft": "Tomato red on the kraft colour is for large text and graphics only."
+  },
+  "darkTheme": {
+    "background": "#1F1B19",
+    "surface": "#2A2522",
+    "text": "#FFF3DF",
+    "mutedText": "#CFC4B5",
+    "primaryAction": "cream fill with charcoal text"
+  },
+  "riderPalette": {
+    "light": {
+      "background": "#FFFFFF",
+      "surface": "#F2F2F2",
+      "text": "#000000",
+      "mutedText": "#4A4A4A",
+      "primaryAction": "black button, white text",
+      "alert": "#A32A1B",
+      "success": "#1B7A3A"
+    },
+    "dark": {
+      "background": "#000000",
+      "surface": "#121212",
+      "text": "#FFFFFF",
+      "mutedText": "#C7C7C7",
+      "primaryAction": "white button, black text",
+      "alert": "#E4604C",
+      "success": "#5CC47E"
+    },
+    "banner": "Golden Yellow background with black text"
+  },
+  "note": "Contrast ratios were calculated, and should be confirmed in the design tools."
+}

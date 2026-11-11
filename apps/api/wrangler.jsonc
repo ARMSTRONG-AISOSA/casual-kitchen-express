@@ -1,0 +1,10 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "cke-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-28",
+  // Better Auth and pg need Node.js APIs (architecture.md 12.2).
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+  // Hyperdrive, R2, Durable Objects, and Cron Triggers are added as bindings in the backend step.
+}

@@ -1,0 +1,47 @@
+:root {
+  /* Colour */
+  --cke-red: #C83F2D;
+  --cke-yellow: #F2B544;      /* accents and backgrounds only, never text on cream */
+  --cke-cream: #FFF3DF;
+  --cke-charcoal: #292522;
+  --cke-kraft: #E2C9A3;
+  --cke-kraft-shade: #CDAE84;
+  --cke-muted-text: #5B534E;
+  --cke-border: #D9CDB8;
+  --cke-white: #FFFFFF;
+
+  /* Dark theme for the customer, kitchen, and manager apps. Contrast was calculated; confirm in the design tools. */
+  --cke-dark-background: #1F1B19;
+  --cke-dark-surface: #2A2522;
+  --cke-dark-text: #FFF3DF;
+  --cke-dark-muted-text: #CFC4B5;
+
+  /* Rider app palette: black and white, with brand colours as accents, alerts, and notifications. */
+  --cke-rider-light-background: #FFFFFF;
+  --cke-rider-light-surface: #F2F2F2;
+  --cke-rider-light-text: #000000;
+  --cke-rider-light-muted-text: #4A4A4A;
+  --cke-rider-dark-background: #000000;
+  --cke-rider-dark-surface: #121212;
+  --cke-rider-dark-text: #FFFFFF;
+  --cke-rider-dark-muted-text: #C7C7C7;
+  --cke-deep-tomato: #A32A1B;          /* alerts on light, white text about 7:1 */
+  --cke-light-tomato: #E4604C;         /* alerts on dark, black text about 6:1 */
+  --cke-rider-success-light: #1B7A3A;
+  --cke-rider-success-dark: #5CC47E;
+  /* New-order banner: Golden Yellow background with black text. */
+
+  /* Typography */
+  --cke-font-heading: "Nunito", system-ui, sans-serif;   /* weights 700, 800 */
+  --cke-font-body: "Inter", system-ui, sans-serif;       /* weights 400, 500, 600, 700 */
+
+  --cke-text-display: 48px;
+  --cke-text-h1: 36px;
+  --cke-text-h2: 28px;
+  --cke-text-h3: 22px;
+  --cke-text-body: 16px;
+  --cke-text-small: 14px;
+  --cke-text-price: 18px;
+
+  --cke-tap-min: 44px;
+}

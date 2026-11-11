@@ -1,0 +1,14 @@
+{
+  "name": "Casual Kitchen Express",
+  "short_name": "CKE",
+  "description": "Tastes like home. Arrives fast.",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#C83F2D",
+  "background_color": "#FFF3DF",
+  "icons": [
+    { "src": "/cke-app-icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/cke-app-icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/cke-app-icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

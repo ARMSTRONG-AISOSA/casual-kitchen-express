@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "CKE",
+    "slug": "cke-customer",
+    "scheme": "cke-customer",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "icon": "../../brand/cke-logo-package/app-icon/cke-app-icon-1024.png",
+    "android": {
+      "package": "com.armstrongaisosa.casualkitchenexpress.customer",
+      "adaptiveIcon": {
+        "foregroundImage": "../../brand/cke-logo-package/app-icon/cke-app-icon-maskable-512.png",
+        "backgroundColor": "#C83F2D"
+      }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 29
+          }
+        }
+      ],
+      "expo-status-bar",
+      "expo-splash-screen"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.expo/
+.turbo/
+package-lock.json
+design/prototypes/
+brand/
+docs/
+*.md
