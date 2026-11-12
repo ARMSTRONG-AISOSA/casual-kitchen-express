@@ -7,3 +7,4 @@ design/prototypes/
 brand/
 docs/
 *.md
+packages/brand-tokens/src/logos.generated.ts

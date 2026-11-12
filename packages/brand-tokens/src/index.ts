@@ -34,3 +34,5 @@ export const radius = { card: 16, button: 12 } as const;
 
 /** Formats whole naira as ₦2,000. */
 export const naira = (amount: number) => "₦" + Math.round(amount).toLocaleString("en-US");
+
+export * as logos from "./logos.generated";

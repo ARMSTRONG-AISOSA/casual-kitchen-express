@@ -2,8 +2,8 @@
 
 The working memory for Casual Kitchen Express (CKE). Read this first, then the documents it points to. The top half is the current state; the **Log** at the bottom is append-only history.
 
-**Last updated:** 11 November 2026
-**Stage:** planning, design, prototypes, and version locking are complete. **Build step 0 (repository setup) is done:** the monorepo installs, typechecks, lints, and passes its first API test. Next: JDK 17 and the Android SDK, then the backend foundation.
+**Last updated:** 12 November 2026
+**Stage:** repository setup and machine setup are done. The arm64 debug build of the customer app runs on the owner’s tablet through the development server. **The customer app’s screens are built on demo data** (frontend first, owner decision on 12 November 2026) and are waiting for the owner’s review. Next: the owner’s feedback on the customer screens, then commit them.
 
 ---
 
@@ -27,7 +27,7 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and two
 | File | What it is | Authority |
 |---|---|---|
 | `progress.md` | This file: status, rules, next steps, log | Start here |
-| `docs/architecture.md` (v0.20) | Functions, 109 feature IDs (CUS, RID, KIT, MGR, WEB), order lifecycle, data model, decisions, free-tier limits, **locked versions (section 15)**, build order (16), **16.1 to verify at build**, seed data | Wins on anything technical |
+| `docs/architecture.md` (v0.21) | Functions, 109 feature IDs (CUS, RID, KIT, MGR, WEB), order lifecycle, data model, decisions, free-tier limits, **locked versions (section 15)**, build order (16), **16.1 to verify at build**, seed data | Wins on anything technical |
 | `docs/design.md` (v0.17) | UI rules per app, screens, page flows, colours, components | Wins on anything visual or UX |
 | `docs/Casual-Kitchen-Express.md` (v1.8) | Brand and business, surface level only | Wins on brand (name, colours, logo, tone, menu, packaging) |
 | `docs/list-of-areas.md` | Delivery areas, boundary, landmarks, neighbourhood list | Areas still to confirm on a map |
@@ -109,6 +109,9 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and two
 | Design plan | Philosophy per app (customer expressive, kitchen practical, rider functional and black-and-white), screens, and flows |
 | Areas | Scouted area list, with the boundary at Oluku Market (the road there is reported clear) |
 | Prototypes | 22 customer screens, 16 rider screens, 19 kitchen and manager screens, and 5 website pages, all automatically click-tested |
+| Repository | npm workspaces and Turborepo monorepo with the three apps, the API Worker, shared packages, and the website. Typecheck, lint, and the first API test pass. Two commits, not pushed. |
+| Android | JDK 17 and the Android SDK installed. arm64-v8a debug build of the customer app installed on the owner’s tablet. |
+| Customer app | Every screen built on demo data, running on the tablet through the development server. Awaiting the owner’s review. |
 
 ---
 
@@ -119,9 +122,10 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and two
 2. **Delivery areas.** Which areas are in range is decided (both sides of Oluku, Isihor, Iguosa, and the Oluku villages, all up to Oluku Market). Still to do: draw the boundary polygon from map pins (Uselu to Oluku Market) and confirm spellings. Extra landmarks between Uselu and Oluku may be researched, but each needs the owner’s approval before it is added.
 3. **GitHub repository (decided):** https://github.com/ARMSTRONG-AISOSA/casual-kitchen-express. The website's download button should point to its `releases/latest` once it exists.
 4. **Versions:** all locked in `architecture.md`, section 15. Re-check them for security advisories just before installing.
-5. **Machine setup (done):** JDK 17.0.21 is installed through apt. The Android SDK is in `~/Android/Sdk` (command-line tools 23.0, platform-tools 37.0.1, Platform 36, build-tools 36.0.0). `JAVA_HOME`, `ANDROID_HOME`, and the SDK `PATH` are set in `~/.bashrc` (verified: adb 37.0.1 from the SDK). Note: the home router’s DNS (192.168.0.1) times out on some names, which broke apt; using 1.1.1.1 and 8.8.8.8 fixed it.
-7. **GitHub remote:** `origin` is https://github.com/ARMSTRONG-AISOSA/casual-kitchen-express.git. The repository exists and is empty. Nothing is pushed until the owner says so.
-6. **Prototypes lag the docs** on the 11 November decisions (cart, cash amounts, load display, kitchen theme, website cancel line). The docs win, and the prototypes are not being updated.
+5. **Machine setup (done):** JDK 17.0.21 is installed through apt. The Android SDK is in `~/Android/Sdk` (command-line tools 23.0, platform-tools 37.0.1, Platforms 36 and 37, build-tools 36.0.0, NDK 27.1.12297006). `JAVA_HOME`, `ANDROID_HOME`, and the SDK `PATH` are set in `~/.bashrc` (verified: adb 37.0.1 from the SDK). Note: the home router’s DNS (192.168.0.1) times out on some names, which broke apt; using 1.1.1.1 and 8.8.8.8 fixed it.
+6. **GitHub remote:** `origin` is https://github.com/ARMSTRONG-AISOSA/casual-kitchen-express.git. The repository exists and is empty. Nothing is pushed until the owner says so.
+7. **Customer screens (awaiting review):** all customer screens are built on demo data and are not yet committed. The owner reviews them on the tablet first. The map and Google sign-in are stand-ins until their libraries and the backend are added.
+8. **Prototypes lag the docs** on the 11 November decisions (cart, cash amounts, load display, kitchen theme, website cancel line). The docs win, and the prototypes are not being updated.
 
 **To verify at build** (the full list is in `architecture.md`, 16.1)
 - Better Auth's username plugin, admin create-user, and custom password-hash setting.
@@ -137,14 +141,14 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and two
 
 ## 8. What comes next: the build
 
-Follow `architecture.md`, section 16 (build order). In short:
+Follow `architecture.md`, section 16 (build order). On 12 November 2026 the owner chose to build the app screens first on demo data, so the order is now:
 
 1. **Done (11 November 2026).** **Set up the repository** (`ARMSTRONG-AISOSA/casual-kitchen-express`) with npm workspaces and Turborepo, using only the locked versions: apps (customer, rider, business), the API Worker, shared packages (types, Zod validation, API client, brand tokens), the website, `docs/`, `design/`, and `brand/`. Add the MIT `LICENSE` and a README with the single Claude Code credit line.
-2. **Backend foundation:** the Hono Worker, Drizzle schema from `architecture.md` section 9, Neon through Hyperdrive, Better Auth, roles, menu, orders, and order statuses. Run the verification checks in 16.1 early.
-3. **Seed script:** two months of demo data per `architecture.md`, 18.3, as soon as the schema exists.
-4. **Business and Kitchen app:** the board, acknowledge and ready, walk-in entry and payment, menu management with image compression, people, and settings.
-5. **Customer app:** browse, order, simulated payment, tracking, and account screens.
-6. **Rider app:** queue, accept, pickup, delivery code, and earnings, with the battery rules from `architecture.md` section 7.
+2. **In review (12 November 2026).** **Customer app screens on demo data:** browse, item, your order, checkout, address, pay, paid, track, rate, orders, profile, more, deactivate, and delete. Owner review, then commit.
+3. **Rider app screens on demo data** (next, owner decision on 12 November 2026), then the **Business and Kitchen app** screens.
+4. **Backend foundation:** the Hono Worker, Drizzle schema from `architecture.md` section 9, Neon through Hyperdrive, Better Auth, roles, menu, orders, and order statuses. Run the verification checks in 16.1 early.
+5. **Seed script:** two months of demo data per `architecture.md`, 18.3, as soon as the schema exists.
+6. **Connect the screens to the API:** replace the demo data in each app with real calls, add the real map (MapLibre) and Google sign-in.
 7. **Capacity rules, batching, and the demo simulator.**
 8. **Website:** turn `design/prototypes/cke-website.html` into the static GitHub Pages site.
 9. **Reports, rider payouts, and polish,** then release APKs on GitHub.
@@ -303,3 +307,72 @@ Append a new dated entry after each work session. Never edit or delete earlier e
 
 ---
 
+## [2026-11-12] Customer app screens on demo data (frontend first)
+
+**What was done:**
+- The owner asked to see the apps before the backend is built. The build order changed: app screens first, on demo data held in the app, then the backend.
+- Built every customer screen with Expo Router, the shared brand tokens, and React Native styles (no UI kit): the Menu tab (hero, open or closed notice, reorder card, search, category chips, menu cards, sticky order bar), item details with options, Your order, single-screen checkout (Google sign-in stand-in, address, optional gender, pay method, totals), address entry (area, pin, landmark, outside-range example), demo payment, paid, tracking with the 4-digit delivery code, rating, the Orders tab (In progress and Order history), Profile, the More tab with text pages, Deactivate account, and Delete account (Danger zone, tick, typed phrase).
+- Demo state lives in one store in the app (`src/state/store.tsx`). A Preview tools panel at the bottom of More (development builds only) switches open, paused, and closed, first-time and returning customer, and resets the demo.
+- Food photos are “Photo to come” placeholders. The map is a drawn stand-in until MapLibre is added.
+- The logo is drawn from the brand package’s SVG files, which a small script turns into a TypeScript module (`npm run logos --workspace @cke/brand-tokens`). The logo is not redrawn.
+- Typecheck and lint pass across the repository (12 of 12 tasks). The development server was restarted with a cleared cache, and the bundle loads cleanly on the tablet.
+
+**Files created/updated:**
+- `apps/customer/app/` — tab layout and all screens listed above; the placeholder `index.tsx` removed
+- `apps/customer/src/data/` — demo menu, order, geography, and text pages
+- `apps/customer/src/state/` — the demo store and theme (light and dark)
+- `apps/customer/src/ui/` — shared parts (text, buttons, cards, chips, sheet, toast, photo placeholder, map stand-in, preview tools)
+- `packages/brand-tokens/scripts/build-logos.mjs`, `packages/brand-tokens/src/logos.generated.ts`, `packages/brand-tokens/src/index.ts`, `packages/brand-tokens/package.json` — logo SVGs as a module
+- `.prettierignore` — skips the generated logo file
+- `progress.md`, `docs/architecture.md` (16 and change log) — the new build order
+
+**Decisions locked in:**
+- Frontend first: the app screens are built on demo data before the backend (owner, 12 November 2026). Customer app first, placeholder photos for now, all customer screens in one pass.
+
+**Open questions / not yet decided:**
+- The owner’s feedback on the customer screens.
+- None other. Claude can now see and tap through the app on the owner’s tablet (ASTRO 10R, Android 12) using Android’s Wireless debugging and adb, with no new packages. If the connection drops, the owner turns Wireless debugging back on and reads out the new IP address and port; pairing doesn’t need repeating.
+
+**Next step:**
+- The owner reviews the customer screens on the tablet. Fix what they report, then commit (not pushed until the owner says so).
+
+---
+
+## [2026-11-12] Claude tapped through the customer app on the tablet and fixed what it found
+
+**What was done:**
+- Connected to the owner’s tablet (ASTRO 10R, Android 12) over Wi-Fi with Android’s Wireless debugging and adb. Claude can now take screenshots and tap through the app itself, with no new packages.
+- Went through every customer flow on the tablet: first-time order (sign-in stand-in, address with in-range and out-of-range pins, card payment, tracking to delivered, rating, reorder), one-tap reorder, cancel with reason and tick, pickup with bank transfer, search, Profile, More pages, the closed state, dark theme, and Delete account.
+- Fixed:
+  - The “added” message covered the View order bar. It now sits above it, and it uses inverted theme colours so it stays readable in dark mode.
+  - The map stand-in grew very tall and cut off its pin. It now keeps a 4:3 shape.
+  - Tracking times were fixed 24-hour values (“12:31”). They are now real clock times counted from when the order was placed, in the app’s style (“7:29 am”).
+  - The phone’s back button after paying went to an empty checkout. Your order, Checkout, and Pay now leave the back stack, so back goes to the menu.
+  - An empty checkout said “Add a delivery address to continue”. It now says “Your order is empty”.
+  - Screens without footer buttons let their last button sit under Android’s navigation buttons. They now leave room for them.
+  - The keyboard covered footer buttons (for example Delete my account). Screens now move up above the keyboard.
+  - The optional gender question came back on the next order. After the first order the customer counts as returning, so it isn’t asked again (“nothing asked twice”).
+  - Every order got the same number. Numbers now run on from the demo’s last order and never repeat.
+  - Order summaries now include quantity and options (“2 × Jollof rice (with beef)”).
+  - The map and its “updates every 45 seconds” line now hide once an order is delivered, when tracking stops.
+  - On a cancelled order, the last step reached now shows as done.
+  - The demo transfer note was reworded (“Normally this confirms by itself once the transfer lands. In this demo, it confirms when you tap the button.”).
+  - The Preview tools’ Advance status button no longer stacks a new tracking screen each time.
+- Typecheck and lint pass across the repository.
+
+**Files created/updated:**
+- `apps/customer/src/ui/toast.tsx`, `src/ui/map.tsx`, `src/ui/kit.tsx`, `src/ui/preview-tools.tsx`
+- `apps/customer/src/state/store.tsx`, `src/data/order.ts`
+- `apps/customer/app/track.tsx`, `app/checkout.tsx`, `app/pay.tsx`
+- `progress.md`
+
+**Decisions locked in:**
+- The rider app’s screens come next, on demo data, after the customer screens are committed (owner, 12 November 2026).
+
+**Open questions / not yet decided:**
+- None new. Noted, not changed: the cancel sheet’s line “Cancelling often can limit cancelling on your account.” is the prototype’s wording; the gear button in the top-right corner is Expo’s development menu and doesn’t appear in release builds.
+
+**Next step:**
+- Commit the customer screens (not pushed), then build the rider app’s screens on demo data.
+
+---
