@@ -27,8 +27,8 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and two
 | File | What it is | Authority |
 |---|---|---|
 | `progress.md` | This file: status, rules, next steps, log | Start here |
-| `docs/architecture.md` (v0.25) | Functions, 126 feature IDs (CUS, RID, KIT, MGR, DSP, ACC, WEB), order lifecycle, data model, decisions, free-tier limits, **locked versions (section 15)**, build order (16), **16.1 to verify at build**, seed data | Wins on anything technical |
-| `docs/design.md` (v0.21) | UI rules per app, screens, page flows, colours, components | Wins on anything visual or UX |
+| `docs/architecture.md` (v0.26) | Functions, 126 feature IDs (CUS, RID, KIT, MGR, DSP, ACC, WEB), order lifecycle, data model, decisions, free-tier limits, **locked versions (section 15)**, build order (16), **16.1 to verify at build**, seed data | Wins on anything technical |
+| `docs/design.md` (v0.22) | UI rules per app, screens, page flows, colours, components | Wins on anything visual or UX |
 | `docs/Casual-Kitchen-Express.md` (v1.9) | Brand and business, surface level only | Wins on brand (name, colours, logo, tone, menu, packaging) |
 | `docs/list-of-areas.md` | Delivery areas, boundary, landmarks, neighbourhood list | Areas still to confirm on a map |
 | `design/prototypes/*.html` | Clickable prototypes of every screen (open in a browser) | Illustrations only. If they disagree with the docs, **the docs win.** |
@@ -136,7 +136,8 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and two
 8. **Decided (12 November 2026):** the rider can’t go offline while carrying an order (`architecture.md` RID-02, `design.md` 5.5).
 9. **Prototypes lag the docs** on the 11 November decisions (cart, cash amounts, load display, kitchen theme, website cancel line) and on everything decided on 12 November (new roles, Finance, soup of the day). The docs win, and the prototypes are not being updated.
 10. **Decided (12 November 2026):** walk-in cash is an Exact button and an Other amount box; the ₦500 to ₦5,000 buttons are gone (`design.md` 6.5).
-11. **Customer leaderboard for account officers (owner to confirm).** Decided as managers only (`architecture.md` MGR-34). Showing it to account officers is a Proposal; the demo app shows it to them for now.
+11. **Decided (12 November 2026):** account officers see the customer leaderboard (`architecture.md` MGR-34).
+12. **Before the backend (owner’s request):** go over ways to reduce API calls and keep data fresh, since some data goes stale sooner than other data. Starting ideas are in `architecture.md` 14.4; agree them with the owner at the start of build step 4.
 
 **To verify at build** (the full list is in `architecture.md`, 16.1)
 - Better Auth's username plugin, admin create-user, and custom password-hash setting.
@@ -158,7 +159,7 @@ Follow `architecture.md`, section 16 (build order). On 12 November 2026 the owne
 2. **Done (12 November 2026, `0c4bcee`).** **Customer app screens on demo data:** browse, item, your order, checkout, address, pay, paid, track, rate, orders, profile, more, deactivate, and delete.
 3. **Done (12 November 2026, `cd8284c`).** **Rider app screens on demo data.**
 3b. **Done (12 November 2026).** **Business and Kitchen app screens on demo data,** for all four staff roles.
-4. **Backend foundation:** the Hono Worker, Drizzle schema from `architecture.md` section 9, Neon through Hyperdrive, Better Auth, roles, menu, orders, and order statuses. Run the verification checks in 16.1 early.
+4. **Backend foundation:** first go over call reduction and data freshness with the owner (`architecture.md` 14.4, open item 12). Then the Hono Worker, Drizzle schema from `architecture.md` section 9, Neon through Hyperdrive, Better Auth, roles, menu, orders, and order statuses. Run the verification checks in 16.1 early.
 5. **Seed script:** two months of demo data per `architecture.md`, 18.3, as soon as the schema exists.
 6. **Connect the screens to the API:** replace the demo data in each app with real calls, add the real map (MapLibre) and Google sign-in.
 7. **Capacity rules, batching, and the demo simulator.**
@@ -517,5 +518,33 @@ Append a new dated entry after each work session. Never edit or delete earlier e
 
 **Next step:**
 - The owner answers open item 11. Then the backend foundation (section 8, step 4).
+
+---
+
+## [2026-11-12] Reports layout, sales amounts, rider and area tables, leaderboard
+
+**What was done:**
+- Owner decisions recorded in `architecture.md` (v0.26) and `design.md` (v0.22), with change log rows:
+  - Account officers see the customer leaderboard (MGR-34; open item 11 closed).
+  - Reports: the report tabs sit on top under a “Report” label. Below a divider, the Date range and the Channel (All, Online, Walk-in) each have their own labelled box: side by side on screens 1250 dp or wider, stacked below that, so each box’s buttons stay on one line.
+  - Sales details show the amount before the percentage (“Card ₦735,730 (51%)”), and the online and walk-in split was added.
+  - Riders, areas, and staff: separate tables for **Riders** (every rider, deliveries, share, average delivery time, total row), **Areas** (every area, deliveries, share, average time, total row), and Kitchen staff. Worked out in the app from the demo delivery records in the chosen date range and channel. Walk-in explains there are no deliveries.
+  - The demo figures now come from one 60-day record set, so 7, 30, and 60 days agree with each other (before, each range had its own unrelated numbers).
+  - `architecture.md` 14.4: starting ideas for fewer API calls and fresher data (what goes stale when), to go over with the owner before the backend (open item 12, build step 4). Also saved as a Claude memory.
+- Tested on the tablet: 7 days showed 214 deliveries across the four riders; 60 days recalculated to 1,787, with all ten areas listed.
+- Typecheck and lint pass, and Prettier is clean.
+
+**Files created/updated:**
+- `apps/business/app/(app)/reports.tsx`
+- `docs/architecture.md`, `docs/design.md`, `progress.md`
+
+**Decisions locked in:**
+- The report changes and the leaderboard access above (owner, 12 November 2026).
+
+**Open questions / not yet decided:**
+- The call-reduction and freshness choices (open item 12), at the start of the backend.
+
+**Next step:**
+- Owner review, then commit (not pushed). Then the backend foundation, starting with open item 12.
 
 ---

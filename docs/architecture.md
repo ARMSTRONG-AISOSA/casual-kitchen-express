@@ -1,6 +1,6 @@
 # CKE ARCHITECTURE
 
-**Document Status:** Draft v0.25. Records the functions, features, and decisions for the apps and the website. Reviewed end to end on 11 November 2026, and again on 12 November 2026 after the new staff roles and Finance were added.  
+**Document Status:** Draft v0.26. Records the functions, features, and decisions for the apps and the website. Reviewed end to end on 11 November 2026, and again on 12 November 2026 after the new staff roles and Finance were added.  
 **Related documents:** `Casual-Kitchen-Express.md` (business and brand, surface level), `design.md` (UI/UX decisions and page flows), and `list-of-areas.md` (delivery areas).
 
 ---
@@ -312,7 +312,7 @@ One app for four staff roles: kitchen staff, dispatch officers, account officers
 
 **Manager**
 
-Account officers also use the reports (MGR-17 to MGR-23, MGR-27, and MGR-34, the leaderboard as noted there) and rider pay (MGR-30). Dispatch officers also use the order list and detail (MGR-13, MGR-24), alerts (MGR-14), manual completion (MGR-16), and the Settings sections in 3.0. Everything else here is for managers only.
+Account officers also use the reports (MGR-17 to MGR-23, MGR-27, and MGR-34, the customer leaderboard) and rider pay (MGR-30). Dispatch officers also use the order list and detail (MGR-13, MGR-24), alerts (MGR-14), manual completion (MGR-16), and the Settings sections in 3.0. Everything else here is for managers only.
 
 | ID | Feature | Notes | Status |
 |---|---|---|---|
@@ -333,9 +333,9 @@ Account officers also use the reports (MGR-17 to MGR-23, MGR-27, and MGR-34, the
 | MGR-15 | Cancellations and refunds | Rules in 4.6, with simulated refunds | **Decided** |
 | MGR-16 | Manual completion approval | For delivery-code problems. Dispatch officers can approve too (DSP-04). | Planned |
 | MGR-17 | Order volume reports | Orders by hour, day, week, and month; peak times; delivery and pickup split; online and walk-in split; completed and cancelled | Planned |
-| MGR-18 | Sales reports | Total sales, average order value, payment method split (cash, card, transfer), online and walk-in split, refunds | Planned |
+| MGR-18 | Sales reports | Total sales, average order value, payment method split (cash, card, transfer), online and walk-in split, refunds. Each split shows the amount first, then its share, for example “Card ₦735,730 (51%)”. | Planned |
 | MGR-19 | Timing reports | Time the order was placed, time to acknowledge, preparation time, wait for a rider, delivery time, and total time; averages and slowest orders | Planned |
-| MGR-20 | Rider and area reports | Per rider: deliveries, order value delivered, delivery fees, rider pay, and average delivery time. Per neighbourhood: orders and average delivery time. | Planned |
+| MGR-20 | Rider and area reports | Separate tables. **Riders:** every rider is listed, even with no deliveries: deliveries, share of all deliveries, and average delivery time. **Areas:** every area (neighbourhood) is listed with its deliveries, share, and average delivery time. A total row ends each table. Every figure is worked out from the deliveries in the chosen date range and channel (walk-ins have no deliveries). The kitchen staff table (MGR-27) sits below them. Order value, delivery fees, and rider pay per rider stay in the CSV export. | **Decided** |
 | MGR-21 | Menu reports | Top items, revenue by item and category, how often items sell out | Planned |
 | MGR-22 | Customer reports | New and returning customers, order frequency (online orders only) | Planned |
 | MGR-23 | Historic data | 7, 30, or 60 days, or a **custom range** of dates; CSV export; order history is kept permanently | **Decided** |
@@ -349,7 +349,7 @@ Account officers also use the reports (MGR-17 to MGR-23, MGR-27, and MGR-34, the
 | MGR-31 | Pricing and pay settings | The delivery fee (₦1,500 by default) and the rider pay per delivery (₦1,000 by default) are both editable. Changes show in the customer app and rider app straight away, apply to new orders and deliveries only, and are written to the audit log. Rider pay can’t exceed the delivery fee. | **Decided** |
 | MGR-32 | Rider tracking mode setting | Light (default) or milestones only (section 7) | **Decided** |
 | MGR-33 | Channel filter and sort | The order list, dashboard, and reports can be filtered to online, walk-in, or all, and sorted by time placed, amount, staff member, or payment method | **Decided** |
-| MGR-34 | Customer leaderboard | Customers ranked by customer ID for any report period, sortable by total spent or number of orders. Managers only, online orders only. **Proposal (12 November 2026):** account officers see it too, as they have Reports; awaiting the owner. The demo app shows it to account officers for now. | **Decided** |
+| MGR-34 | Customer leaderboard | Customers ranked by customer ID for any report period, sortable by total spent or number of orders. Managers and account officers (account officers added by the owner on 12 November 2026), online orders only. | **Decided** |
 | MGR-35 | Cancellation limit setting | The number of cancellations in 7 days after which a customer can only request a cancellation. 3 by default, adjustable from 3 to 7. Changes are written to the audit log. (4.6) | **Decided** |
 | MGR-36 | Restaurant contact number | The WhatsApp number behind “Contact the restaurant” in the customer app (CUS-19). One editable number, managers only. The change shows straight away and is written to the audit log. | **Decided** |
 
@@ -683,7 +683,7 @@ Entities and key fields, as a starting point for the Drizzle schema. Better Auth
 | Price changes | Fixed prices; editable by managers | Editable in Settings, shown in the customer and rider apps straight away, for new orders and deliveries only | **Decided** |
 | Cancellation friction | One tap; reason and confirmation | A reason and a confirmation tick, with a limit after 3 cancellations in 7 days (managers can set 3 to 7) | **Decided** |
 | Customer account removal | Delete only; deactivate and delete | Deactivate (reversible) and delete (Danger zone, tick, and typed DELETE ACCOUNT) | **Decided** |
-| Customer IDs and leaderboard | No ranking; manager leaderboard; public leaderboard | Unique customer IDs and a manager-only leaderboard by spend or orders (account officer access is a Proposal, MGR-34) | **Decided** |
+| Customer IDs and leaderboard | No ranking; manager leaderboard; public leaderboard | Unique customer IDs and a leaderboard by spend or orders for managers and account officers (MGR-34) | **Decided** |
 | Report periods | Fixed periods only; fixed and custom | 7, 30, and 60 days, plus a custom date range | **Decided** |
 | Owner protection | Any manager can be deactivated; owner protected | The owner account can’t be deactivated | **Decided** |
 | Rider pay per delivery | A fixed amount set by the manager; the full delivery fee; a percentage | A fixed amount set by the manager, default ₦1,000 | **Decided** |
@@ -805,6 +805,28 @@ Neon now also offers Functions (serverless Node.js compute), Object Storage, and
 - Functions run in a few regions (two in the US, Frankfurt, and Singapore), while Workers run at Cloudflare's edge.
 - Neon's 5 GB transfer allowance is shared across its products, while R2 has no download charges.
 - Because Hono also runs on Node, the API could move to Neon Functions later if Workers limits get in the way.
+
+### 14.4 Fewer calls and fresh data (to go over with the owner before the backend)
+
+**Status:** Planned. The owner asked (12 November 2026) that, before the backend is built, we go over ways to reduce the number of calls the API gets, especially for fetching app data and keeping it fresh, given that some data goes stale sooner than other data. Agree the list below with the owner at the start of build step 4, then mark each item Decided.
+
+Starting ideas, from the most stable data to the most live:
+
+| Data | How often it really changes | Ideas to keep calls low |
+|---|---|---|
+| Past days (reports, statements, closed months, order history) | Never, once the day is over; a closed month is locked (ACC-07) | Cache for good on the device and on the server. Only today’s figures are ever re-fetched. Pre-computed summaries (ReportView) mean one small call per report view. |
+| Menu, prices, delivery fee, rider pay, WhatsApp number, soup of the day | A few times a day at most | One “bootstrap” call when an app opens returns all of it with a version number. After that, the app re-fetches only when the live channel or a push says the version changed. HTTP ETags let an unchanged reply come back as a tiny “not modified”. |
+| Staff list, riders’ profiles, areas | Rarely | Same as settings: a version number, re-fetched only on change. |
+| Today’s orders on the board, the rider queue, tracking | Every few seconds at busy times | The live connection (Durable Objects, 10) pushes each change; the app never polls. On reconnect, one call fetches only what changed since the last version seen. |
+| Rider location | About every 45 seconds while delivering | Already batched and low-frequency (7.1). |
+| Reports for a chosen range | Only today’s part changes | The app can fetch the range’s records once (for example the deliveries behind the rider and area tables, about 2,000 small rows for 60 days) and work out the tables itself, so switching channel or table makes no new call. Or SQL does the sums and returns only the totals. Choose per report at build time, by payload size. |
+
+**General rules to consider**
+- Each data type gets its own freshness time in TanStack Query (`staleTime`), so stable data isn’t re-fetched just because a screen opens again.
+- Re-fetch on reconnect and when the app comes back to the foreground, not on a timer.
+- One call per screen where possible: endpoints return what a screen needs together (for example an order with its customer card and timeline).
+- Writes return the updated record, so the app doesn’t need a follow-up read.
+- Count requests and queries per day in Workers Logs against the budget in 14.2.
 
 ### 14.3 Customer map provider
 
@@ -1110,6 +1132,7 @@ At build time, a seed script fills the database with up to **two months** of his
 
 | Version | Change |
 |---|---|
+| 0.26 | Owner decisions on 12 November 2026: account officers see the customer leaderboard (MGR-34); sales splits show the amount before the percentage (MGR-18); the rider and area report is two tables, every rider and every area with deliveries, share, and average time, worked out from the chosen date range (MGR-20); 14.4 lists ways to reduce API calls and keep data fresh, to go over with the owner before the backend. |
 | 0.25 | Owner decisions on 12 November 2026: kitchen staff can set the soup of the day on the Sold out screen, as well as managers (KIT-17); walk-in cash is Exact or an Other amount box, replacing the ₦500 to ₦5,000 buttons (KIT-14); the cash-up sign-off and the month close record who did it, an account officer or any manager, by name, staff ID, and time (ACC-04, ACC-07, 4.5). |
 | 0.24 | Consistency review on 12 November 2026, with no new decisions: the dispatch officer and account officer added wherever staff roles are listed (users, attribution 4.5, cancellation rules 4.6, sign-in 12.1, seed people 18.3, payouts 18.1 and 18.2); a note on which Manager features the officers also use; Need help goes to dispatch (RID-11); alerts and live setting changes in section 10; decision rows for staff roles, Finance, the soup of the day, and report comparison; account officer access to the leaderboard recorded as a Proposal (MGR-34); seeded cash-ups and closed months; feature rows put in number order. |
 | 0.23 | Owner decisions on 12 November 2026: the soup of the day is set by a manager each day and shows in the customer app (KIT-17); two new staff roles, the dispatch officer (DSP-01 to DSP-06: customer contact with Call and WhatsApp, live riders panel, rider help, assigning orders to riders, cancellation requests) and the account officer (ACC-01 to ACC-07: rider payouts, a Finance menu with the monthly statement, daily cash-up, audit trail, exports, and close month); a role and menu table (3.0); a manager setting for the restaurant’s WhatsApp number (MGR-36, CUS-19); orders assigned by dispatch in the rider app (RID-23); CashUp, MonthClose, and Adjustment records; and report comparison moved to possible future updates (14.0). Rider earnings gain an All time period and an Owed list (RID-18). |

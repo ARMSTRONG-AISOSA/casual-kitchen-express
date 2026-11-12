@@ -1,6 +1,6 @@
 # CKE DESIGN
 
-**Document Status:** Draft v0.21. Records UI and UX decisions, design choices, page flows, and design libraries. Reviewed end to end on 11 November 2026, and again on 12 November 2026 after the new staff roles and Finance were added.  
+**Document Status:** Draft v0.22. Records UI and UX decisions, design choices, page flows, and design libraries. Reviewed end to end on 11 November 2026, and again on 12 November 2026 after the new staff roles and Finance were added.  
 **Related documents:** `Casual-Kitchen-Express.md` (business and brand, surface level), `architecture.md` (functions, features, data, technical decisions), and `list-of-areas.md` (delivery areas).
 
 ---
@@ -456,7 +456,7 @@ Same philosophy as the kitchen: practical first, polished second. Larger control
 | Finance | Four tabs: **Statement** (a month’s sales by channel and payment method, refunds, delivery fees, rider pay earned and paid, cash variances, and net), **Cash-ups** (each day’s expected, counted, difference, who counted, Sign off, and who signed it off with the time), **Audit trail** (every money action with who and when, with filters), and **Close month**. Export as CSV or PDF. Account officers and managers. |
 | Demo controls | Create orders, auto-play the kitchen and riders, set the speed, and reset the demo data |
 | Settings | Online order hours (8:00 am to 6:00 pm) and walk-in hours (8:00 am to 8:30 pm), pause orders, the neighbourhood list and delivery boundary, rider capacity and the batch drop-off distance, rider tracking mode (light or milestones only), the cancellation limit (3 to 7 in 7 days), the delivery fee (₦1,500 by default), and the rider pay per delivery (₦1,000 by default). The delivery fee and rider pay are editable, and changes show in the customer and rider apps straight away. **Restaurant contact** holds the WhatsApp number behind “Contact the restaurant” in the customer app. Pricing and pay and Restaurant contact are shown to managers only; dispatch officers see the other sections. |
-| Reports | Orders, sales, timings, riders, areas and staff, menu, and customers (with a leaderboard), for 7, 30, or 60 days or a custom date range, with a channel filter. Account officers and managers. |
+| Reports | Orders, sales, timings, riders, areas and staff, menu, and customers (with a leaderboard), for 7, 30, or 60 days or a custom date range, with a channel filter. The report tabs sit on top under a “Report” label; below a divider, the **Date range** and the **Channel** (All, Online, Walk-in) each sit in their own labelled box, side by side on wide screens and stacked otherwise, so the three kinds of choice are never confused. Account officers and managers. |
 
 ### 7.3 Page flows
 
@@ -507,11 +507,12 @@ Same philosophy as the kitchen: practical first, polished second. Larger control
 6. To replace or remove an image, tap it and choose Replace or Remove, with confirmation for removal.
 
 **View reports and historic data**
-1. Open Reports and choose a report: Orders, Sales, Times, Riders, areas, and staff, Menu, or Customers.
-2. Pick 7, 30, or 60 days with one tap, or choose Custom range and pick a From and To date.
-3. Each report opens with summary cards (for example total orders, total sales, average delivery time), then a simple chart, then a list.
-4. Tap any row or bar to drill down to the individual orders. Tap an order to see its full timeline with every timestamp (placed, acknowledged, ready, picked up, delivered).
-5. Export the current view as a CSV file.
+1. Open Reports and choose a report from the tabs at the top: Orders, Sales, Times, Riders, areas, and staff, Menu, or Customers.
+2. In the Date range box, pick 7, 30, or 60 days with one tap, or choose Custom range and pick a From and To date.
+3. In the Channel box, pick All, Online, or Walk-in.
+4. Each report opens with summary cards (for example total orders, total sales, average delivery time), then a simple chart, then the details. Every figure follows the chosen date range and channel.
+5. Tap any row or bar to drill down to the individual orders. Tap an order to see its full timeline with every timestamp (placed, acknowledged, ready, picked up, delivered).
+6. Export the current view as a CSV file.
 
 Comparing with the previous period is a possible future update (`architecture.md` 14.0), not part of the first release.
 
@@ -598,11 +599,11 @@ Comparing with the previous period is a possible future update (`architecture.md
 | Report | Shows |
 |---|---|
 | Orders | Order volume by hour, day, week, and month; peak times; delivery and pickup split; online and walk-in split; completed and cancelled orders |
-| Sales | Total sales, average order value, payment method split (cash, card, transfer), online and walk-in split, refunds |
+| Sales | Total sales, average order value, refunds, and the details: the payment method split (cash, card, transfer) and the online and walk-in split, each line showing the amount first and then its share, for example “Card ₦735,730 (51%)” |
 | Times | Time each order was placed, time to acknowledge, preparation time, wait for a rider, delivery time, and total time; averages and the slowest orders |
-| Riders, areas, and staff | Per rider: deliveries, order value delivered, delivery fees, rider pay, and average delivery time. Per neighbourhood: orders and average delivery time. Per kitchen staff member: orders handled (online and walk-in), order value handled, and average preparation time. |
+| Riders, areas, and staff | Summary cards (deliveries, average delivery time, rider pay), then three separate tables. **Riders:** every rider, even with none in the range, with deliveries, share of all deliveries, and average delivery time. **Areas:** every area, with deliveries, share, and average delivery time. **Kitchen staff:** orders handled, share, and average preparation time. Riders and areas end with a total row, are worked out from the deliveries in the chosen date range and channel, and say so when Walk-in is chosen (walk-ins have no deliveries). |
 | Menu | Top items, revenue by item and category, how often items sell out |
-| Customers | New and returning customers, order frequency, and a **leaderboard** of the top customers by customer ID, sortable by total spent or number of orders (online orders only, because walk-ins have no account). Managers only (decided); showing it to account officers too is a Proposal awaiting the owner (`architecture.md` MGR-34), and the demo app shows it to them for now. |
+| Customers | New and returning customers, order frequency, and a **leaderboard** of the top customers by customer ID, sortable by total spent or number of orders (online orders only, because walk-ins have no account). Managers and account officers (`architecture.md` MGR-34). |
 
 **Design notes:** large summary numbers, one clear chart per section, plain labels, and lists that collapse into cards on phones. Colour is never the only cue. Reports use pre-computed summaries so they load quickly, even over long periods. Charts are simple bars and lines, with the lists below them for detail.
 
@@ -722,6 +723,7 @@ Every design question is now decided. Anything that needs checking is listed in 
 
 | Version | Change |
 |---|---|
+| 0.22 | Owner decisions on 12 November 2026: Reports separates the report tabs, the Date range box, and the Channel box; sales details show the amount before the percentage; the rider and area details are separate tables for every rider and every area; account officers see the leaderboard. |
 | 0.21 | Owner decisions on 12 November 2026: kitchen staff set the soup of the day on the Sold out screen (managers can also use Menu); walk-in cash is Exact or an Other amount box; the cash-up sign-off and month close show who did it (an account officer or any manager), with the time. |
 | 0.20 | Consistency review on 12 November 2026, with no new decisions: the dispatch officer and account officer added to the scope, sign in, alerts, People (five tabs), the manual completion and rider pay flows, and the side rail decision; rider Need help goes to dispatch, and an Assigned by dispatch flow; today’s soup on the item detail; the leaderboard for account officers marked as a Proposal. |
 | 0.19 | Owner decisions on 12 November 2026: the soup of the day is picked by a manager on the Menu screen and shows in the customer app; side rail items by role, with two new roles, the dispatch officer (Alerts, Orders, Riders, Settings without Pricing and pay) and the account officer (Reports, Rider pay, Finance); a Customer card with Call and WhatsApp on online orders; the Riders screen and Assign to a rider; the Finance screen (statement, cash-ups, audit trail, close month) and the cash-up at close on the counter; the Restaurant contact setting; report comparison moved to future updates; the rider’s Earnings gain All time and an Owed section, and assigned orders get a banner. |
