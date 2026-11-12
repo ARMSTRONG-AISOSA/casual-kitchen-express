@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { useState } from "react";
-import { Linking, Pressable, View } from "react-native";
+import { View } from "react-native";
 import { ROLE_LABEL, type Person, type Role } from "../../src/data/seed";
 import { log, useStore } from "../../src/state/store";
 import { Avatar } from "../../src/ui/avatar";
@@ -132,19 +132,8 @@ export default function People() {
               }
             />
             <KV k="Home address" v={viewing.homeAddress || "Not given"} />
-            {photo ? (
-              <Pressable
-                onPress={() => photo.sourceUrl && Linking.openURL(photo.sourceUrl)}
-                accessibilityRole="link"
-              >
-                <T v="small" muted style={{ marginTop: 10 }}>
-                  Photo:{" "}
-                  {photo.sourceKind === "internet"
-                    ? `${photo.author ?? "unknown"}, ${photo.licence ?? ""}`
-                    : `Casual Kitchen Express${photo.author ? ` (${photo.author})` : ""}`}
-                </T>
-              </Pressable>
-            ) : (
+            {/* Staff photos carry no credit (owner, 12 November 2026). */}
+            {photo ? null : (
               <T v="small" muted style={{ marginTop: 10 }}>
                 No photo yet. Add one with Edit.
               </T>

@@ -127,7 +127,7 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and two
 ## 7. Open items
 
 **Owner to provide or confirm**
-1. **Food and staff photos (owner action: a Pexels API key).** 22 of 23 menu photos are in, credited in `docs/photo-credits.md`. The owner chose a larger library search over AI images, and real, freely licensed photos of Nigerians for the demo staff (matched by gender, credited, marked as demo). Both wait for a free Pexels API key (steps in the 12 November log entry). Still to find: the Office Lunch Combo, better yoghurt drink, moi moi, and Home Plate photos, and 10 staff headshots (3 women, 7 men).
+1. **Food and staff photos: done (12 November 2026).** All 23 menu photos are in (`docs/photo-credits.md`). Pexels had paused new API keys, so the owner made the Office Lunch Combo, yoghurt drink, moi moi, and Home Plate photos and the 10 staff headshots with Google Gemini. Menu ones are credited “Casual Kitchen Express (made with Gemini)”; staff photos carry no credit. None are marked as demo: they ship with the starting data.
 2. **Delivery areas.** Which areas are in range is decided (both sides of Oluku, Isihor, Iguosa, and the Oluku villages, all up to Oluku Market). Still to do: draw the boundary polygon from map pins (Uselu to Oluku Market) and confirm spellings. Extra landmarks between Uselu and Oluku may be researched, but each needs the owner’s approval before it is added.
 3. **GitHub repository (decided):** https://github.com/ARMSTRONG-AISOSA/casual-kitchen-express. The website's download button should point to its `releases/latest` once it exists.
 4. **Versions:** all locked in `architecture.md`, section 15. Re-check them for security advisories just before installing.
@@ -673,3 +673,16 @@ Append a new dated entry after each work session. Never edit or delete earlier e
 - Owner tests, then commit (not pushed). With the Pexels key: source the remaining food photos and the staff headshots. Then sign-in with Better Auth.
 
 ---
+
+### 12 November 2026: Gemini photos for the menu and staff
+
+- Pexels had paused new API keys, so Claude wrote an image prompt (brand photography direction, no text or logos, invented faces) and the owner made the images with Google Gemini.
+- Menu: Office Lunch Combo (new), Yoghurt drink, Moi moi, and Home Plate (replacing the weak ones). Cropped to 4:3 (1195 x 896) and saved as WebP at quality 78 (42 to 84 KB). Credited as CKE’s own photos, “made with Gemini”.
+- Staff: one grid image cut into 10 square headshots (about 276 px, about 5 KB each), saved as `apps/api/seed-media/staff/<staff ID>.webp`.
+- Owner decisions: staff photos carry no credit anywhere; no starting photo (menu or staff) is marked as demo, so they carry on to the release's starting data. This replaces the earlier plan of credited internet headshots marked as demo.
+- `scripts/seed-media.ts` now seeds staff photos too, stores the Gemini menu photos as business-own, flags nothing as demo, and cleans up earlier seeded photos by their folder (`menu/`, `seed-staff/`), leaving photos uploaded in the app alone.
+- The originals stay in `apps/api/seed-media/incoming/` (gitignored).
+- Staff photos show no credit anywhere: the "Photo: …" line is gone from View profile, and the photo dialog skips the "Where’s the photo from?" questions for staff (saved as CKE’s own). Checked on the tablet: Efosa’s photo in the top bar, the photos on People and View profile, the new dish photos in the customer app, and the four “made with Gemini” lines on Photo credits.
+- The seed now resets only the links it puts back (a soup added in the app keeps its photo) and removes any photo nothing uses (record and file). It removed two leftovers from testing.
+- Files: `apps/api/seed-media/menu/` (4 WebP files, `credits.json`), `apps/api/seed-media/staff/` (new), `apps/api/scripts/seed-media.ts`, `apps/business/app/(app)/people.tsx`, `apps/business/src/ui/photo-editor.tsx`, `docs/photo-credits.md`, `docs/architecture.md`, `docs/design.md`, `.gitignore`, `progress.md`.
+- Next: the owner checks the photos, then commit; then sign-in with Better Auth.

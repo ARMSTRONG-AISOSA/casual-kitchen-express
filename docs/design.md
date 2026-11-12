@@ -510,7 +510,7 @@ Same philosophy as the kitchen: practical first, polished second. Larger control
 2. Crop to the shape: 4:3 for dishes and soups, square for staff.
 3. The app compresses the image automatically before it leaves the device: it resizes it, converts it to a modern format, and strips private metadata.
 4. A preview shows the result with the new file size and the space saved (for example, "995 KB reduced to 152 KB").
-5. Say where the photo is from. **Our own photo**: credited to Casual Kitchen Express, with an optional name of who took it and an optional link. **From the internet**: who took it, the licence (CC0, CC BY, CC BY-SA, public domain, or other), and the link; the licence link is optional.
+5. Say where the photo is from (dishes and soups only; staff photos skip this step and show no credit). **Our own photo**: credited to Casual Kitchen Express, with an optional name of who took it and an optional link. **From the internet**: who took it, the licence (CC0, CC BY, CC BY-SA, public domain, or other), and the link; the licence link is optional.
 6. Save. Only the compressed file is uploaded, in one call with its credit.
 7. To replace a photo, tap it and choose a new one: the old photo is deleted and the new one shows in every app, and the customer app’s Photo credits update to match. Remove photo deletes it.
 8. When a soup is added, its photo dialog opens straight away (optional, it can be skipped and added later).

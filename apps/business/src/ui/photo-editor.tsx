@@ -111,9 +111,12 @@ export function PhotoEditor({
       if (c) setPicked(c);
     });
 
+  // Staff photos skip the credit questions and save as CKE's own (owner, 12 November 2026).
+  const asks = kind !== "staff";
   const finalLicence = licence === "Other" ? otherLicence.trim() : licence;
-  const needs =
-    source === "internet"
+  const needs = !asks
+    ? null
+    : source === "internet"
       ? !author.trim()
         ? "Enter who took the photo"
         : !finalLicence
@@ -129,7 +132,7 @@ export function PhotoEditor({
     run(async () => {
       if (!api || !targetId || !picked) throw new Error("Connect to the API to save photos.");
       const credit: PhotoCredit =
-        source === "business"
+        !asks || source === "business"
           ? { sourceKind: "business", author: author.trim(), sourceUrl: link.trim() }
           : {
               sourceKind: "internet",
@@ -205,7 +208,15 @@ export function PhotoEditor({
         ) : null}
       </View>
 
-      {picked ? (
+      {picked && !asks ? (
+        <Button
+          label={currentUri ? "Replace the photo" : "Save the photo"}
+          style={{ marginTop: 14 }}
+          disabled={busy}
+          onPress={save}
+        />
+      ) : null}
+      {picked && asks ? (
         <>
           <T v="label" style={{ marginTop: 16 }}>
             Where’s the photo from?

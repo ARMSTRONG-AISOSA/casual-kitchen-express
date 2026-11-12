@@ -35,3 +35,4 @@ playwright-report/
 .idea/
 *.swp
 .~lock.*#
+apps/api/seed-media/incoming/
