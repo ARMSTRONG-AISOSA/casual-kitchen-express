@@ -6,5 +6,18 @@
   // Better Auth and pg need Node.js APIs (architecture.md 12.2).
   "compatibility_flags": ["nodejs_compat"],
   "observability": { "enabled": true },
-  // Hyperdrive, R2, Durable Objects, and Cron Triggers are added as bindings in the backend step.
+  // The database, through Hyperdrive (architecture.md 14.2). Locally it points at the Docker
+  // database. The id is replaced with the real Hyperdrive id when the API is deployed.
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "00000000000000000000000000000000",
+      "localConnectionString": "postgres://cke:cke-local-only@127.0.0.1:5432/cke",
+    },
+  ],
+  // "true" only in .dev.vars on the development laptop, until sign-in exists (src/auth/actor.ts).
+  "vars": { "ALLOW_UNSIGNED_WRITES": "false" },
+  // Image files (architecture.md 8.2). Locally, wrangler keeps the bucket in .wrangler/state.
+  "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "cke-media" }],
+  // Durable Objects and Cron Triggers are added as their features are built.
 }

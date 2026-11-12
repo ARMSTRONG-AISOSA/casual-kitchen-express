@@ -2,13 +2,14 @@ import { router } from "expo-router";
 import { DEFAULTS } from "@cke/validation";
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 import {
+  dishName,
   findItem,
+  usesSoup,
   PROTEINS,
   SOUPS,
   SWALLOWS,
   type MenuItem,
   type ProteinId,
-  type SoupId,
   type SwallowId,
 } from "../data/menu";
 import type { Point } from "../data/geo";
@@ -16,7 +17,8 @@ import type { Point } from "../data/geo";
 // In-app state for building the screens against mock data. It moves to the API
 // (with TanStack Query) once the backend exists.
 
-export type Options = { protein?: ProteinId; soup?: SoupId; swallow?: SwallowId };
+/** `soup` is the soup's name, as shown to the customer. */
+export type Options = { protein?: ProteinId; soup?: string; swallow?: SwallowId };
 export type Line = { id: string; opt: Options; qty: number; unit: number; label: string };
 export type Address = {
   label: "Home" | "Work" | "Other";
@@ -66,8 +68,13 @@ export type State = {
   cart: Line[];
   mode: "delivery" | "pickup";
   open: "open" | "closed" | "paused";
-  /** Today's soup, set by a manager in the Business app (KIT-17). */
-  soupToday: SoupId;
+  /** The soup rotation and today's soup, set in the Business app (KIT-17). */
+  soups: string[];
+  soupToday: string;
+  /** Where the menu data came from: the API, or the demo data in the app. */
+  catalogFrom: "api" | "demo";
+  /** Photo addresses by dish or soup name, from the API. Empty means placeholders. */
+  photos: Record<string, string>;
   fee: number;
   pay: "card" | "transfer";
   order: Order | null;
@@ -101,7 +108,10 @@ export const initialState: State = {
   cart: [],
   mode: "delivery",
   open: "open",
-  soupToday: "egusi",
+  soups: SOUPS,
+  soupToday: "Egusi",
+  catalogFrom: "demo",
+  photos: {},
   fee: DEFAULTS.deliveryFee,
   pay: "card",
   order: null,
@@ -112,9 +122,11 @@ export const initialState: State = {
 /* ---------- menu and cart helpers ---------- */
 
 /** Default options: chicken for rice meals, and today's soup with eba. */
-export function defaults(it: MenuItem, soup: SoupId = "egusi"): Options {
+export function defaults(it: MenuItem, soup = "Egusi"): Options {
   if (it.opts === "protein") return { protein: "chicken" };
   if (it.opts === "soup") return { soup, swallow: "eba" };
+  // Extra soup and Home Plate keep the soup they were ordered with, even if it changes later.
+  if (usesSoup(it)) return { soup };
   return {};
 }
 
@@ -130,10 +142,11 @@ export function optLabel(it: MenuItem, opt: Options): string {
     return p ? "With " + p.label.toLowerCase() : "";
   }
   if (it.opts === "soup") {
-    const soup = SOUPS.find((x) => x.id === opt.soup)?.label ?? "";
+    const soup = opt.soup ?? "";
     const swallow = SWALLOWS.find((x) => x.id === opt.swallow)?.label.toLowerCase() ?? "";
     return `${soup}, ${swallow}`;
   }
+  if (it.id === "homeplate" && opt.soup) return `With ${opt.soup.toLowerCase()}`;
   return "";
 }
 
@@ -157,7 +170,8 @@ export const cartFood = (cart: Line[]) => cart.reduce((a, c) => a + c.qty * c.un
 export const itemsText = (lines: Line[]) =>
   lines
     .map((l) => {
-      const name = findItem(l.id)?.name ?? l.id;
+      const it = findItem(l.id);
+      const name = it ? dishName(it, l.opt.soup) : l.id;
       const opt = l.label ? ` (${l.label.charAt(0).toLowerCase()}${l.label.slice(1)})` : "";
       return `${l.qty > 1 ? `${l.qty} × ` : ""}${name}${opt}`;
     })

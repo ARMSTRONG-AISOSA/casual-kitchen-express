@@ -3,12 +3,14 @@ import { useMemo, useState } from "react";
 import { View, useWindowDimensions } from "react-native";
 import { BarChart } from "react-native-gifted-charts";
 import { AREAS } from "../../src/data/seed";
+import { AOV, DAYS, DELIVERIES } from "../../src/data/report-data";
 import { useStore } from "../../src/state/store";
 import { useTheme } from "../../src/state/theme";
 import { Button, Card, Chip, Chips, KV, Page, Section, Stat, T } from "../../src/ui/kit";
+import { RefundsReport } from "../../src/ui/refunds-report";
 import { useToast } from "../../src/ui/toast";
 
-type Report = "orders" | "sales" | "times" | "riders" | "menu" | "customers";
+type Report = "orders" | "sales" | "times" | "riders" | "menu" | "customers" | "refunds";
 type Range = 7 | 30 | 60;
 type Channel = "all" | "online" | "walkin";
 
@@ -19,55 +21,8 @@ const REPORTS: [Report, string][] = [
   ["riders", "Riders, areas, and staff"],
   ["menu", "Menu"],
   ["customers", "Customers"],
+  ["refunds", "Refunds"],
 ];
-
-// A repeatable pseudo-random number, so the demo figures stay the same between visits.
-const seeded = (n: number) => {
-  const x = Math.sin(n * 9301 + 49297) * 233280;
-  return x - Math.floor(x);
-};
-
-/* ---------- demo records: 60 days, the last item is yesterday ---------- */
-
-const AOV = 4300;
-const DAYS = Array.from({ length: 60 }, (_, i) => {
-  const weekend = (i + 2) % 7 >= 5;
-  const f = 0.85 + seeded(i) * 0.3;
-  return {
-    online: Math.round((weekend ? 25 : 40) * f),
-    walkin: Math.round((weekend ? 8 : 13) * f),
-  };
-});
-
-// Minutes from the kitchen to each area, and how often orders come from there.
-const AREA_BASE = [10, 12, 14, 15, 17, 19, 21, 23, 25, 27];
-const AREA_WEIGHT = [22, 18, 12, 10, 10, 7, 6, 5, 5, 5];
-const RIDER_IDS = ["R-001", "R-002", "R-003", "R-004"];
-const RIDER_WEIGHT = [30, 27, 23, 20];
-const RIDER_PACE = [0.95, 1.05, 1, 1.1];
-
-const pick = (weights: number[], r: number) => {
-  let x = r * weights.reduce((a, b) => a + b, 0);
-  for (let i = 0; i < weights.length; i++) {
-    x -= weights[i]!;
-    if (x < 0) return i;
-  }
-  return weights.length - 1;
-};
-
-type Delivery = { day: number; rider: string; area: number; mins: number };
-
-// About 85% of online orders are deliveries (architecture.md 18.3). Each one gets a rider, an area,
-// and a delivery time. In the real app these come from the Delivery records (section 9).
-const DELIVERIES: Delivery[] = DAYS.flatMap((d, day) =>
-  Array.from({ length: Math.round(d.online * 0.85) }, (_, j) => {
-    const k = day * 100 + j;
-    const area = pick(AREA_WEIGHT, seeded(k + 0.1));
-    const r = pick(RIDER_WEIGHT, seeded(k + 0.2));
-    const mins = Math.round(AREA_BASE[area]! * RIDER_PACE[r]! * (0.8 + seeded(k + 0.3) * 0.45));
-    return { day, rider: RIDER_IDS[r]!, area, mins };
-  }),
-);
 
 const pct = (n: number, total: number) => (total ? `${Math.round((n / total) * 100)}%` : "0%");
 const avg = (xs: number[]) =>
@@ -128,7 +83,7 @@ export default function Reports() {
   }));
   const chartWidth = Math.min(width - 300, 700);
 
-  const summary: Record<Report, [string, string][]> = {
+  const summary: Record<Exclude<Report, "refunds">, [string, string][]> = {
     orders: [
       ["Orders", String(orders)],
       ["Per day", String(Math.round(orders / range))],
@@ -160,7 +115,7 @@ export default function Reports() {
       ["Orders each", "3.1"],
     ],
   };
-  const lists: Record<Exclude<Report, "riders">, [string, string][]> = {
+  const lists: Record<Exclude<Report, "riders" | "refunds">, [string, string][]> = {
     orders: [
       ["Busiest hour", "12 pm to 1 pm"],
       ["Delivery and pickup", "81% and 19%"],
@@ -248,11 +203,13 @@ export default function Reports() {
         </Card>
       </View>
 
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, marginTop: 16 }}>
-        {summary[report].map(([l, v]) => (
-          <Stat key={l} label={l} value={v} />
-        ))}
-      </View>
+      {report !== "refunds" ? (
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, marginTop: 16 }}>
+          {summary[report].map(([l, v]) => (
+            <Stat key={l} label={l} value={v} />
+          ))}
+        </View>
+      ) : null}
       {report === "orders" || report === "sales" ? (
         <Card>
           <T v="h3" style={{ marginBottom: 10 }}>
@@ -274,7 +231,9 @@ export default function Reports() {
         </Card>
       ) : null}
 
-      {report === "riders" ? (
+      {report === "refunds" ? (
+        <RefundsReport range={range} channel={channel} />
+      ) : report === "riders" ? (
         <>
           {channel === "walkin" ? (
             <T muted style={{ marginTop: 16 }}>

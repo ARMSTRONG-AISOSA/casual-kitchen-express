@@ -1,21 +1,44 @@
 import { fontFamily } from "@cke/brand-tokens";
-import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
+import { Image, StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
+import { useStore } from "../state/store";
 import Svg, { Ellipse, Path } from "react-native-svg";
 import { useTheme } from "../state/theme";
 
-/** Placeholder until the food photos are sourced (progress.md, open item 1). */
+/**
+ * A dish photo. Shows the real photo when the API has one (sourced as the brand document asks, with
+ * credits on More, Photo credits), and the drawn placeholder otherwise. Images are cached by the
+ * phone: each address never changes, so it downloads once.
+ */
 export function PhotoPlaceholder({
   height,
   width,
   label,
+  caption = false,
   style,
 }: {
   height: number;
   width?: number;
+  /** What the photo shows, for example the dish, or today's soup for soup dishes. */
   label: string;
+  /** Names the photo on large placeholders, so a change of soup shows in the picture too. */
+  caption?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
   const t = useTheme();
+  const { s } = useStore();
+  const uri = s.photos[label];
+  if (uri) {
+    return (
+      <View
+        accessibilityRole="image"
+        accessibilityLabel={`${label} photo`}
+        style={[styles.box, { height, width, backgroundColor: t.kraft }, style]}
+      >
+        <Image source={{ uri }} resizeMode="cover" style={StyleSheet.absoluteFill} />
+        {caption ? <Text style={styles.note}>{label}</Text> : null}
+      </View>
+    );
+  }
   return (
     <View
       accessibilityRole="image"
@@ -34,7 +57,9 @@ export function PhotoPlaceholder({
           opacity={0.45}
         />
       </Svg>
-      {height >= 90 ? <Text style={styles.note}>Photo to come</Text> : null}
+      {height >= 90 ? (
+        <Text style={styles.note}>{caption ? `${label} photo to come` : "Photo to come"}</Text>
+      ) : null}
     </View>
   );
 }

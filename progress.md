@@ -27,10 +27,11 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and two
 | File | What it is | Authority |
 |---|---|---|
 | `progress.md` | This file: status, rules, next steps, log | Start here |
-| `docs/architecture.md` (v0.26) | Functions, 126 feature IDs (CUS, RID, KIT, MGR, DSP, ACC, WEB), order lifecycle, data model, decisions, free-tier limits, **locked versions (section 15)**, build order (16), **16.1 to verify at build**, seed data | Wins on anything technical |
-| `docs/design.md` (v0.22) | UI rules per app, screens, page flows, colours, components | Wins on anything visual or UX |
+| `docs/architecture.md` (v0.31) | Functions, 126 feature IDs (CUS, RID, KIT, MGR, DSP, ACC, WEB), order lifecycle, data model, decisions, free-tier limits, **locked versions (section 15)**, build order (16), **16.1 to verify at build**, seed data | Wins on anything technical |
+| `docs/design.md` (v0.25) | UI rules per app, screens, page flows, colours, components | Wins on anything visual or UX |
 | `docs/Casual-Kitchen-Express.md` (v1.9) | Brand and business, surface level only | Wins on brand (name, colours, logo, tone, menu, packaging) |
 | `docs/list-of-areas.md` | Delivery areas, boundary, landmarks, neighbourhood list | Areas still to confirm on a map |
+| `docs/photo-credits.md` | Every menu photo’s author, licence, and source, and the photos still to find | The record the brand document asks for |
 | `design/prototypes/*.html` | Clickable prototypes of every screen (open in a browser) | Illustrations only. If they disagree with the docs, **the docs win.** |
 | `brand/cke-logo-package/` | Logo SVG and PNG files, app icons, favicons, brand tokens (CSS and JSON), web snippet, build script | Use these files, never redraw the logo |
 
@@ -70,7 +71,7 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and two
 | Repository | npm workspaces (npm 11.17.0, bundled with Node.js 24) and Turborepo 2.11.10, on Node.js 24 LTS. GitHub: ARMSTRONG-AISOSA/casual-kitchen-express |
 | App libraries | Expo Router, TanStack Query, Zod, lucide-react-native icons, Gifted Charts (business app), and React Native styles with the shared brand tokens (no UI kit) |
 | API | Hono 4.13.14 on Cloudflare Workers (free plan, Wrangler 4.155.0), REST first (GraphQL only if needed) |
-| Database | Neon Postgres, through Cloudflare Hyperdrive with `pg` 8.23.1, and Drizzle ORM 0.45.4 (Drizzle Kit 0.31.11 for migrations) |
+| Database | Neon Postgres, through Cloudflare Hyperdrive with `pg` 8.23.1, and Drizzle ORM 0.45.4 (Drizzle Kit 0.31.11 for migrations). Development uses Postgres 17.10 in Docker on the laptop. |
 | Real-time | Cloudflare Durable Objects (WebSockets with hibernation) |
 | Background jobs | Cron Triggers and Durable Object alarms |
 | Images | Cloudflare R2. Files in object storage, links in the database. Compressed on the device before upload. |
@@ -126,7 +127,7 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and two
 ## 7. Open items
 
 **Owner to provide or confirm**
-1. **Food photos (approach decided).** Every dish is a "Photo to come" placeholder. Free libraries first (Unsplash, Pexels, Pixabay, Wikimedia Commons) with each source recorded, then AI images based on real references only where nothing suitable exists. Raise this when building the screens.
+1. **Food and staff photos (owner action: a Pexels API key).** 22 of 23 menu photos are in, credited in `docs/photo-credits.md`. The owner chose a larger library search over AI images, and real, freely licensed photos of Nigerians for the demo staff (matched by gender, credited, marked as demo). Both wait for a free Pexels API key (steps in the 12 November log entry). Still to find: the Office Lunch Combo, better yoghurt drink, moi moi, and Home Plate photos, and 10 staff headshots (3 women, 7 men).
 2. **Delivery areas.** Which areas are in range is decided (both sides of Oluku, Isihor, Iguosa, and the Oluku villages, all up to Oluku Market). Still to do: draw the boundary polygon from map pins (Uselu to Oluku Market) and confirm spellings. Extra landmarks between Uselu and Oluku may be researched, but each needs the owner’s approval before it is added.
 3. **GitHub repository (decided):** https://github.com/ARMSTRONG-AISOSA/casual-kitchen-express. The website's download button should point to its `releases/latest` once it exists.
 4. **Versions:** all locked in `architecture.md`, section 15. Re-check them for security advisories just before installing.
@@ -137,7 +138,7 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and two
 9. **Prototypes lag the docs** on the 11 November decisions (cart, cash amounts, load display, kitchen theme, website cancel line) and on everything decided on 12 November (new roles, Finance, soup of the day). The docs win, and the prototypes are not being updated.
 10. **Decided (12 November 2026):** walk-in cash is an Exact button and an Other amount box; the ₦500 to ₦5,000 buttons are gone (`design.md` 6.5).
 11. **Decided (12 November 2026):** account officers see the customer leaderboard (`architecture.md` MGR-34).
-12. **Before the backend (owner’s request):** go over ways to reduce API calls and keep data fresh, since some data goes stale sooner than other data. Starting ideas are in `architecture.md` 14.4; agree them with the owner at the start of build step 4.
+12. **Decided (12 November 2026):** fewer API calls and fresh data: settings with a version number and a live nudge, past data kept and only today refreshed, reports worked out in the app or database by size, and reconnecting fetches only what changed (`architecture.md` 14.4).
 
 **To verify at build** (the full list is in `architecture.md`, 16.1)
 - Better Auth's username plugin, admin create-user, and custom password-hash setting.
@@ -159,7 +160,7 @@ Follow `architecture.md`, section 16 (build order). On 12 November 2026 the owne
 2. **Done (12 November 2026, `0c4bcee`).** **Customer app screens on demo data:** browse, item, your order, checkout, address, pay, paid, track, rate, orders, profile, more, deactivate, and delete.
 3. **Done (12 November 2026, `cd8284c`).** **Rider app screens on demo data.**
 3b. **Done (12 November 2026).** **Business and Kitchen app screens on demo data,** for all four staff roles.
-4. **Backend foundation:** first go over call reduction and data freshness with the owner (`architecture.md` 14.4, open item 12). Then the Hono Worker, Drizzle schema from `architecture.md` section 9, Neon through Hyperdrive, Better Auth, roles, menu, orders, and order statuses. Run the verification checks in 16.1 early.
+4. **In progress (12 November 2026).** **Backend foundation:** following the data freshness choices in `architecture.md` 14.4. Done: local Postgres 17.10 in Docker, the full schema and first migration, the base seed (menu, soups, areas, settings), and `GET /bootstrap` with a version and 304s. Next: Better Auth (sign-in and roles), then orders and statuses. The Hono Worker, Drizzle schema from `architecture.md` section 9, Neon through Hyperdrive, Better Auth, roles, menu, orders, and order statuses. Run the verification checks in 16.1 early.
 5. **Seed script:** two months of demo data per `architecture.md`, 18.3, as soon as the schema exists.
 6. **Connect the screens to the API:** replace the demo data in each app with real calls, add the real map (MapLibre) and Google sign-in.
 7. **Capacity rules, batching, and the demo simulator.**
@@ -546,5 +547,129 @@ Append a new dated entry after each work session. Never edit or delete earlier e
 
 **Next step:**
 - Owner review, then commit (not pushed). Then the backend foundation, starting with open item 12.
+
+---
+
+## [2026-11-12] Data freshness decisions and the backend foundation started
+
+**What was done:**
+- Committed the Reports changes (`d4d2032`, not pushed).
+- Owner decisions on fewer API calls and fresh data (`architecture.md` 14.4, open item 12 closed): settings and menu use a version number with a live nudge; past data is kept and only today refreshed; reports are worked out in the app or the database by size; reconnecting fetches only what changed.
+- Owner decisions on setup: local Postgres in Docker for development, a Cloudflare account soon (for the early 16.1 checks), and Neon at deploy.
+- Locked the Postgres Docker image at 17.10 (17.11 is newer than the cutoff), pinned by digest (`architecture.md` 15.1). It runs on 127.0.0.1 only.
+- Updated the shared types and validation for the dispatch officer and account officer roles (staff codes D- and A-).
+- Built the schema from `architecture.md` section 9 (30 tables) with Drizzle, generated the first migration, and applied it. Added change numbers for syncing, a catalog version, soup varieties, and hours overrides (recorded under section 9).
+- A base seed script: the brand document’s menu (22 items with protein and swallow options), the three soups, the ten areas, and the default settings.
+- The Worker connects through Hyperdrive (pointed at the Docker database locally). `GET /bootstrap` returns the menu, soups, areas, and customer-facing settings with an ETag, and answers 304 when the app already has that version. Tests run inside the Workers runtime against the local database: 3 of 3 pass.
+- Fixed a “socket has been closed” error that pg’s Workers socket reports after a connection is closed: it’s now ignored only after the close.
+- `apps/api/README.md` lists the database commands with what each should print.
+
+**Files created/updated:**
+- `apps/api/docker-compose.yml`, `drizzle.config.ts`, `drizzle/0000_init.sql` and `drizzle/meta/`, `src/db/schema.ts`, `src/db/catalog.ts`, `src/db/client.ts`, `src/routes/bootstrap.ts`, `src/index.ts`, `scripts/seed-base.ts`, `test/bootstrap.test.ts`, `wrangler.jsonc`, `worker-configuration.d.ts`, `package.json`, `README.md`
+- `packages/types/src/index.ts`, `packages/validation/src/index.ts`
+- `docs/architecture.md` (v0.27, v0.28), `progress.md`
+
+**Decisions locked in:**
+- The data freshness choices, the local database, and the account timing above (owner, 12 November 2026).
+
+**Open questions / not yet decided:**
+- None new. The API tests need the local database running (README step 1).
+
+**Next step:**
+- Better Auth in the Worker: Google sign-in for customers and managers, username and password for the other staff roles, roles checked on every route. Then the owner creates the Cloudflare account (detailed steps to follow) to run the 16.1 checks: PBKDF2 timing, the username plugin, and Durable Object alarms.
+
+---
+
+## [2026-11-12] Add and remove soups in the rotation, through the API
+
+**What was done:**
+- Owner decision: managers add and remove soups in the soup of the day rotation on the Menu screen, saved in the database and shown in the customer app (`architecture.md` KIT-17, v0.29; `design.md` 7.2 and a new flow, v0.23).
+- API: `POST /soups`, `DELETE /soups/:id`, and `PUT /settings/soup-of-the-day`. Removing archives the soup (past orders point to it), adding the name again brings it back, today’s soup can’t be removed, and one soup always stays. Each change raises the catalog version and goes in the audit log. 4 of 4 API tests pass.
+- Temporary write guard until sign-in: changes are refused unless `ALLOW_UNSIGNED_WRITES` is on, which is set only in `apps/api/.dev.vars` on the laptop (not committed).
+- `@cke/api-client`: the bootstrap call remembers its ETag and keeps its data on a 304; soup calls return the API’s plain-English messages.
+- Business app: the Menu screen’s soup card lists Soups in the rotation with Remove (with a confirmation) and an Add a soup box. Sold out keeps pick-only for kitchen staff. A line says whether changes are saved for every app or only in demo data.
+- Customer app: today’s soup and the soup list come from `GET /bootstrap` when the app opens and when it comes back to the front; an unchanged catalog costs a 304.
+- Both apps read the API address from a local `.env` (`.env.example` committed) and fall back to their demo data without it. The API runs on the laptop’s network address for the tablet (`npm run dev:lan --workspace @cke/api`).
+- Checked from the laptop over the network: add Banga, the 304 before and the full reply after a change, remove Banga, both actions in the audit log. The tablet dropped off wireless debugging, so the owner tests on the tablet.
+
+**Files created/updated:**
+- `apps/api/src/routes/soups.ts`, `src/auth/actor.ts`, `src/index.ts`, `test/soups.test.ts`, `wrangler.jsonc`, `worker-configuration.d.ts`, `package.json`, `.dev.vars.example`
+- `packages/api-client/src/index.ts`, `packages/validation/src/index.ts`
+- `apps/business/src/api.ts`, `src/state/catalog.tsx`, `src/state/store.tsx`, `src/ui/soup.tsx`, `app/_layout.tsx`, `app/(app)/menu.tsx`, `.env.example`
+- `apps/customer/src/api.ts`, `src/state/catalog.tsx`, `src/state/store.tsx`, `src/data/menu.ts`, `app/item/[id].tsx`, `src/ui/preview-tools.tsx`, `app/_layout.tsx`, `.env.example`
+- `docs/architecture.md`, `docs/design.md`, `progress.md`
+
+**Decisions locked in:**
+- Managers add and remove soups in the rotation (owner, 12 November 2026).
+
+**Open questions / not yet decided:**
+- None. The owner tests on the tablet, then we commit and move on.
+
+**Next step:**
+- Owner tests, then commit (not pushed). Then sign-in with Better Auth and role checks, replacing the temporary write guard, then the owner’s Cloudflare account steps.
+
+---
+
+## [2026-11-12] Soup dishes follow today’s soup, and menu photos in the apps
+
+**What was done:**
+- Reconnected to the tablet (new pairing code). The tablet test of the soup rotation passed: adding a soup on the Business app’s Menu screen saved it to the database, Remove (with its confirmation) took it out, today’s soup’s Remove is greyed out, and both actions are in the audit log.
+- Owner request: the soup dishes carry today’s soup. The customer app now shows “Soup of the day: Egusi”, “Extra egusi”, and Home Plate “Egusi with pounded yam, fish, and water”, and the soup and extra soup show that soup’s own photo with its name on it. Each order line keeps the soup it was ordered with. The Business app’s walk-in tiles, tickets, and sold-out list use the same names (“Efo riro with eba”). The customer Menu tab checks for a new soup each time it comes into view (a 304 when nothing changed). Tested on the tablet: switching the soup from Efo riro to Egusi changed the names, descriptions, and photos.
+- Owner request: populate the apps with images, before sign-in. Sourced 22 menu photos from Wikimedia Commons and Flickr (through Openverse) following the brand document (Nigerian dishes that match the menu, free licences that allow commercial use, sources recorded, no brand logos). Processed to `architecture.md` 8.1 (4:3, at most 1200 px, WebP 78, all under 250 KB, metadata removed). Credits in `docs/photo-credits.md`, `apps/api/seed-media/menu/credits.json`, the database, and a new Photo credits page under More in the customer app.
+- Backend: each soup has its own photo; MediaAsset rows carry title, author, licence, and source; photos are stored in R2 (local for now) and served by `GET /media/:id` with a year’s caching; `GET /media/credits`; a seed script uploads and links them. Migrations `0001` and `0002`.
+- Customer app: real photos on menu cards and the dish screen, the placeholder where there is no photo. Business app: small photos on the Menu screen’s items and soup rotation. The rider app stays image-free by design.
+- The apps use React Native’s Image for now; expo-image (decided) is a native module and comes with the next native build (`architecture.md` 15.2).
+- API tests: the catalog tests are in one file and test files run one after another, because running them at the same time stalled requests through Hyperdrive’s local proxy; the soup test clears any test soup left behind. 4 of 4 pass, three runs in a row.
+
+**Files created/updated:**
+- `apps/api/seed-media/menu/` (22 photos and `credits.json`), `scripts/seed-media.ts`, `src/routes/media.ts`, `src/routes/bootstrap.ts`, `src/db/schema.ts`, `drizzle/0001_soup-photo.sql`, `drizzle/0002_media-credits.sql`, `drizzle/meta/`, `src/index.ts`, `wrangler.jsonc`, `worker-configuration.d.ts`, `vitest.config.ts`, `test/catalog.test.ts` (replaces the bootstrap and soups test files), `package.json`
+- `packages/api-client/src/index.ts`
+- `apps/customer/src/data/menu.ts`, `src/state/store.tsx`, `src/state/catalog.tsx`, `src/ui/photo.tsx`, `app/(tabs)/index.tsx`, `app/item/[id].tsx`, `app/cart.tsx`, `app/(tabs)/more/index.tsx`, `app/(tabs)/more/photo-credits.tsx`
+- `apps/business/src/state/store.tsx`, `src/state/catalog.tsx`, `src/ui/thumb.tsx`, `src/ui/soup.tsx`, `app/(app)/menu.tsx`, `app/(app)/walk-in.tsx`, `app/(app)/sold-out.tsx`
+- `docs/photo-credits.md` (new), `docs/architecture.md` (v0.30), `docs/design.md` (v0.24), `docs/Casual-Kitchen-Express.md`, `progress.md`
+
+**Decisions locked in:**
+- Soup dishes carry today’s soup in name, description, and photo (owner, 12 November 2026).
+- Photos come before sign-in (owner, 12 November 2026).
+
+**Open questions / not yet decided:**
+- The Office Lunch Combo photo: an AI image from real references, or a photo of the real dish (open item 1).
+
+**Next step:**
+- Owner tests, then commit (not pushed). Then sign-in with Better Auth and role checks, then the owner’s Cloudflare account steps.
+
+---
+
+## [2026-11-12] Photo upload with compression, refunds with confirmation, Refunds report, View profile
+
+**What was done:**
+- Owner answers: search larger photo libraries (no AI images); use real, freely licensed photos of Nigerians for the demo staff, matched by gender (Claude raised that this presents real people as made-up staff; the owner chose it, so only photos whose licence allows reuse and changes are used, each credited, no public figures, marked as demo); rebuild the Business app now.
+- Board bug fixed: on a tablet in portrait, the Taking orders switch and clock move to a second row, so they no longer overlap the person and Switch person (tested on the tablet).
+- Rebuilt the Business app’s arm64 APK with the locked `expo-image-picker` 58.0.10, `expo-image-manipulator` 58.0.16, and `expo-image` 58.0.18 (about 49 minutes), installed it, and stopped the build helpers.
+- Photo upload in the Business app: one way to take or choose, crop (4:3 dishes and soups, square staff), and compress (WebP, quality 78 stepping down until under 250 KB or 80 KB), used on Menu (tap a dish’s photo), the item editor, the soup rotation (tap a soup’s photo; the dialog opens when a soup is added), and the person editor. The dialog shows the size saved and asks where the photo is from: Our own photo (optional photographer and link) or From the internet (who took it, licence, link; licence link optional). Errors show inside the dialog. Tested on the tablet: 995 KB reduced to 152 KB, saved, the old photo deleted.
+- API: `PUT /photos/:kind/:id` checks the WebP, its size, and its dimensions, stores it, links it, and deletes the old photo (record and file); `DELETE` removes it; `GET /media/credits` lists only photos in use, so the customer app’s Photo credits follow every change; `GET /staff/photos`. MediaAsset gains a source kind. The demo staff are seeded into the database (`db:seed-people`). Migration `0003`.
+- Customer app: Photo credits shows “Photo by Casual Kitchen Express (name)” for CKE’s own photos.
+- Refunds: every place that refunds (order detail, approving a cancellation request in Alerts, cancelling a walk-in on its ticket) needs an “I’m sure I want to refund ₦… for …” tick, shows who it will be recorded as, and records the name, role, staff ID, and time (on the order, in the audit trail, and in the new report). Tested: “Efosa Igbinedion, Manager (M-001), 7:04 pm”.
+- Reports: a Refunds tab with the same date range, channel, and export as the others: count, total, average, by reason, by person, and every refund, newest or largest first.
+- People: View profile (all details and the photo, or an initials placeholder), photos on the cards and in the top bar, and gender and home address in the editor.
+- Orders: Back to Orders on the order detail.
+- API tests: 5 of 5 pass. Fixed a test left with Banga as today’s soup by an interrupted run (the clean-up now moves today’s soup first), raised the test time limit, and noted that the tests share local state with `dev:lan`, so run them with it stopped.
+- Not done: staff headshots (Commons had too few, mostly public figures; Openverse was down) and better food photos. Both wait for the owner’s Pexels API key.
+
+**Files created/updated:**
+- `apps/api/src/routes/photos.ts`, `src/routes/staff.ts`, `src/media/webp.ts`, `src/routes/media.ts`, `src/index.ts`, `src/db/schema.ts`, `drizzle/0003_photo-source.sql`, `drizzle/meta/`, `scripts/seed-people.ts`, `scripts/seed-media.ts`, `test/photos.test.ts`, `test/catalog.test.ts`, `vitest.config.ts`, `package.json`, `README.md`
+- `packages/api-client/src/index.ts`
+- `apps/business/package.json`, `app.json`, `src/media/compress.ts`, `src/ui/photo-editor.tsx`, `src/ui/avatar.tsx`, `src/ui/thumb.tsx`, `src/ui/soup.tsx`, `src/ui/kit.tsx`, `src/ui/shell.tsx`, `src/ui/refunds-report.tsx`, `src/data/report-data.ts`, `src/data/seed.ts`, `src/state/store.tsx`, `src/state/catalog.tsx`, `app/(app)/menu.tsx`, `app/(app)/item/[id].tsx`, `app/(app)/people.tsx`, `app/(app)/person/[id].tsx`, `app/(app)/order/[no].tsx`, `app/(app)/alerts.tsx`, `app/(app)/ticket/[no].tsx`, `app/(app)/reports.tsx`
+- `apps/customer/app/(tabs)/more/photo-credits.tsx`
+- `package-lock.json`, `docs/architecture.md` (v0.31), `docs/design.md` (v0.25), `docs/photo-credits.md`, `progress.md`
+
+**Decisions locked in:**
+- MGR-06 photo upload with credits and replace-deletes-old, MGR-15 refund tick and refunder recorded, MGR-37 Refunds report, MGR-38 View profile (owner, 12 November 2026).
+
+**Open questions / not yet decided:**
+- None. Owner action: a free Pexels API key for the remaining food photos and the staff headshots.
+
+**Next step:**
+- Owner tests, then commit (not pushed). With the Pexels key: source the remaining food photos and the staff headshots. Then sign-in with Better Auth.
 
 ---

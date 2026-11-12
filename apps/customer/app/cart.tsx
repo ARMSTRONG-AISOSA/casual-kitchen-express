@@ -1,7 +1,7 @@
 import { naira } from "@cke/brand-tokens";
 import { router } from "expo-router";
 import { StyleSheet, View } from "react-native";
-import { findItem } from "../src/data/menu";
+import { dishName, findItem } from "../src/data/menu";
 import { cartFood, useStore } from "../src/state/store";
 import { useTheme } from "../src/state/theme";
 import { Button, Card, Line, Qty, Screen, Segmented, T, TopBar } from "../src/ui/kit";
@@ -73,7 +73,7 @@ export default function CartScreen() {
             ]}
           >
             <View style={{ flex: 1 }}>
-              <T v="label">{findItem(c.id)?.name}</T>
+              <T v="label">{lineName(c.id, c.opt.soup)}</T>
               {c.label ? (
                 <T v="small" muted>
                   {c.label}
@@ -109,3 +109,9 @@ export default function CartScreen() {
 const styles = StyleSheet.create({
   row: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10 },
 });
+
+/** A line's dish name, with the soup it was ordered with (KIT-17). */
+function lineName(id: string, soup?: string) {
+  const it = findItem(id);
+  return it ? dishName(it, soup) : id;
+}

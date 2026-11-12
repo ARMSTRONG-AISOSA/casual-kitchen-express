@@ -1,9 +1,11 @@
+import { naira } from "@cke/brand-tokens";
 import { router, useLocalSearchParams } from "expo-router";
 import { Check } from "lucide-react-native";
 import { useState } from "react";
 import { Pressable, View } from "react-native";
-import type { Station } from "../../../src/data/seed";
+import { orderTotal, type Station } from "../../../src/data/seed";
 import {
+  actorLabel,
   cancelOrder,
   findOrder,
   firstName,
@@ -13,7 +15,18 @@ import {
   useStore,
 } from "../../../src/state/store";
 import { useTheme } from "../../../src/state/theme";
-import { Button, Card, Chip, Chips, Page, Row, Sheet, StatusPill, T } from "../../../src/ui/kit";
+import {
+  Button,
+  Card,
+  Chip,
+  Chips,
+  ConfirmTick,
+  Page,
+  Row,
+  Sheet,
+  StatusPill,
+  T,
+} from "../../../src/ui/kit";
 import { useToast } from "../../../src/ui/toast";
 
 const STATIONS: Station[] = ["Rice", "Soups and swallows", "Snacks and drinks"];
@@ -32,6 +45,7 @@ export default function Ticket() {
   const toast = useToast();
   const [cancel, setCancel] = useState(false);
   const [reason, setReason] = useState<string | null>(null);
+  const [sure, setSure] = useState(false);
   const o = findOrder(s, no);
   if (!o)
     return (
@@ -125,7 +139,11 @@ export default function Ticket() {
           />
         ) : null}
         {o.channel === "walkin" && (o.status === "new" || o.status === "preparing") ? (
-          <Button label="Cancel order" variant="ghost" onPress={() => setCancel(true)} />
+          <Button
+            label="Cancel order"
+            variant="ghost"
+            onPress={() => (setCancel(true), setSure(false))}
+          />
         ) : null}
       </View>
       <Sheet visible={cancel} onClose={() => setCancel(false)} title={`Cancel ${o.no}?`}>
@@ -137,10 +155,18 @@ export default function Ticket() {
             <Chip key={r} label={r} selected={reason === r} onPress={() => setReason(r)} />
           ))}
         </Chips>
+        <ConfirmTick
+          checked={sure}
+          onChange={setSure}
+          label={`I’m sure I want to refund ${naira(orderTotal(o))} for ${o.no}`}
+        />
+        <T v="small" muted style={{ marginTop: 6 }}>
+          Recorded as {actorLabel(s)}, with the time.
+        </T>
         <Button
           label="Cancel and refund"
           variant="danger"
-          disabled={!reason}
+          disabled={!reason || !sure}
           style={{ marginTop: 16 }}
           onPress={() => {
             set((x) => cancelOrder(x, o.no, reason ?? ""));

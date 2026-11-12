@@ -1,7 +1,10 @@
 // Shared domain types. The source of truth is docs/architecture.md.
 
 /** Section 3: account roles. */
-export type Role = "customer" | "rider" | "kitchen" | "manager";
+export type Role = "customer" | StaffRole;
+
+/** Sections 3.0 and 3.1: staff roles. Only managers sign in with Google. */
+export type StaffRole = "rider" | "kitchen" | "dispatch" | "accounts" | "manager";
 
 /** Section 4.8: every order has a channel. */
 export type OrderChannel = "online" | "walkin";

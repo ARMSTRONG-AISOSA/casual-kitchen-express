@@ -1,6 +1,6 @@
 # CKE DESIGN
 
-**Document Status:** Draft v0.22. Records UI and UX decisions, design choices, page flows, and design libraries. Reviewed end to end on 11 November 2026, and again on 12 November 2026 after the new staff roles and Finance were added.  
+**Document Status:** Draft v0.25. Records UI and UX decisions, design choices, page flows, and design libraries. Reviewed end to end on 11 November 2026, and again on 12 November 2026 after the new staff roles and Finance were added.  
 **Related documents:** `Casual-Kitchen-Express.md` (business and brand, surface level), `architecture.md` (functions, features, data, technical decisions), and `list-of-areas.md` (delivery areas).
 
 ---
@@ -168,7 +168,7 @@ Expressive and appetising: large food photography, warm cream backgrounds, frien
 | Screen | Purpose |
 |---|---|
 | Home / Menu | Browse categories and items, with search; reorder card for returning customers; the open or closed state |
-| Item detail | Photo, description, default options, price, add button. For the soup, only today’s soup (set each morning by the kitchen or a manager) can be chosen, and the menu card names it. |
+| Item detail | Photo, description, default options, price, add button. For the soup, only today’s soup (set each morning by the kitchen or a manager) can be chosen. The soup dishes carry today’s soup in their name, description, and photo (“Soup of the day: Egusi”, “Extra egusi”), with the soup’s name on the photo. |
 | Order bar | Sticky bar with the item count and running total. Tapping it opens Your order. |
 | Your order (cart) | The item list with quantities, Add more, delivery or pickup, and the food, delivery, and total lines, then Go to checkout |
 | Checkout | Delivery or pickup, address, the flat delivery fee (₦1,500 by default, set by the manager), payment, pay button |
@@ -183,7 +183,7 @@ Expressive and appetising: large food photography, warm cream backgrounds, frien
 | Address editor | Add, edit, delete, set default |
 | Deactivate account | One confirmation tick, then the customer is signed out. Signing in again offers to reactivate. |
 | Delete account | A red Danger zone: a checkbox and typing DELETE ACCOUNT exactly, with Deactivate offered as the gentler choice |
-| More | A list of text pages: Terms and conditions, Privacy policy, About us, Support us, Partner with us, and FAQs |
+| More | A list of text pages: Terms and conditions, Privacy policy, About us, Support us, Partner with us, and FAQs Photo credits lists each menu photo’s author and licence. |
 | Text page | One plain text page with a back button to More |
 
 ### 4.3 Page flows
@@ -267,7 +267,7 @@ Expressive and appetising: large food photography, warm cream backgrounds, frien
 
 ### 4.5 Imagery
 
-Menu photography follows the brand's photography direction. Images are shown in consistent ratios and loaded progressively to suit slower networks.
+Menu photography follows the brand's photography direction. Images are shown in consistent ratios and loaded progressively to suit slower networks. Menu photos are 4:3 and fill the card’s square or the dish screen’s wide frame (cropped to cover). A dish without a photo keeps the drawn placeholder. The soup and extra soup show today’s soup’s own photo, labelled with the soup’s name. Credits are on More, Photo credits (`docs/photo-credits.md`).
 
 ### 4.6 Navigation and first launch
 
@@ -400,7 +400,7 @@ Menu photography follows the brand's photography direction. Images are shown in 
 | Account officer | Reports, Rider pay, Finance |
 | Manager | Board, Walk-in, Sold out, Alerts, then a Manager group: Dashboard, Orders, Riders, People, Menu, Rider pay, Reports, Finance, Settings, and Demo |
 
-The top bar shows the screen title, the Demo chip on manager screens, the signed-in person, and Switch person on kitchen screens. A person who opens the app lands on their first item (the Board, Alerts, or Reports).
+The top bar shows the screen title, the Demo chip on manager screens, the signed-in person, and Switch person on kitchen screens. A person who opens the app lands on their first item (the Board, Alerts, or Reports). On a narrow screen (a tablet in portrait, under 1100 dp wide), the Board’s pause switch and clock move to a second row so nothing overlaps the person and Switch person.
 
 ### 6.4 Kitchen screen inventory
 
@@ -444,19 +444,19 @@ Same philosophy as the kitchen: practical first, polished second. Larger control
 | Screen | Purpose |
 |---|---|
 | Dashboard | Today's orders and sales with the online and walk-in split, cash and online payments, orders in progress, alerts |
-| People | Five tabs: Riders, Kitchen staff, Dispatch officers, Account officers, and Managers, with staff IDs and status. Reset password, Deactivate, and Reactivate for every account except the owner’s. Managers only. |
-| Add or edit a person | Username and temporary password (or a Google email for managers), plus the profile: name, role, job title, gender (optional), phone, home address (optional), and photo |
-| Menu list | Categories and items with availability and prices, and **Soup of the day** at the top: one tap picks today’s soup, and the customer app shows it straight away (kitchen staff set it on Sold out) |
+| People | Five tabs: Riders, Kitchen staff, Dispatch officers, Account officers, and Managers, with staff IDs and status. Reset password, Deactivate, and Reactivate for every account except the owner’s. Managers only. Each card shows the person’s photo (or initials) and has **View profile**, Edit, Reset password, and Deactivate. View profile shows every detail from the editor and the photo, or a large initials placeholder. |
+| Add or edit a person | Username and temporary password (or a Google email for managers), plus the profile: name, role, job title, phone, gender (optional: female, male, or prefer not to say), home address (optional), and an optional photo (cropped square and compressed, then shown in the top bar when they sign in) |
+| Menu list | Categories and items with availability and prices, and **Soup of the day** at the top: one tap picks today’s soup, and the customer app shows it straight away (kitchen staff set it on Sold out). Below the soups, **Soups in the rotation** lists each soup with Remove, and an **Add a soup** box adds a new one. Each item and soup shows a small photo. |
 | Item editor | Name, description, price, image, options, load value, station |
 | Orders | All orders for Today, Yesterday, or any date range back to the first order. Search by order number or customer ID, filter by channel (All, Online, Walk-in), status, staff member, and payment method, and sort by time placed or amount. Shows the count and total value, and loads long ranges 150 rows at a time. |
-| Order detail | The full timeline with timestamps and staff IDs, payment, and Refund (managers only). Online orders show a **Customer** card: name, customer ID, phone, and delivery address (label, neighbourhood, landmark), with **Call** and **WhatsApp** buttons. Waiting orders show **Assign to a rider**. |
+| Order detail | The full timeline with timestamps and staff IDs, payment, and Refund (managers only). Online orders show a **Customer** card: name, customer ID, phone, and delivery address (label, neighbourhood, landmark), with **Call** and **WhatsApp** buttons. Waiting orders show **Assign to a rider**. A **Back to Orders** button sits at the top. Refunds need an “I’m sure…” tick, and each refund shows who made it (name, role, staff ID, time). |
 | Riders | Riders online now, what each is carrying and their load (“Load 5 of 6”), and Call rider. Offline riders are listed below. |
 | Assign to a rider | Online riders whose remaining capacity fits the order, with their load and current stops. One tap assigns. |
 | Rider pay | Each rider's owed balance, per-delivery pay, mark a period as paid (simulated), and payout history. Account officers and managers. |
 | Finance | Four tabs: **Statement** (a month’s sales by channel and payment method, refunds, delivery fees, rider pay earned and paid, cash variances, and net), **Cash-ups** (each day’s expected, counted, difference, who counted, Sign off, and who signed it off with the time), **Audit trail** (every money action with who and when, with filters), and **Close month**. Export as CSV or PDF. Account officers and managers. |
 | Demo controls | Create orders, auto-play the kitchen and riders, set the speed, and reset the demo data |
 | Settings | Online order hours (8:00 am to 6:00 pm) and walk-in hours (8:00 am to 8:30 pm), pause orders, the neighbourhood list and delivery boundary, rider capacity and the batch drop-off distance, rider tracking mode (light or milestones only), the cancellation limit (3 to 7 in 7 days), the delivery fee (₦1,500 by default), and the rider pay per delivery (₦1,000 by default). The delivery fee and rider pay are editable, and changes show in the customer and rider apps straight away. **Restaurant contact** holds the WhatsApp number behind “Contact the restaurant” in the customer app. Pricing and pay and Restaurant contact are shown to managers only; dispatch officers see the other sections. |
-| Reports | Orders, sales, timings, riders, areas and staff, menu, and customers (with a leaderboard), for 7, 30, or 60 days or a custom date range, with a channel filter. The report tabs sit on top under a “Report” label; below a divider, the **Date range** and the **Channel** (All, Online, Walk-in) each sit in their own labelled box, side by side on wide screens and stacked otherwise, so the three kinds of choice are never confused. Account officers and managers. |
+| Reports | Orders, sales, timings, riders, areas and staff, menu, customers (with a leaderboard), and refunds, for 7, 30, or 60 days or a custom date range, with a channel filter. The report tabs sit on top under a “Report” label; below a divider, the **Date range** and the **Channel** (All, Online, Walk-in) each sit in their own labelled box, side by side on wide screens and stacked otherwise, so the three kinds of choice are never confused. Account officers and managers. |
 
 ### 7.3 Page flows
 
@@ -492,19 +492,28 @@ Same philosophy as the kitchen: practical first, polished second. Larger control
 4. Set the station and the load value (the load value controls how many orders a rider can carry).
 5. Add options if needed, then save. The item appears in the customer app straight away.
 
+**Add or remove a soup in the rotation (managers)**
+1. Open Menu. The Soup of the day card is at the top.
+2. To add: type the name in Add a soup (for example Banga) and tap Add. It joins the chips and the customer app’s soup list.
+3. To remove: tap Remove beside the soup, then Remove from the rotation. It leaves the chips and the customer app. Past orders keep it, and adding the same name later brings it back.
+4. Today’s soup can’t be removed (its Remove button is greyed out), so pick another soup first. At least one soup always stays.
+5. Each change is logged with who made it and when.
+
 **Edit or delete a menu item**
 1. Open the item from the list.
 2. Change any field, including image or price, and save.
 3. To delete, tap Delete and confirm. Items that appear in past orders are archived rather than erased, so order history stays accurate.
 4. A one-tap "Sold out" switch is available on the list for quick changes.
 
-**Image upload with compression**
-1. Tap "Add image" and choose Take photo or Choose from gallery.
-2. Crop to the menu card shape.
+**Image upload with compression** (dishes, soups, and staff; built 12 November 2026)
+1. Tap the photo (on Menu, a soup in the rotation, or the item or person editor) and choose Take photo or Choose from gallery.
+2. Crop to the shape: 4:3 for dishes and soups, square for staff.
 3. The app compresses the image automatically before it leaves the device: it resizes it, converts it to a modern format, and strips private metadata.
-4. A preview shows the result with the new file size and the space saved (for example, "4.2 MB reduced to 180 KB").
-5. Save. Only the compressed file is uploaded.
-6. To replace or remove an image, tap it and choose Replace or Remove, with confirmation for removal.
+4. A preview shows the result with the new file size and the space saved (for example, "995 KB reduced to 152 KB").
+5. Say where the photo is from. **Our own photo**: credited to Casual Kitchen Express, with an optional name of who took it and an optional link. **From the internet**: who took it, the licence (CC0, CC BY, CC BY-SA, public domain, or other), and the link; the licence link is optional.
+6. Save. Only the compressed file is uploaded, in one call with its credit.
+7. To replace a photo, tap it and choose a new one: the old photo is deleted and the new one shows in every app, and the customer app’s Photo credits update to match. Remove photo deletes it.
+8. When a soup is added, its photo dialog opens straight away (optional, it can be skipped and added later).
 
 **View reports and historic data**
 1. Open Reports and choose a report from the tabs at the top: Orders, Sales, Times, Riders, areas, and staff, Menu, or Customers.
@@ -530,7 +539,8 @@ Comparing with the previous period is a possible future update (`architecture.md
 1. Open Orders and choose the order, or open a customer's cancellation request from Alerts.
 2. Choose Approve or Decline for a request, or Cancel or Refund for an order the manager is acting on.
 3. For a refund, choose full or partial, pick a reason, and confirm.
-4. The customer is notified, the refund shows "Refund pending" and then "Refund completed" (simulated), and the action is recorded with the staff ID of the person who decided it.
+4. Tick “I’m sure I want to refund ₦… for …” (the dialog says who it will be recorded as), then confirm.
+5. The customer is notified, the refund shows "Refund pending" and then "Refund completed" (simulated), and the refund is recorded with the name, role, and staff ID of the person signed in, and the time. It appears on the order, in the audit trail, and in Reports, Refunds.
 
 **Approve a manual completion (dispatch officers and managers)**
 1. A rider's "Need help" request appears in Alerts.
@@ -604,6 +614,7 @@ Comparing with the previous period is a possible future update (`architecture.md
 | Riders, areas, and staff | Summary cards (deliveries, average delivery time, rider pay), then three separate tables. **Riders:** every rider, even with none in the range, with deliveries, share of all deliveries, and average delivery time. **Areas:** every area, with deliveries, share, and average delivery time. **Kitchen staff:** orders handled, share, and average preparation time. Riders and areas end with a total row, are worked out from the deliveries in the chosen date range and channel, and say so when Walk-in is chosen (walk-ins have no deliveries). |
 | Menu | Top items, revenue by item and category, how often items sell out |
 | Customers | New and returning customers, order frequency, and a **leaderboard** of the top customers by customer ID, sortable by total spent or number of orders (online orders only, because walk-ins have no account). Managers and account officers (`architecture.md` MGR-34). |
+| Refunds | Count, total, and average refunded; by reason and by person; and every refund with its order, amount, full or partial, reason, time, and who made it (name, role, staff ID), newest or largest first. Same date range, channel filter, and export as the other reports. |
 
 **Design notes:** large summary numbers, one clear chart per section, plain labels, and lists that collapse into cards on phones. Colour is never the only cue. Reports use pre-computed summaries so they load quickly, even over long periods. Charts are simple bars and lines, with the lists below them for detail.
 
@@ -723,6 +734,9 @@ Every design question is now decided. Anything that needs checking is listed in 
 
 | Version | Change |
 |---|---|
+| 0.25 | Owner decisions on 12 November 2026: photo upload with crop, compression, and credit fields wherever photos are added, replacing deletes the old photo everywhere; a refund confirmation tick and the refunder recorded; a Refunds report; View profile and staff photos on People, with gender and home address in the editor; Back to Orders on the order detail; the Board top bar on narrow screens. |
+| 0.24 | 12 November 2026: menu photos in the customer app and as thumbnails on the Business app’s Menu screen; soup dishes carry the soup’s name and photo; a Photo credits page under More. |
+| 0.23 | Owner decision on 12 November 2026: managers add and remove soups in the rotation from the Menu screen (Soups in the rotation, Add a soup). |
 | 0.22 | Owner decisions on 12 November 2026: Reports separates the report tabs, the Date range box, and the Channel box; sales details show the amount before the percentage; the rider and area details are separate tables for every rider and every area; account officers see the leaderboard. |
 | 0.21 | Owner decisions on 12 November 2026: kitchen staff set the soup of the day on the Sold out screen (managers can also use Menu); walk-in cash is Exact or an Other amount box; the cash-up sign-off and month close show who did it (an account officer or any manager), with the time. |
 | 0.20 | Consistency review on 12 November 2026, with no new decisions: the dispatch officer and account officer added to the scope, sign in, alerts, People (five tabs), the manual completion and rider pay flows, and the side rail decision; rider Need help goes to dispatch, and an Assigned by dispatch flow; today’s soup on the item detail; the leaderboard for account officers marked as a Proposal. |

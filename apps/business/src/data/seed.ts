@@ -204,11 +204,17 @@ export type Person = {
   phone: string;
   active: boolean;
   owner?: boolean;
+  /** Optional, with “prefer not to say” (3.1). */
+  gender?: "female" | "male" | "prefer_not_to_say";
+  /** Optional (3.1). */
+  homeAddress?: string;
 };
 
 export const PEOPLE: Person[] = [
   {
     id: "M-001",
+    gender: "male",
+    homeAddress: "12 Ekenwan Road, Benin City",
     name: "Efosa Igbinedion",
     role: "manager",
     email: "efosa.cke@gmail.com",
@@ -219,6 +225,8 @@ export const PEOPLE: Person[] = [
   },
   {
     id: "M-002",
+    gender: "female",
+    homeAddress: "4 Uselu-Lagos Road, Uselu",
     name: "Ivie Osagie",
     role: "manager",
     email: "ivie.cke@gmail.com",
@@ -228,6 +236,8 @@ export const PEOPLE: Person[] = [
   },
   {
     id: "K-001",
+    gender: "female",
+    homeAddress: "Ekosodin, near the market",
     name: "Blessing Okafor",
     role: "kitchen",
     username: "blessing.k",
@@ -237,6 +247,7 @@ export const PEOPLE: Person[] = [
   },
   {
     id: "K-002",
+    gender: "male",
     name: "Samuel Eze",
     role: "kitchen",
     username: "samuel.k",
@@ -246,6 +257,8 @@ export const PEOPLE: Person[] = [
   },
   {
     id: "D-001",
+    gender: "male",
+    homeAddress: "BDPA estate, Ugbowo",
     name: "Osas Edo",
     role: "dispatch",
     username: "osas.d",
@@ -255,6 +268,7 @@ export const PEOPLE: Person[] = [
   },
   {
     id: "A-001",
+    gender: "female",
     name: "Ngozi Bello",
     role: "accounts",
     username: "ngozi.a",
@@ -264,6 +278,8 @@ export const PEOPLE: Person[] = [
   },
   {
     id: "R-001",
+    gender: "male",
+    homeAddress: "Osasogie",
     name: "Musa Abdullahi",
     role: "rider",
     username: "musa.a",
@@ -273,6 +289,8 @@ export const PEOPLE: Person[] = [
   },
   {
     id: "R-002",
+    gender: "male",
+    homeAddress: "Uwelu",
     name: "Chidi Nwosu",
     role: "rider",
     username: "chidi.r",
@@ -282,6 +300,7 @@ export const PEOPLE: Person[] = [
   },
   {
     id: "R-003",
+    gender: "male",
     name: "Femi Ade",
     role: "rider",
     username: "femi.r",
@@ -291,6 +310,8 @@ export const PEOPLE: Person[] = [
   },
   {
     id: "R-004",
+    gender: "male",
+    homeAddress: "Isihor",
     name: "Uyi Ogbe",
     role: "rider",
     username: "uyi.r",
@@ -378,13 +399,20 @@ export type Order = {
 
 export const orderTotal = (o: Order) => o.food + o.fee;
 export const orderLoad = (o: Order) =>
-  o.lines.reduce((a, l) => a + (MENU.find((m) => m.name === l.name)?.load ?? 2) * l.qty, 0);
+  o.lines.reduce(
+    (a, l) =>
+      a +
+      (MENU.find((m) => m.name === l.name)?.load ?? (/egusi|soup/i.test(l.name) ? 3 : 2)) * l.qty,
+    0,
+  );
 
 const MIN = 60_000;
 
 const line = (id: string, qty = 1, ticked = false): Line => {
   const m = MENU.find((x) => x.id === id)!;
-  return { name: m.name, qty, station: m.station, ticked };
+  // The demo day's soup is egusi, so soup lines carry it (KIT-17).
+  const name = id === "soup" ? "Egusi with eba" : id === "xsoup" ? "Extra egusi" : m.name;
+  return { name, qty, station: m.station, ticked };
 };
 const food = (ls: Line[]) =>
   ls.reduce((a, l) => a + (MENU.find((m) => m.name === l.name)?.price ?? 0) * l.qty, 0);

@@ -1,16 +1,18 @@
 import { naira } from "@cke/brand-tokens";
 import { router, useLocalSearchParams } from "expo-router";
-import { MessageCircle, Phone } from "lucide-react-native";
+import { ChevronLeft, MessageCircle, Phone } from "lucide-react-native";
 import { useState } from "react";
 import { View } from "react-native";
 import { CUSTOMERS, orderTotal } from "../../../src/data/seed";
 import {
+  actorLabel,
   cancelOrder,
   clock,
   findOrder,
   log,
   myRole,
   nameOf,
+  partialRefund,
   useStore,
 } from "../../../src/state/store";
 import {
@@ -18,6 +20,7 @@ import {
   Card,
   Chip,
   Chips,
+  ConfirmTick,
   DemoNote,
   KV,
   Page,
@@ -46,6 +49,7 @@ export default function OrderDetail() {
   const [refund, setRefund] = useState(false);
   const [kind, setKind] = useState<"full" | "partial">("full");
   const [reason, setReason] = useState<string | null>(null);
+  const [sure, setSure] = useState(false);
   const o = findOrder(s, no);
   if (!o)
     return (
@@ -70,8 +74,19 @@ export default function OrderDetail() {
     toast(`In the real app this ${how === "Call" ? "calls" : "opens WhatsApp with"} ${c.name}`);
   };
 
+  const refunds = s.refunds.filter((r) => r.orderNo === o.no);
+  const amount = kind === "full" ? orderTotal(o) : Math.round(o.food / 2);
+
   return (
     <Page>
+      <Button
+        label="Back to Orders"
+        variant="ghost"
+        small
+        icon={(col) => <ChevronLeft size={20} color={col} />}
+        style={{ alignSelf: "flex-start", marginBottom: 12 }}
+        onPress={() => router.navigate("/orders")}
+      />
       <Row style={{ justifyContent: "space-between", flexWrap: "wrap" }}>
         <T v="big">{o.no}</T>
         <StatusPill status={o.status} />
@@ -147,6 +162,13 @@ export default function OrderDetail() {
             }
           />
           {o.refunded ? <KV k="Refunded" v={naira(o.refunded)} /> : null}
+          {refunds.map((r, i) => (
+            <KV
+              key={i}
+              k={`Refunded by`}
+              v={`${r.byName}, ${r.byRole} (${r.by}), ${clock(r.at)}`}
+            />
+          ))}
         </Card>
       </Section>
 
@@ -167,7 +189,7 @@ export default function OrderDetail() {
           label="Refund"
           variant="ghost"
           style={{ marginTop: 18 }}
-          onPress={() => setRefund(true)}
+          onPress={() => (setRefund(true), setSure(false), setReason(null))}
         />
       ) : null}
 
@@ -189,19 +211,23 @@ export default function OrderDetail() {
             <Chip key={r} label={r} selected={reason === r} onPress={() => setReason(r)} />
           ))}
         </Chips>
+        <ConfirmTick
+          checked={sure}
+          onChange={setSure}
+          label={`I’m sure I want to refund ${naira(amount)} for ${o.no}`}
+        />
+        <T v="small" muted style={{ marginTop: 6 }}>
+          Recorded as {actorLabel(s)}, with the time.
+        </T>
         <Button
           label="Confirm refund"
-          disabled={!reason}
+          disabled={!reason || !sure}
           style={{ marginTop: 16 }}
           onPress={() => {
-            const amount = kind === "full" ? orderTotal(o) : Math.round(o.food / 2);
             set((st) =>
               kind === "full"
                 ? cancelOrder(st, o.no, reason ?? "")
-                : {
-                    orders: st.orders.map((x) => (x.no === o.no ? { ...x, refunded: amount } : x)),
-                    ...log(st, "money", `Partly refunded ${o.no}: ${naira(amount)} (${reason})`),
-                  },
+                : partialRefund(st, o.no, amount, reason ?? ""),
             );
             setRefund(false);
             toast(`Refund of ${naira(amount)} pending`);

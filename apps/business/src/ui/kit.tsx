@@ -412,10 +412,13 @@ export function Sheet({
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel="Close">
         <Pressable style={[styles.sheet, { backgroundColor: t.surface }]} onPress={() => {}}>
-          <T v="h2" style={{ marginBottom: 10 }}>
-            {title}
-          </T>
-          {children}
+          {/* Long forms (such as a photo's credit) scroll inside the dialog. */}
+          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 20 }}>
+            <T v="h2" style={{ marginBottom: 10 }}>
+              {title}
+            </T>
+            {children}
+          </ScrollView>
         </Pressable>
       </Pressable>
     </Modal>
@@ -555,5 +558,45 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 20,
   },
-  sheet: { width: "100%", maxWidth: 520, borderRadius: 18, padding: 20 },
+  sheet: { width: "100%", maxWidth: 520, maxHeight: "100%", borderRadius: 18, overflow: "hidden" },
 });
+
+/**
+ * A large tick box with a plain sentence, for actions that move money (refunds): the button stays
+ * off until it's ticked.
+ */
+export function ConfirmTick({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  label: string;
+}) {
+  const t = useTheme();
+  return (
+    <Pressable
+      onPress={() => onChange(!checked)}
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked }}
+      style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 14, minHeight: 48 }}
+    >
+      <View
+        style={{
+          width: 28,
+          height: 28,
+          borderRadius: 6,
+          borderWidth: 2,
+          borderColor: checked ? t.primary : t.muted,
+          backgroundColor: checked ? t.primary : "transparent",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        {checked ? <Check size={20} color={t.onPrimary} strokeWidth={3} /> : null}
+      </View>
+      <T style={{ flex: 1 }}>{label}</T>
+    </Pressable>
+  );
+}

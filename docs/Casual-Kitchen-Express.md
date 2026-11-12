@@ -405,6 +405,7 @@ Food images are sourced from the internet for the design and build.
 
 - **Source:** the best-quality photo available for each dish. Free-to-use libraries (such as Unsplash, Pexels, Pixabay, and Wikimedia Commons) are preferred, and the source of each image is recorded, with credit where the licence asks for it.
 - **Subject:** Nigerian dishes that match the menu, accurate in colour, texture, and portion.
+- **Credits:** the apps list each photo’s author and licence on a Photo credits page, and the full record is kept with the technical documents.
 - **AI fallback:** when no suitable photo is found, AI-generated images may be used. They must be based on real-world reference photos and look as human-made as possible, with natural light, believable portions and plating, natural imperfections, and no distorted food, hands, or garbled text.
 
 ### Visual Rules

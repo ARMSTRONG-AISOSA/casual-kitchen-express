@@ -1,9 +1,10 @@
 import { router } from "expo-router";
 import { useState } from "react";
-import { View } from "react-native";
-import type { Person } from "../../src/data/seed";
+import { Linking, Pressable, View } from "react-native";
+import { ROLE_LABEL, type Person, type Role } from "../../src/data/seed";
 import { log, useStore } from "../../src/state/store";
-import { Badge, Button, Card, Chip, Chips, Page, Row, Sheet, T } from "../../src/ui/kit";
+import { Avatar } from "../../src/ui/avatar";
+import { Badge, Button, Card, Chip, Chips, KV, Page, Row, Sheet, T } from "../../src/ui/kit";
 import { useToast } from "../../src/ui/toast";
 
 type Tab = Person["role"];
@@ -25,6 +26,8 @@ export default function People() {
   const toast = useToast();
   const [tab, setTab] = useState<Tab>("rider");
   const [temp, setTemp] = useState<{ name: string; pass: string } | null>(null);
+  const [viewing, setViewing] = useState<Person | null>(null);
+  const photo = viewing ? s.staffPhotos[viewing.id] : undefined;
   const list = s.people.filter((p) => p.role === tab);
 
   const toggle = (p: Person) => {
@@ -53,17 +56,21 @@ export default function People() {
       {list.map((p) => (
         <Card key={p.id}>
           <Row style={{ justifyContent: "space-between", flexWrap: "wrap" }}>
-            <View style={{ flexShrink: 1 }}>
-              <T v="h3">
-                {p.name}, {p.id}
-              </T>
-              <T muted>
-                {p.job}, {p.username ?? p.email}
-              </T>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 12, flexShrink: 1 }}>
+              <Avatar code={p.id} name={p.name} size={48} />
+              <View style={{ flexShrink: 1 }}>
+                <T v="h3">
+                  {p.name}, {p.id}
+                </T>
+                <T muted>
+                  {p.job}, {p.username ?? p.email}
+                </T>
+              </View>
             </View>
             <Badge label={p.active ? "Active" : "Deactivated"} />
           </Row>
           <View style={{ flexDirection: "row", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+            <Button label="View profile" small onPress={() => setViewing(p)} />
             <Button
               label="Edit"
               variant="ghost"
@@ -88,6 +95,76 @@ export default function People() {
           </View>
         </Card>
       ))}
+      {/* View profile: everything from the editor, read only, with the photo or a placeholder. */}
+      <Sheet visible={!!viewing} onClose={() => setViewing(null)} title="Profile">
+        {viewing ? (
+          <>
+            <View style={{ alignItems: "center", marginBottom: 6 }}>
+              <Avatar code={viewing.id} name={viewing.name} size={140} />
+              <T v="h2" style={{ marginTop: 10 }}>
+                {viewing.name}
+              </T>
+              <T muted>
+                {viewing.role === "rider" ? "Rider" : ROLE_LABEL[viewing.role as Role]},{" "}
+                {viewing.id}
+              </T>
+            </View>
+            <KV
+              k="Status"
+              v={viewing.owner ? "Owner, active" : viewing.active ? "Active" : "Deactivated"}
+            />
+            <KV k="Job title" v={viewing.job || "–"} />
+            <KV
+              k={viewing.username ? "Username" : "Google email"}
+              v={viewing.username ?? viewing.email ?? "–"}
+            />
+            <KV k="Phone" v={viewing.phone || "–"} />
+            <KV
+              k="Gender"
+              v={
+                viewing.gender === "female"
+                  ? "Female"
+                  : viewing.gender === "male"
+                    ? "Male"
+                    : viewing.gender === "prefer_not_to_say"
+                      ? "Prefer not to say"
+                      : "Not given"
+              }
+            />
+            <KV k="Home address" v={viewing.homeAddress || "Not given"} />
+            {photo ? (
+              <Pressable
+                onPress={() => photo.sourceUrl && Linking.openURL(photo.sourceUrl)}
+                accessibilityRole="link"
+              >
+                <T v="small" muted style={{ marginTop: 10 }}>
+                  Photo:{" "}
+                  {photo.sourceKind === "internet"
+                    ? `${photo.author ?? "unknown"}, ${photo.licence ?? ""}`
+                    : `Casual Kitchen Express${photo.author ? ` (${photo.author})` : ""}`}
+                </T>
+              </Pressable>
+            ) : (
+              <T v="small" muted style={{ marginTop: 10 }}>
+                No photo yet. Add one with Edit.
+              </T>
+            )}
+            <View style={{ flexDirection: "row", gap: 8, marginTop: 16 }}>
+              <Button
+                label="Edit"
+                variant="ghost"
+                onPress={() => {
+                  const id = viewing.id;
+                  setViewing(null);
+                  router.push(`/person/${id}`);
+                }}
+              />
+              <Button label="Close" onPress={() => setViewing(null)} />
+            </View>
+          </>
+        ) : null}
+      </Sheet>
+
       <Sheet visible={!!temp} onClose={() => setTemp(null)} title="Temporary password">
         <T muted>
           Give this to {temp?.name}. It’s shown once. They choose their own at the next sign-in.

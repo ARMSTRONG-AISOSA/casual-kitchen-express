@@ -1,6 +1,6 @@
 import { naira } from "@cke/brand-tokens";
 import { CATEGORIES } from "../../src/data/seed";
-import { useStore } from "../../src/state/store";
+import { dishName, useStore } from "../../src/state/store";
 import { Card, Page, Section, SwitchRow } from "../../src/ui/kit";
 import { SoupOfTheDay } from "../../src/ui/soup";
 import { useToast } from "../../src/ui/toast";
@@ -22,14 +22,18 @@ export default function SoldOut() {
               {items.map((m) => (
                 <SwitchRow
                   key={m.id}
-                  label={m.name}
+                  label={dishName(m, s.soupToday)}
                   hint={m.soldOut ? "Sold out today" : `Available, ${naira(m.price)}`}
                   value={!m.soldOut}
                   onChange={(on) => {
                     set((st) => ({
                       menu: st.menu.map((x) => (x.id === m.id ? { ...x, soldOut: !on } : x)),
                     }));
-                    toast(on ? `${m.name} is back on` : `${m.name} is sold out`);
+                    toast(
+                      on
+                        ? `${dishName(m, s.soupToday)} is back on`
+                        : `${dishName(m, s.soupToday)} is sold out`,
+                    );
                   }}
                 />
               ))}

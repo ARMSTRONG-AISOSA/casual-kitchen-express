@@ -36,6 +36,7 @@ import { ROLE_LABEL, type Role } from "../data/seed";
 import { clock, log, me, myRole, useStore } from "../state/store";
 import { useTheme } from "../state/theme";
 import { Button, Sheet, T } from "./kit";
+import { Avatar } from "./avatar";
 import { useToast } from "./toast";
 
 // The side rail and top bar (design.md 6.3). Each role sees only its own items
@@ -177,6 +178,8 @@ export function Shell({ children }: { children: ReactNode }) {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const wide = width >= 900;
+  // Room for the title, the pause switch, the person, and Switch person on one row.
+  const roomy = width >= 1100;
   const path = usePathname();
   const screen = path.split("/")[1] || "board";
   const role = myRole(s);
@@ -184,6 +187,30 @@ export function Shell({ children }: { children: ReactNode }) {
   const [leaving, setLeaving] = useState(false);
   const active = SCREEN_OWNER[screen];
   const isManagerScreen = MANAGER.includes(active ?? "board") || screen === "assign";
+  const showPause = screen === "board" && (role === "manager" || role === "kitchen");
+  const pauseControl = (
+    <View style={styles.pause}>
+      <T v="small" bold>
+        {s.settings.paused ? "Orders paused" : "Taking orders"}
+      </T>
+      <Switch
+        value={!s.settings.paused}
+        onValueChange={(on) => {
+          set((st) => ({
+            settings: { ...st.settings, paused: !on },
+            ...log(st, "setting", on ? "Resumed new orders" : "Paused new orders"),
+          }));
+          toast(on ? "Taking new orders" : "New orders paused");
+        }}
+        accessibilityLabel="Take new online orders"
+        trackColor={{ true: t.success, false: t.danger }}
+        thumbColor="#FFFFFF"
+      />
+      <T v="small" muted>
+        {nowClock()}
+      </T>
+    </View>
+  );
   const isKitchenScreen = KITCHEN_SCREENS.includes(screen);
 
   const signOut = () => {
@@ -305,68 +332,44 @@ export function Shell({ children }: { children: ReactNode }) {
 
       <View style={{ flex: 1 }}>
         <View
-          style={[
-            styles.top,
-            { paddingTop: insets.top + 8, borderBottomColor: t.line, backgroundColor: t.bg },
-          ]}
+          style={{
+            paddingTop: insets.top + 8,
+            borderBottomWidth: 1,
+            borderBottomColor: t.line,
+            backgroundColor: t.bg,
+          }}
         >
-          <T v="title" style={{ flexShrink: 0 }} numberOfLines={1}>
-            {TITLES[screen] ?? "CKE"}
-          </T>
-          {isManagerScreen ? (
-            <View style={[styles.demo, { backgroundColor: t.newBg }]}>
-              <Text style={[styles.demoText, { color: t.onNew }]}>Demo</Text>
-            </View>
-          ) : null}
-          <View style={{ flex: 1 }} />
-          {screen === "board" && (role === "manager" || role === "kitchen") ? (
-            <View style={styles.pause}>
-              <T v="small" bold>
-                {s.settings.paused ? "Orders paused" : "Taking orders"}
-              </T>
-              <Switch
-                value={!s.settings.paused}
-                onValueChange={(on) => {
-                  set((st) => ({
-                    settings: { ...st.settings, paused: !on },
-                    ...log(st, "setting", on ? "Resumed new orders" : "Paused new orders"),
-                  }));
-                  toast(on ? "Taking new orders" : "New orders paused");
-                }}
-                accessibilityLabel="Take new online orders"
-                trackColor={{ true: t.success, false: t.danger }}
-                thumbColor="#FFFFFF"
-              />
-              <T v="small" muted>
-                {nowClock()}
-              </T>
-            </View>
-          ) : null}
-          <View style={styles.who}>
-            <View style={[styles.avatar, { backgroundColor: t.primary }]}>
-              <Text style={[styles.avatarText, { color: t.onPrimary }]}>
-                {(user?.name ?? "?")
-                  .split(" ")
-                  .map((p) => p[0])
-                  .join("")
-                  .slice(0, 2)}
-              </Text>
-            </View>
-            {/* On the board the pause switch needs the room, so only the initials show there. */}
-            {wide && (screen !== "board" || width >= 1400) ? (
-              <View style={{ flexShrink: 1 }}>
-                <T v="label" numberOfLines={1}>
-                  {user?.name}
-                </T>
-                <T v="small" muted>
-                  {ROLE_LABEL[role]}, {user?.id}
-                </T>
+          <View style={styles.top}>
+            <T v="title" style={{ flexShrink: 0 }} numberOfLines={1}>
+              {TITLES[screen] ?? "CKE"}
+            </T>
+            {isManagerScreen ? (
+              <View style={[styles.demo, { backgroundColor: t.newBg }]}>
+                <Text style={[styles.demoText, { color: t.onNew }]}>Demo</Text>
               </View>
             ) : null}
+            <View style={{ flex: 1 }} />
+            {showPause && roomy ? pauseControl : null}
+            <View style={styles.who}>
+              <Avatar code={user?.id} name={user?.name} size={44} />
+              {/* On the board the pause switch needs the room, so only the initials show there. */}
+              {wide && (screen !== "board" || width >= 1400) ? (
+                <View style={{ flexShrink: 1 }}>
+                  <T v="label" numberOfLines={1}>
+                    {user?.name}
+                  </T>
+                  <T v="small" muted>
+                    {ROLE_LABEL[role]}, {user?.id}
+                  </T>
+                </View>
+              ) : null}
+            </View>
+            {isKitchenScreen ? (
+              <Button label="Switch person" variant="ghost" small onPress={signOut} />
+            ) : null}
           </View>
-          {isKitchenScreen ? (
-            <Button label="Switch person" variant="ghost" small onPress={signOut} />
-          ) : null}
+          {/* Narrow screens (a tablet in portrait) put the pause switch on its own row. */}
+          {showPause && !roomy ? <View style={styles.topRow2}>{pauseControl}</View> : null}
         </View>
         <View style={{ flex: 1 }}>{children}</View>
       </View>
@@ -459,8 +462,8 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingHorizontal: 18,
     paddingBottom: 10,
-    borderBottomWidth: 1,
   },
+  topRow2: { flexDirection: "row", paddingHorizontal: 18, paddingBottom: 10 },
   demo: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },
   demoText: { fontFamily: fontFamily.bodyBold, fontSize: 13 },
   pause: { flexDirection: "row", alignItems: "center", gap: 6 },

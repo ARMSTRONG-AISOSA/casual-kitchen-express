@@ -3,7 +3,7 @@ import { router } from "expo-router";
 import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { CATEGORIES, type CategoryId } from "../../src/data/seed";
-import { draftTotal, useStore } from "../../src/state/store";
+import { dishName, draftTotal, useStore } from "../../src/state/store";
 import { useTheme } from "../../src/state/theme";
 import { Button, Chip, Chips, Field, Segmented, T } from "../../src/ui/kit";
 
@@ -42,11 +42,11 @@ export default function WalkIn() {
           return (
             <View key={id} style={styles.line}>
               <T v="label" style={{ flex: 1 }}>
-                {q} × {m.name}
+                {q} × {dishName(m, s.soupToday)}
               </T>
               <Pressable
                 onPress={() => qty(id, -1)}
-                accessibilityLabel={`Remove one ${m.name}`}
+                accessibilityLabel={`Remove one ${dishName(m, s.soupToday)}`}
                 style={[styles.minus, { borderColor: t.line }]}
               >
                 <Text style={[styles.minusText, { color: t.text }]}>−</Text>
@@ -99,7 +99,7 @@ export default function WalkIn() {
               onPress={() => qty(m.id, 1)}
               disabled={m.soldOut}
               accessibilityRole="button"
-              accessibilityLabel={`Add ${m.name}, ${naira(m.price)}`}
+              accessibilityLabel={`Add ${dishName(m, s.soupToday)}, ${naira(m.price)}`}
               style={({ pressed }) => [
                 styles.tile,
                 { backgroundColor: t.surface, borderColor: d.lines[m.id] ? t.primary : t.line },
@@ -107,7 +107,7 @@ export default function WalkIn() {
                 pressed && { opacity: 0.75 },
               ]}
             >
-              <Text style={[styles.tileName, { color: t.text }]}>{m.name}</Text>
+              <Text style={[styles.tileName, { color: t.text }]}>{dishName(m, s.soupToday)}</Text>
               <T muted>{m.soldOut ? "Sold out" : naira(m.price)}</T>
               {d.lines[m.id] ? (
                 <View style={[styles.q, { backgroundColor: t.primary }]}>

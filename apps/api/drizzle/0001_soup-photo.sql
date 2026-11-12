@@ -1,0 +1,2 @@
+ALTER TABLE "soup_variety" ADD COLUMN "image_id" uuid;--> statement-breakpoint
+ALTER TABLE "soup_variety" ADD CONSTRAINT "soup_variety_image_id_media_asset_id_fk" FOREIGN KEY ("image_id") REFERENCES "public"."media_asset"("id") ON DELETE no action ON UPDATE no action;

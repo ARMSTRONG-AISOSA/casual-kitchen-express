@@ -1,0 +1,20 @@
+# Local development database only (owner decision, 12 November 2026). Production uses Neon through
+# Hyperdrive. The image is locked in docs/architecture.md 15.1: Postgres 17.10, pinned by digest.
+name: cke
+services:
+  db:
+    image: postgres:17.10-alpine@sha256:742f40ea20b9ff2ff31db5458d127452988a2164df9e17441e191f3b72252193
+    environment:
+      POSTGRES_USER: cke
+      POSTGRES_PASSWORD: cke-local-only
+      POSTGRES_DB: cke
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - cke-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cke -d cke"]
+      interval: 2s
+      retries: 30
+volumes:
+  cke-db:

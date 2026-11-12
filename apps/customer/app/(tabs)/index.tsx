@@ -1,9 +1,18 @@
 import { fontFamily, naira } from "@cke/brand-tokens";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { Plus, Search } from "lucide-react-native";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
-import { CATEGORIES, describe, MENU, type CategoryId, type MenuItem } from "../../src/data/menu";
+import {
+  CATEGORIES,
+  describe,
+  dishName,
+  MENU,
+  photoOf,
+  type CategoryId,
+  type MenuItem,
+} from "../../src/data/menu";
+import { refreshCatalog } from "../../src/state/catalog";
 import {
   addLine,
   cartCount,
@@ -35,25 +44,34 @@ export default function MenuScreen() {
   const toast = useToast();
   const [cat, setCat] = useState<CategoryId | "all">("all");
   const [q, setQ] = useState("");
+  const soup = s.soupToday;
+
+  // Check for a new soup of the day (or menu change) each time the Menu tab comes into view. An
+  // unchanged catalog costs a tiny 304 (architecture.md 14.4).
+  useFocusEffect(
+    useCallback(() => {
+      void refreshCatalog();
+    }, []),
+  );
 
   const groups = useMemo(() => {
     const query = q.trim().toLowerCase();
     const list = MENU.filter(
       (m) =>
         (cat === "all" || m.cat === cat) &&
-        (!query || `${m.name} ${m.desc}`.toLowerCase().includes(query)),
+        (!query || `${dishName(m, soup)} ${describe(m, soup)}`.toLowerCase().includes(query)),
     );
     return CATEGORIES.slice(1)
       .map((c) => ({ label: c.label, items: list.filter((m) => m.cat === c.id) }))
       .filter((g) => g.items.length);
-  }, [cat, q]);
+  }, [cat, q, soup]);
 
   const last = s.history[0];
   const open = s.open === "open";
 
   const quickAdd = (m: MenuItem) => {
     set((st) => ({ cart: addLine(st.cart, makeLine(m.id, defaults(m, st.soupToday))) }));
-    toast(`${m.name} added`);
+    toast(`${dishName(m, s.soupToday)} added`);
   };
 
   return (
@@ -188,14 +206,19 @@ function MenuCard({ item, onAdd }: { item: MenuItem; onAdd: () => void }) {
         item.soldOut && { opacity: 0.6 },
       ]}
     >
-      <PhotoPlaceholder height={96} width={96} label={item.name} />
+      <PhotoPlaceholder
+        height={96}
+        width={96}
+        label={photoOf(item, s.soupToday)}
+        caption={item.id === "soup" || item.id === "xsoup"}
+      />
       <View style={{ flex: 1 }}>
         <Pressable
           onPress={() => router.push(`/item/${item.id}`)}
           accessibilityRole="button"
           accessibilityHint="Opens the dish details"
         >
-          <T v="h3">{item.name}</T>
+          <T v="h3">{dishName(item, s.soupToday)}</T>
           <T v="small" muted numberOfLines={2}>
             {describe(item, s.soupToday)}
           </T>
@@ -217,7 +240,7 @@ function MenuCard({ item, onAdd }: { item: MenuItem; onAdd: () => void }) {
             <Pressable
               onPress={onAdd}
               accessibilityRole="button"
-              accessibilityLabel={`Add ${item.name}`}
+              accessibilityLabel={`Add ${dishName(item, s.soupToday)}`}
               style={({ pressed }) => [
                 styles.add,
                 { backgroundColor: t.primary },

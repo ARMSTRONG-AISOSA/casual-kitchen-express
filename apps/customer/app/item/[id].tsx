@@ -2,7 +2,7 @@ import { naira } from "@cke/brand-tokens";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { View } from "react-native";
-import { describe, findItem, PROTEINS, SOUPS, SWALLOWS } from "../../src/data/menu";
+import { describe, dishName, findItem, photoOf, PROTEINS, SWALLOWS } from "../../src/data/menu";
 import {
   addLine,
   defaults,
@@ -35,7 +35,7 @@ export default function ItemScreen() {
   const total = unitPrice(item, opt) * qty;
   const add = () => {
     set((s) => ({ cart: addLine(s.cart, makeLine(item.id, opt, qty)) }));
-    toast(`${item.name} added`);
+    toast(`${dishName(item, s.soupToday)} added`);
     router.back();
   };
 
@@ -50,9 +50,14 @@ export default function ItemScreen() {
         />
       }
     >
-      <PhotoPlaceholder height={220} label={item.name} style={{ borderRadius: 20 }} />
+      <PhotoPlaceholder
+        height={220}
+        label={photoOf(item, s.soupToday)}
+        caption
+        style={{ borderRadius: 20 }}
+      />
       <T v="display" style={{ marginTop: 14 }}>
-        {item.name}
+        {dishName(item, s.soupToday)}
       </T>
       <T muted style={{ marginTop: 4 }}>
         {describe(item, s.soupToday)}
@@ -79,17 +84,14 @@ export default function ItemScreen() {
 
       {item.opts === "soup" ? (
         <>
-          <Group
-            title="Soup"
-            hint={`Today’s pot is ${(SOUPS.find((x) => x.id === s.soupToday)?.label ?? "").toLowerCase()}`}
-          >
-            {SOUPS.map((p) => (
+          <Group title="Soup" hint={`Today’s pot is ${s.soupToday.toLowerCase()}`}>
+            {s.soups.map((p) => (
               <Option
-                key={p.id}
-                label={p.id === s.soupToday ? `${p.label} (today)` : `${p.label} (not today)`}
-                selected={opt.soup === p.id}
-                disabled={p.id !== s.soupToday}
-                onPress={() => setOpt({ ...opt, soup: p.id })}
+                key={p}
+                label={p === s.soupToday ? `${p} (today)` : `${p} (not today)`}
+                selected={opt.soup === p}
+                disabled={p !== s.soupToday}
+                onPress={() => setOpt({ ...opt, soup: p })}
               />
             ))}
           </Group>

@@ -27,6 +27,13 @@
       ],
       "expo-status-bar",
       "expo-splash-screen",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "CKE Kitchen uses your photos to add pictures of dishes and staff.",
+          "cameraPermission": "CKE Kitchen uses the camera to take pictures of dishes and staff."
+        }
+      ],
       "../../tools/expo-plugins/with-android-architectures.js"
     ]
   }

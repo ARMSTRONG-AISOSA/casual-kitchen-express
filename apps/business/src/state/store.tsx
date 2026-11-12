@@ -6,7 +6,9 @@ import {
   OWED_EARLIER,
   PAYOUTS,
   PEOPLE,
+  ROLE_LABEL,
   RIDERS_ONLINE,
+  SOUPS,
   orderLoad,
   orderTotal,
   seedAlerts,
@@ -42,6 +44,14 @@ export type Settings = {
   whatsapp: string;
 };
 
+export type StaffPhoto = {
+  uri: string;
+  sourceKind: "business" | "internet" | null;
+  author: string | null;
+  licence: string | null;
+  sourceUrl: string | null;
+};
+
 export type WalkInDraft = {
   lines: Record<string, number>;
   type: "eatin" | "takeaway";
@@ -68,12 +78,26 @@ export type State = {
   };
   payouts: Payout[];
   owedEarlier: Record<string, number>;
+  /** Every refund, with who made it (name, role, staff ID) (MGR-15). Shown in Reports, Refunds. */
+  refunds: Refund[];
   audit: AuditEntry[];
   /** Closed months, each with who closed it and when (ACC-07). */
   monthCloses: MonthClose[];
   draft: WalkInDraft;
-  /** Today's soup, set each morning by kitchen staff (Sold out) or a manager (Menu) (KIT-17). */
+  /**
+   * The soup rotation and today's soup (KIT-17). From the API when connected (ids set), otherwise
+   * the demo list. Managers add and remove soups on Menu; kitchen staff pick today's on Sold out.
+   */
+  soups: { id?: string; name: string }[];
   soupToday: string;
+  /** Where the menu data came from: the API, or the demo data in the app. */
+  catalogFrom: "api" | "demo";
+  /** Photo addresses by dish or soup name, from the API. Empty means no photos. */
+  photos: Record<string, string>;
+  /** Database IDs of the menu items, by name, for changing their photos. */
+  catalogIds: Record<string, string>;
+  /** Each staff member's photo and its credit, by staff code (from the API). */
+  staffPhotos: Record<string, StaffPhoto>;
   walkInSeq: number;
   onlineSeq: number;
 };
@@ -101,10 +125,16 @@ export const initial = (): State => ({
   today: { counted: null },
   payouts: PAYOUTS,
   owedEarlier: OWED_EARLIER,
+  refunds: [],
   audit: seedAudit(),
   monthCloses: seedMonthCloses(),
   draft: { lines: {}, type: "takeaway", name: "" },
+  soups: SOUPS.map((name) => ({ name })),
   soupToday: "Egusi",
+  catalogFrom: "demo",
+  photos: {},
+  catalogIds: {},
+  staffPhotos: {},
   walkInSeq: 7,
   onlineSeq: 2180,
 });
@@ -193,6 +223,55 @@ export const markReady = (s: State, no: string) =>
 export const markCollected = (s: State, no: string) =>
   patchOrder(s, no, () => ({ status: "done" }), "Collected");
 
+export type Refund = {
+  orderNo: string;
+  channel: Order["channel"];
+  amount: number;
+  kind: "full" | "partial";
+  reason: string;
+  at: number;
+  /** Who made the refund: their staff ID, name, and role when they made it. */
+  by: string;
+  byName: string;
+  byRole: string;
+};
+
+/** The person signed in, as recorded on money actions: “Efosa Igbinedion, Manager (M-001)”. */
+export function actorLabel(s: State) {
+  const p = me(s);
+  return p ? `${p.name}, ${ROLE_LABEL[p.role as Role] ?? p.role} (${p.id})` : "System";
+}
+
+/** Records a refund with who made it, and writes it to the audit trail (MGR-15, ACC-05). */
+export function recordRefund(
+  s: State,
+  o: Order,
+  amount: number,
+  kind: Refund["kind"],
+  reason: string,
+): Pick<State, "refunds" | "audit"> {
+  const p = me(s);
+  const r: Refund = {
+    orderNo: o.no,
+    channel: o.channel,
+    amount,
+    kind,
+    reason,
+    at: Date.now(),
+    by: p?.id ?? "System",
+    byName: p?.name ?? "System",
+    byRole: p ? (ROLE_LABEL[p.role as Role] ?? p.role) : "System",
+  };
+  return {
+    refunds: [r, ...s.refunds],
+    ...log(
+      s,
+      "money",
+      `${kind === "full" ? "Refunded" : "Partly refunded"} ${o.no}: ₦${amount.toLocaleString("en-US")} (${reason}). By ${actorLabel(s)}`,
+    ),
+  };
+}
+
 export function cancelOrder(s: State, no: string, reason: string): Partial<State> {
   const o = findOrder(s, no);
   if (!o) return {};
@@ -201,13 +280,18 @@ export function cancelOrder(s: State, no: string, reason: string): Partial<State
       s,
       no,
       () => ({ status: "cancelled", refunded: orderTotal(o) }),
-      `Cancelled: ${reason}`,
+      `Cancelled and refunded: ${reason}`,
     ),
-    ...log(
-      s,
-      "money",
-      `Cancelled ${no} and refunded ₦${orderTotal(o).toLocaleString("en-US")} (${reason})`,
-    ),
+    ...recordRefund(s, o, orderTotal(o), "full", `Cancelled: ${reason}`),
+  };
+}
+
+export function partialRefund(s: State, no: string, amount: number, reason: string) {
+  const o = findOrder(s, no);
+  if (!o) return {};
+  return {
+    ...patchOrder(s, no, () => ({ refunded: amount }), `Partly refunded: ${reason}`),
+    ...recordRefund(s, o, amount, "partial", reason),
   };
 }
 
@@ -240,6 +324,19 @@ export function assignRider(s: State, no: string, riderId: string): Partial<Stat
   };
 }
 
+/* ---------- soup dishes (KIT-17) ---------- */
+
+/**
+ * A dish's name with today's soup in it, for the walk-in tiles, tickets, and sold-out list:
+ * “Efo riro with eba”, “Extra efo riro”. Other dishes keep their name.
+ */
+export function dishName(m: Pick<MenuItem, "id" | "name">, soup: string) {
+  if (!soup) return m.name;
+  if (m.id === "soup") return `${soup} with eba`;
+  if (m.id === "xsoup") return `Extra ${soup.toLowerCase()}`;
+  return m.name;
+}
+
 /* ---------- walk-in ---------- */
 
 export const draftLines = (s: State): Line[] =>
@@ -247,7 +344,7 @@ export const draftLines = (s: State): Line[] =>
     .filter(([, q]) => q > 0)
     .map(([id, qty]) => {
       const m = s.menu.find((x) => x.id === id)!;
-      return { name: m.name, qty, station: m.station, ticked: false };
+      return { name: dishName(m, s.soupToday), qty, station: m.station, ticked: false };
     });
 
 export const draftTotal = (s: State) =>

@@ -1,6 +1,6 @@
 # CKE ARCHITECTURE
 
-**Document Status:** Draft v0.26. Records the functions, features, and decisions for the apps and the website. Reviewed end to end on 11 November 2026, and again on 12 November 2026 after the new staff roles and Finance were added.  
+**Document Status:** Draft v0.31. Records the functions, features, and decisions for the apps and the website. Reviewed end to end on 11 November 2026, and again on 12 November 2026 after the new staff roles and Finance were added.  
 **Related documents:** `Casual-Kitchen-Express.md` (business and brand, surface level), `design.md` (UI/UX decisions and page flows), and `list-of-areas.md` (delivery areas).
 
 ---
@@ -253,7 +253,7 @@ Kitchen staff enter walk-in orders at the counter. They are kept separate from o
 | CUS-23 | Delivery range check | An address outside the delivery range cannot be used for delivery. The app says so and offers pickup (4.7). | **Decided** |
 | CUS-24 | Closed and paused states | After 6:00 pm, or while new orders are paused, the customer can browse and see when online orders open (8:00 am), but cannot check out (4.7) | Planned |
 | CUS-25 | Deactivate account | Above the Danger zone in Profile, with one confirmation tick. Signs the customer out and keeps everything. Signing in again with Google offers to reactivate. | **Decided** |
-| CUS-26 | More tab and text pages | A fourth tab, More, listing Terms and conditions, Privacy policy, About us, Support us, Partner with us, and FAQs. Each is a text page with a back button. | **Decided** |
+| CUS-26 | More tab and text pages | A fourth tab, More, listing Terms and conditions, Privacy policy, About us, Support us, Partner with us, and FAQs. Each is a text page with a back button. A **Photo credits** page lists each menu photo’s author and licence, opening its source (12 November 2026). | **Decided** |
 | CUS-27 | Customer ID | Every customer account has a unique ID (for example C-00418), shown in Profile and used in reports and the leaderboard | **Decided** |
 
 ### 5.2 Rider and Delivery app
@@ -308,7 +308,7 @@ One app for four staff roles: kitchen staff, dispatch officers, account officers
 | KIT-14 | Walk-in payment at the counter | Cash (amount received, change due; the amount is **Exact** or typed into an **Other amount** box, which can’t be less than the total) or online (card or transfer), all simulated, taken at the point of placing the order | **Decided** |
 | KIT-15 | Walk-in tickets on the board | A "Walk-in" badge, eat in or take away shown, and the steps Preparing, Ready, and Collected | **Decided** |
 | KIT-16 | Board filter | Filter the board to All, Online, or Walk-in | **Decided** |
-| KIT-17 | Soup of the day | Kitchen staff pick today’s soup (for example egusi, efo riro, or ogbono) on the Sold out screen each morning, and managers (including the owner) can also pick it there or on the Menu screen. The change is written to the audit log. The customer app shows it straight away on the menu and the dish screen, and only today’s soup can be ordered. | **Decided** |
+| KIT-17 | Soup of the day | Kitchen staff pick today’s soup (for example egusi, efo riro, or ogbono) on the Sold out screen each morning, and managers (including the owner) can also pick it there or on the Menu screen. The change is written to the audit log. The customer app shows it straight away on the menu and the dish screen, and only today’s soup can be ordered. Managers also **add and remove soups in the rotation** on the Menu screen (owner decision, 12 November 2026). A removed soup is archived, not erased, because past orders point to it; adding the name again brings it back. Today’s soup can’t be removed, and at least one soup stays. Each change raises the catalog version, so the customer app picks it up (14.4). The soup dishes carry the soup: “Soup of the day: Egusi”, “Extra egusi”, and Home Plate’s description, and the soup and extra soup show **that soup’s own photo**, so the picture changes with the soup. Each line in an order keeps the soup it was ordered with. | **Decided** |
 
 **Manager**
 
@@ -321,7 +321,7 @@ Account officers also use the reports (MGR-17 to MGR-23, MGR-27, and MGR-34, the
 | MGR-03 | Create, edit, deactivate, and reactivate rider accounts | Username and password, plus the profile in 3.1 (name, role, job title, gender, phone, home address, photo). The manager enters everything and can edit it later. | **Decided** |
 | MGR-04 | Create, edit, deactivate, and reactivate kitchen staff, dispatch officer, account officer, and manager accounts | The same profile fields. Kitchen staff, dispatch officers, and account officers use a username and password, and managers use Google. The owner account can’t be deactivated. | **Decided** |
 | MGR-05 | Menu management | Add, edit, delete items | Planned |
-| MGR-06 | Item images with compression | Upload, crop, compress, replace, remove (section 8) | Planned |
+| MGR-06 | Item images with compression | Take or choose a photo, crop it (4:3 for dishes and soups, square for staff), compress it on the tablet (8.1), and upload it with its **credit** in one call: “Our own photo” (credited to Casual Kitchen Express, with an optional photographer and link) or “From the internet” (who took it, the licence, and the link are needed; the licence link is optional). The same steps are used everywhere a photo is added: dishes (Menu and the item editor), soups (when added, or later), and staff (People). **Replacing a photo deletes the old one**, its file and its record, so every app shows the new photo and the credits follow; removing works the same way. Built 12 November 2026. | **Decided** |
 | MGR-07 | Prices and availability | Edit prices, mark sold out | Planned |
 | MGR-08 | Categories and options | Proteins, sides, extras | Planned |
 | MGR-09 | Opening hours | Online order hours (8:00 am to 6:00 pm) and walk-in hours (8:00 am to 8:30 pm), with overrides | **Decided** |
@@ -330,7 +330,7 @@ Account officers also use the reports (MGR-17 to MGR-23, MGR-27, and MGR-34, the
 | MGR-12 | Rider capacity settings | Load values and capacity budget (section 6) | Planned |
 | MGR-13 | Order list and search | Today, yesterday, or **any date range back to the first order**. Search by order number or customer ID. Filter by channel (online or walk-in), status, staff member, and payment method. Sort by time placed or amount. Shows the count and total value, and loads long ranges in pages. | **Decided** |
 | MGR-14 | Alerts | Order unaccepted by riders, order stuck, item unavailable, a rider’s help request, and a customer’s cancellation request (the Alert record in section 9) | Planned |
-| MGR-15 | Cancellations and refunds | Rules in 4.6, with simulated refunds | **Decided** |
+| MGR-15 | Cancellations and refunds | Rules in 4.6, with simulated refunds Every refund (a manager’s refund, a dispatch officer’s or manager’s approval of a cancellation request, and kitchen staff cancelling a walk-in) needs an **“I’m sure I want to refund ₦… for …” tick** first, and is recorded with the **name, role, and staff ID** of the person signed in, and the time (shown on the order and in the audit trail). Owner decision, 12 November 2026. | **Decided** |
 | MGR-16 | Manual completion approval | For delivery-code problems. Dispatch officers can approve too (DSP-04). | Planned |
 | MGR-17 | Order volume reports | Orders by hour, day, week, and month; peak times; delivery and pickup split; online and walk-in split; completed and cancelled | Planned |
 | MGR-18 | Sales reports | Total sales, average order value, payment method split (cash, card, transfer), online and walk-in split, refunds. Each split shows the amount first, then its share, for example “Card ₦735,730 (51%)”. | Planned |
@@ -352,6 +352,8 @@ Account officers also use the reports (MGR-17 to MGR-23, MGR-27, and MGR-34, the
 | MGR-34 | Customer leaderboard | Customers ranked by customer ID for any report period, sortable by total spent or number of orders. Managers and account officers (account officers added by the owner on 12 November 2026), online orders only. | **Decided** |
 | MGR-35 | Cancellation limit setting | The number of cancellations in 7 days after which a customer can only request a cancellation. 3 by default, adjustable from 3 to 7. Changes are written to the audit log. (4.6) | **Decided** |
 | MGR-36 | Restaurant contact number | The WhatsApp number behind “Contact the restaurant” in the customer app (CUS-19). One editable number, managers only. The change shows straight away and is written to the audit log. | **Decided** |
+| MGR-37 | Refunds report | A Refunds tab in Reports, with the same date range, channel filter, and CSV export as the other reports: count, total, and average; refunds by reason and by person; and every refund (order, amount, full or partial, reason, time, and who made it: name, role, staff ID), newest or largest first. Managers and account officers. Owner decision, 12 November 2026. | **Decided** |
+| MGR-38 | View profile | On People, each person has View profile: everything from the editor (role, staff ID, status, job title, username or Google email, phone, gender, home address) and their photo, or their initials until a photo is added. The photo also shows in the top bar when they sign in. Owner decision, 12 November 2026. | **Decided** |
 
 ### 5.3.1 Dispatch officer (Business and Kitchen app)
 
@@ -477,6 +479,10 @@ Images are compressed **on the device before they leave the app**, so uploads ar
 
 The backend **re-validates** every upload (type, size, dimensions) and can create smaller thumbnails for lists, so the app never trusts the client alone.
 
+### 8.1.1 Menu photos (12 November 2026)
+
+22 menu photos were sourced from Wikimedia Commons and Flickr (through Openverse), processed to the values above (4:3, at most 1200 px, WebP quality 78, all under 250 KB), and recorded with author, licence, and source in `docs/photo-credits.md` and `apps/api/seed-media/menu/credits.json`. The seed script (`npm run db:seed-media --workspace @cke/api`) puts them in R2 and links them to the menu items and the three soups. MediaAsset rows keep each photo’s title, author, licence, and source, and `GET /media/credits` lists them for the customer app’s Photo credits page. The Office Lunch Combo has no photo yet (`docs/photo-credits.md`, Still to do).
+
 ### 8.2 Where images are stored
 
 **Decided:** image files are kept in **object storage**, and only their links (paths or URLs) are stored in the database. Large binary files inside a database make it slower and more expensive to store and back up, so the database holds just the references, along with each image's size and dimensions.
@@ -497,6 +503,16 @@ Entities and key fields, as a starting point for the Drizzle schema. Better Auth
 **Order list at any range:** the API returns orders for any date range, filtered and sorted on the server and paged with a cursor, so a long range never loads all at once. Orders are indexed by placed time, channel, status, staff, and customer.
 
 **Historic data:** orders, payments, status events, and deliveries are kept permanently so managers can look at any past period. Every status change is stored with its time, which makes the timing reports (preparation time, wait for a rider, delivery time) possible. Menu items that appear in past orders are archived, never erased.
+
+**Built so far (12 November 2026):** the schema is in `apps/api/src/db/schema.ts`, with migrations in `apps/api/drizzle/`. Details added while building it:
+- **Change numbers:** orders, alerts, and rider states carry a `version` from one shared counter (`change_seq`). Every change takes the next number, so a reconnecting app asks only for rows above the last number it saw (14.4, decision 4).
+- **Catalog version:** the Setting row has a `catalog version` that goes up whenever the menu or a customer-facing setting changes. `GET /bootstrap` returns it as an ETag (14.4, decision 1).
+- **Soups:** a SoupVariety list (egusi, efo riro, ogbono to start) holds the soups the soup of the day is picked from. Managers add and remove soups; removing sets it inactive. Menu items flagged as soup take today’s soup, and each order stores the soup it got.
+- **Hours overrides:** an HoursOverride row per date (closed, or different hours) covers MGR-09’s overrides.
+- **Accounts:** Better Auth’s user, session, account, and verification tables, with its username and admin plugin fields, written by hand from Better Auth 1.7’s schema. They are confirmed against Better Auth’s own generator when sign-in is built (16.1, item 1).
+- **Not yet:** the ReportView summaries come with the reports (build step 9).
+
+**API routes so far** (`apps/api/README.md` has the commands): `GET /health`; `GET /bootstrap` (menu, soups, areas, and customer-facing settings, with an ETag and 304s); `POST /soups` and `DELETE /soups/:id` (managers); `PUT /settings/soup-of-the-day` (kitchen staff and managers); `GET /media/:id` (an image from R2, cached for a year because an ID never changes what it points to, 8.3); `GET /media/credits` (the credits of the menu and soup photos in use, so a replaced or removed photo drops out); `PUT /photos/:kind/:id` and `DELETE /photos/:kind/:id` (add, replace, or remove a dish, soup, or staff photo with its credit; the API checks it is WebP within the size and dimension limits, and deletes the old photo); `GET /staff/photos` (staff photos and credits; open until sign-in, then staff only). The demo staff are in the database too (`npm run db:seed-people`), so staff photos and, next, sign-in have records to use. Until sign-in exists, changes are refused unless the laptop-only setting `ALLOW_UNSIGNED_WRITES` is on, so a deployed Worker can’t be changed by anyone. Sign-in replaces this with role checks. The soup rotation is the first feature the apps read from the API; both apps fall back to their demo data when no API address is set.
 
 | Entity | Key fields |
 |---|---|
@@ -519,7 +535,7 @@ Entities and key fields, as a starting point for the Drizzle schema. Better Auth
 | Neighbourhood | id, name, in delivery range (yes or no), sort order |
 | DeviceToken | id, user id, platform, token |
 | Notification | id, user id, type, content, sent at |
-| MediaAsset | id, owner, storage path, size, dimensions, format |
+| MediaAsset | id, owner, storage path, size, dimensions, format, source kind (business or internet), title, author, licence, licence link, source link |
 | Setting | online order hours, walk-in hours, tablet sign-out time, pause flag, delivery boundary, capacity defaults, batch drop-off distance (about 1.5 km by default), rider tracking mode, delivery fee (₦1,500 by default), rider pay per delivery (₦1,000 by default), cancellation limit (3 in 7 days by default, adjustable from 3 to 7), restaurant WhatsApp number (MGR-36), soup of the day (KIT-17). Price, limit, and contact changes are written to the audit log. |
 | CashUp | id, business date, cash expected, cash counted, difference, counted by, counted at, signed off by, signed off at, note |
 | MonthClose | id, month, closed by, closed at, snapshot of the statement totals |
@@ -704,6 +720,7 @@ Entities and key fields, as a starting point for the Drizzle schema. Better Auth
 | Battery target | Set after testing; set now | No more than about 10% an hour during an active delivery (7.5) | **Decided** |
 | Tracking values | Tune at build; set now | Balanced accuracy, about every 45 seconds and 100 metres, and a geofence of about 300 metres | **Decided** |
 | Staff code format | Role prefix with a number; random IDs only | R-001, K-001, D-001, A-001, and M-001 style codes alongside the unique ID | **Decided** |
+| Development database | Local Postgres in Docker; Neon from the start | Postgres 17.10 in Docker on the development laptop (the version Neon uses), Neon when the API is deployed. Cloudflare account soon for the 16.1 checks, Neon account at deploy. Owner decisions, 12 November 2026. | **Decided** |
 | Staff roles | Kitchen staff and managers only; separate dispatch and account roles | Four staff roles in the Business and Kitchen app: kitchen staff, dispatch officer, account officer, and manager, each with its own menus (3.0). Owner decision, 12 November 2026. | **Decided** |
 | Finance records | Reports and rider pay only; a Finance menu | A Finance menu with the monthly statement, daily cash-up, audit trail, exports, and close month (5.3.2). Owner decision, 12 November 2026. | **Decided** |
 | Soup of the day | Customer picks any soup; one soup a day set by a manager | One soup a day, set by kitchen staff on Sold out or by a manager on Sold out or Menu (KIT-17). Owner decisions, 12 November 2026. | **Decided** |
@@ -808,7 +825,15 @@ Neon now also offers Functions (serverless Node.js compute), Object Storage, and
 
 ### 14.4 Fewer calls and fresh data (to go over with the owner before the backend)
 
-**Status:** Planned. The owner asked (12 November 2026) that, before the backend is built, we go over ways to reduce the number of calls the API gets, especially for fetching app data and keeping it fresh, given that some data goes stale sooner than other data. Agree the list below with the owner at the start of build step 4, then mark each item Decided.
+**Status:** the four choices below are **Decided** (owner, 12 November 2026). The owner asked that, before the backend is built, we go over ways to reduce the number of calls the API gets, especially for fetching app data and keeping it fresh, given that some data goes stale sooner than other data.
+
+**Decided (12 November 2026)**
+1. **Settings and menu: version plus a live nudge.** One start-up call loads the menu, prices, delivery fee, rider pay, WhatsApp number, and soup of the day with a version number. The app fetches them again only when the live connection or a push says the version changed.
+2. **Past data: kept, only today refreshed.** Past days (reports, statements, order history) are stored on the device and the server and never fetched twice. Only today’s figures are refreshed.
+3. **Reports: chosen per report by size.** Small sets (such as the deliveries behind the rider and area tables) are fetched once for the range and worked out in the app, so switching channel or table needs no new call. Large sets are summed in the database, and only the totals are sent.
+4. **Reconnect: only what changed.** The app remembers the last update it saw and asks for the changes since then, in one small call.
+
+The table and rules below are the detail behind these choices.
 
 Starting ideas, from the most stable data to the most live:
 
@@ -880,6 +905,7 @@ Starting ideas, from the most stable data to the most live:
 | Wrangler | **4.155.0** | Cloudflare Workers command-line tool |
 | Drizzle Kit | **0.31.11** | Database migrations |
 | tsx | **4.23.15** | Runs the seed script |
+| Postgres (Docker image, development only) | **17.10** (`postgres:17.10-alpine`, pinned by digest `sha256:742f40ea…2193` in `apps/api/docker-compose.yml`) | The local database (owner decision, 12 November 2026). 17.11 was published on 6 November 2026, after the cutoff. Neon runs Postgres 17 in production. |
 
 ### 15.2 Mobile apps (Expo SDK 58)
 
@@ -908,7 +934,7 @@ All three apps use the same versions.
 | expo-keep-awake | ~58.0.3 | Screen awake on pickup and code entry (rider app) and on the kitchen tablet |
 | expo-image-picker | ~58.0.10 | Photos (customer profile, manager menu and staff) |
 | expo-image-manipulator | ~58.0.16 | Crop, resize, and compress before upload |
-| expo-image | ~58.0.18 | Showing menu photos with caching |
+| expo-image | ~58.0.18 | Showing menu photos with caching. Not installed yet: it is a native module, so it comes with the next native build of the customer and business apps. Until then the apps show photos with React Native’s own Image, which Android also caches. |
 | expo-font | ~58.0.11 | Loading Nunito and Inter |
 | expo-linear-gradient | ~58.0.3 | Required by the charts library (business app) |
 | expo-splash-screen | ~58.0.12 | Launch screen |
@@ -993,6 +1019,8 @@ The website uses **no packages**. It is plain HTML, CSS, and JavaScript.
 **Platform:** every step targets Android first. iOS is added later.
 
 **Development setup:** each app runs as a development build (`expo-dev-client`) installed on a real Android device, connected over the local network to the development server (`npx expo start --dev-client --lan` in the app’s folder). Expo Router’s optional typed routes are switched off: its CLI couldn’t load them with `expo-router` 58.0.28 in this workspace.
+
+**Backend development (12 November 2026):** the API runs against Postgres 17.10 in Docker on the laptop (`apps/api/docker-compose.yml`, listening on 127.0.0.1 only). Locally, the Worker reaches it through Hyperdrive’s `localConnectionString` in `wrangler.jsonc`, the same code path as production. `apps/api/README.md` lists the commands (start, migrate, seed, test).
 
 ### 16.1 To verify at build
 
@@ -1132,6 +1160,11 @@ At build time, a seed script fills the database with up to **two months** of his
 
 | Version | Change |
 |---|---|
+| 0.31 | Owner decisions on 12 November 2026: photo upload in the Business app with crop, compression, and credit fields, replacing deletes the old photo everywhere (MGR-06, MediaAsset source kind); a refund confirmation tick and the refunder’s name, role, and staff ID recorded (MGR-15); a Refunds report (MGR-37); View profile, staff photos, gender, and home address on People (MGR-38); new photo routes and the demo staff in the database (section 9 notes). |
+| 0.30 | 12 November 2026: menu photos sourced, processed, and recorded (8.1.1, `docs/photo-credits.md`), stored in R2 and served by `GET /media/:id`; MediaAsset gains credit fields; soups gain their own photo; soup dishes carry the soup’s name and photo (KIT-17); a Photo credits page (CUS-26); expo-image noted for the next native build (15.2). |
+| 0.29 | Owner decision on 12 November 2026: managers add and remove soups in the soup of the day rotation on the Menu screen, saved in the database and shown in the customer app (KIT-17). The first API routes (section 9 notes), with a temporary write guard until sign-in. |
+| 0.28 | Backend foundation started on 12 November 2026: owner decisions on a local Postgres 17.10 database in Docker for development (locked in 15.1) and account timing (Cloudflare soon, Neon at deploy); the schema built from section 9, with change numbers, a catalog version, soup varieties, and hours overrides recorded under section 9; the development setup in 16. |
+| 0.27 | Owner decisions on 12 November 2026 (14.4): settings and menu use a version number with a live nudge; past data is kept and only today refreshed; reports are worked out in the app or the database by size; reconnecting fetches only what changed. |
 | 0.26 | Owner decisions on 12 November 2026: account officers see the customer leaderboard (MGR-34); sales splits show the amount before the percentage (MGR-18); the rider and area report is two tables, every rider and every area with deliveries, share, and average time, worked out from the chosen date range (MGR-20); 14.4 lists ways to reduce API calls and keep data fresh, to go over with the owner before the backend. |
 | 0.25 | Owner decisions on 12 November 2026: kitchen staff can set the soup of the day on the Sold out screen, as well as managers (KIT-17); walk-in cash is Exact or an Other amount box, replacing the ₦500 to ₦5,000 buttons (KIT-14); the cash-up sign-off and the month close record who did it, an account officer or any manager, by name, staff ID, and time (ACC-04, ACC-07, 4.5). |
 | 0.24 | Consistency review on 12 November 2026, with no new decisions: the dispatch officer and account officer added wherever staff roles are listed (users, attribution 4.5, cancellation rules 4.6, sign-in 12.1, seed people 18.3, payouts 18.1 and 18.2); a note on which Manager features the officers also use; Need help goes to dispatch (RID-11); alerts and live setting changes in section 10; decision rows for staff roles, Finance, the soup of the day, and report comparison; account officer access to the leaderboard recorded as a Proposal (MGR-34); seeded cash-ups and closed months; feature rows put in number order. |

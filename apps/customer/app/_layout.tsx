@@ -8,6 +8,7 @@ import { Nunito_700Bold, Nunito_800ExtraBold } from "@expo-google-fonts/nunito";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { CatalogProvider } from "../src/state/catalog";
 import { StoreProvider } from "../src/state/store";
 import { useTheme } from "../src/state/theme";
 import { ToastProvider } from "../src/ui/toast";
@@ -40,9 +41,11 @@ export default function RootLayout() {
   if (!loaded) return null;
   return (
     <StoreProvider>
-      <ToastProvider>
-        <Shell />
-      </ToastProvider>
+      <CatalogProvider>
+        <ToastProvider>
+          <Shell />
+        </ToastProvider>
+      </CatalogProvider>
     </StoreProvider>
   );
 }

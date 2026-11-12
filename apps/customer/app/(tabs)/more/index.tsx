@@ -7,7 +7,7 @@ import { useTheme } from "../../../src/state/theme";
 import { Card, Screen, T } from "../../../src/ui/kit";
 import { PreviewTools } from "../../../src/ui/preview-tools";
 
-// More: a list of text pages (CUS-26).
+// More: a list of text pages (CUS-26), and the photo credits.
 export default function MoreScreen() {
   const t = useTheme();
   return (
@@ -34,6 +34,14 @@ export default function MoreScreen() {
             <ChevronRight size={20} color={t.muted} />
           </Pressable>
         ))}
+        <Pressable
+          onPress={() => router.push("/more/photo-credits")}
+          accessibilityRole="button"
+          style={[styles.row, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: t.line }]}
+        >
+          <T style={{ flex: 1 }}>Photo credits</T>
+          <ChevronRight size={20} color={t.muted} />
+        </Pressable>
       </Card>
       <T v="small" muted center style={{ marginTop: 14 }}>
         CKE app version {Constants.expoConfig?.version ?? "1.0.0"} (demo)

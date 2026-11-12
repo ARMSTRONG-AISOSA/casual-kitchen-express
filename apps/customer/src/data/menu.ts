@@ -176,7 +176,6 @@ export const MENU: MenuItem[] = [
 ];
 
 export type ProteinId = "chicken" | "beef" | "fish" | "none";
-export type SoupId = "egusi" | "efo" | "ogbono";
 export type SwallowId = "eba" | "poundo";
 
 export const PROTEINS: { id: ProteinId; label: string; price: number; soldOut?: boolean }[] = [
@@ -186,18 +185,39 @@ export const PROTEINS: { id: ProteinId; label: string; price: number; soldOut?: 
   { id: "none", label: "No protein", price: 0 },
 ];
 
-/** Soups the kitchen cooks. A manager picks one as the soup of the day (KIT-17). */
-export const SOUPS: { id: SoupId; label: string }[] = [
-  { id: "egusi", label: "Egusi" },
-  { id: "efo", label: "Efo riro" },
-  { id: "ogbono", label: "Ogbono" },
-];
+/**
+ * The demo soup rotation, used when the app isn't connected to the API. With the API, the list
+ * and today's soup come from GET /bootstrap, as set in the Business app (KIT-17).
+ */
+export const SOUPS = ["Egusi", "Efo riro", "Ogbono"];
+
+/** Dishes made with today's soup (KIT-17). Their name, description, and photo follow it. */
+const SOUP_DISHES = new Set(["soup", "xsoup", "homeplate"]);
+export const usesSoup = (it: MenuItem) => SOUP_DISHES.has(it.id);
+
+/** The dish's name with the soup filled in: “Soup of the day: Egusi”, “Extra egusi”. */
+export function dishName(it: MenuItem, soup?: string) {
+  if (!soup) return it.name;
+  if (it.id === "soup") return `Soup of the day: ${soup}`;
+  if (it.id === "xsoup") return `Extra ${soup.toLowerCase()}`;
+  return it.name;
+}
 
 /** A dish's description, with today's soup filled in. */
-export const describe = (it: MenuItem, soup: SoupId) =>
-  it.id === "soup"
-    ? `Today it’s ${(SOUPS.find((x) => x.id === soup)?.label ?? "egusi").toLowerCase()}. Comes with one swallow.`
-    : it.desc;
+export function describe(it: MenuItem, soup: string) {
+  const s = (soup || "Egusi").toLowerCase();
+  if (it.id === "soup") return `Today it’s ${s}. Comes with one swallow.`;
+  if (it.id === "xsoup") return `A second bowl of ${s}.`;
+  if (it.id === "homeplate") return `${soup || "Egusi"} with pounded yam, fish, and water.`;
+  return it.desc;
+}
+
+/**
+ * Which photo a dish shows: the soup and extra soup show today's soup's own photo, so the picture
+ * changes with the soup. Every other dish, Home Plate included, has its own photo.
+ */
+export const photoOf = (it: MenuItem, soup: string) =>
+  it.id === "soup" || it.id === "xsoup" ? soup : it.name;
 
 export const SWALLOWS: { id: SwallowId; label: string }[] = [
   { id: "eba", label: "Eba" },

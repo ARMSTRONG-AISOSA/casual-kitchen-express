@@ -3,7 +3,12 @@ import { useState } from "react";
 import { ROLE_LABEL, type Person, type Role } from "../../../src/data/seed";
 import { log, useStore } from "../../../src/state/store";
 import { Button, Card, Chip, Chips, Field, Page, T } from "../../../src/ui/kit";
+import { refreshStaff } from "../../../src/state/catalog";
+import { Avatar } from "../../../src/ui/avatar";
+import { PhotoEditor } from "../../../src/ui/photo-editor";
 import { useToast } from "../../../src/ui/toast";
+import { PEOPLE } from "../../../src/data/seed";
+import { View } from "react-native";
 
 const PREFIX: Record<Person["role"], string> = {
   rider: "R",
@@ -26,6 +31,12 @@ export default function PersonEditor() {
   const [job, setJob] = useState(existing?.job ?? "");
   const [phone, setPhone] = useState(existing?.phone ?? "");
   const [login, setLogin] = useState(existing?.username ?? existing?.email ?? "");
+  const [gender, setGender] = useState<Person["gender"]>(existing?.gender);
+  const [homeAddress, setHomeAddress] = useState(existing?.homeAddress ?? "");
+  const [photoOpen, setPhotoOpen] = useState(false);
+  // Staff photos are stored with the staff record, which exists for the starting staff now and for
+  // everyone once sign-in is built.
+  const inSystem = !!existing && PEOPLE.some((p) => p.id === existing.id);
   const isManager = role === "manager";
 
   const save = () => {
@@ -39,6 +50,8 @@ export default function PersonEditor() {
                 job,
                 phone,
                 role,
+                gender,
+                homeAddress: homeAddress.trim() || undefined,
                 ...(isManager ? { email: login } : { username: login }),
               }
             : p,
@@ -58,6 +71,8 @@ export default function PersonEditor() {
             role,
             job,
             phone,
+            gender,
+            homeAddress: homeAddress.trim() || undefined,
             active: true,
             ...(isManager ? { email: login } : { username: login }),
           },
@@ -110,7 +125,57 @@ export default function PersonEditor() {
           hint="A label only. The role controls what they can do."
         />
         <Field label="Phone" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
+        <T v="label" style={{ marginTop: 14 }}>
+          Gender (optional)
+        </T>
+        <Chips style={{ marginTop: 8 }}>
+          <Chip label="Female" selected={gender === "female"} onPress={() => setGender("female")} />
+          <Chip label="Male" selected={gender === "male"} onPress={() => setGender("male")} />
+          <Chip
+            label="Prefer not to say"
+            selected={gender === "prefer_not_to_say"}
+            onPress={() => setGender("prefer_not_to_say")}
+          />
+        </Chips>
+        <Field
+          label="Home address (optional)"
+          value={homeAddress}
+          onChangeText={setHomeAddress}
+          hint="Seen only by managers and the person themself."
+        />
       </Card>
+      <Card>
+        <T v="label">Photo (optional)</T>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 14, marginTop: 10 }}>
+          <Avatar code={existing?.id} name={name || "?"} size={72} />
+          <Button
+            label={existing && s.staffPhotos[existing.id] ? "Change photo" : "Add photo"}
+            variant="ghost"
+            onPress={() =>
+              inSystem
+                ? setPhotoOpen(true)
+                : toast(
+                    existing
+                      ? "Photos for new staff can be added once sign-in is built."
+                      : "Save the person first, then add their photo.",
+                  )
+            }
+          />
+        </View>
+        <T v="small" muted style={{ marginTop: 6 }}>
+          Cropped square and compressed before upload. Shown when they sign in.
+        </T>
+      </Card>
+      <PhotoEditor
+        visible={photoOpen}
+        onClose={() => setPhotoOpen(false)}
+        kind="staff"
+        targetId={existing?.id}
+        title={existing?.name ?? name}
+        currentUri={existing ? s.staffPhotos[existing.id]?.uri : undefined}
+        photoKey={existing?.id}
+        onSaved={refreshStaff}
+      />
       <Button
         label="Save"
         style={{ marginTop: 16 }}

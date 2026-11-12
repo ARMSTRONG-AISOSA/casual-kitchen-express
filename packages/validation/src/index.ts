@@ -10,8 +10,8 @@ export const walkinOrderNumber = z.string().regex(/^W-\d{3,}$/);
 /** Customer IDs, for example C-00418 (CUS-27). */
 export const customerCode = z.string().regex(/^C-\d{5,}$/);
 
-/** Staff codes: R- riders, K- kitchen staff, M- managers (3.1). */
-export const staffCode = z.string().regex(/^[RKM]-\d{3,}$/);
+/** Staff codes: R- riders, K- kitchen staff, D- dispatch officers, A- account officers, M- managers (3.1). */
+export const staffCode = z.string().regex(/^[RKDAM]-\d{3,}$/);
 
 /** The 4-digit delivery code (4.4). */
 export const deliveryCode = z.string().regex(/^\d{4}$/);
@@ -49,3 +49,10 @@ export const cancellationLimit = z
   .int()
   .min(DEFAULTS.cancellationLimitMin)
   .max(DEFAULTS.cancellationLimitMax);
+
+/** KIT-17: a soup name in the soup of the day rotation, for example “Efo riro”. */
+export const soupName = z
+  .string()
+  .trim()
+  .min(2, "Enter the soup’s name")
+  .max(40, "Keep the name under 40 characters");
