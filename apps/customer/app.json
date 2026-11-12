@@ -26,10 +26,8 @@
         }
       ],
       "expo-status-bar",
-      "expo-splash-screen"
-    ],
-    "experiments": {
-      "typedRoutes": true
-    }
+      "expo-splash-screen",
+      "../../tools/expo-plugins/with-android-architectures.js"
+    ]
   }
 }

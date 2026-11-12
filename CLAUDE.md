@@ -20,6 +20,7 @@ The clickable prototypes in `design/prototypes/` show every screen. Open them in
 - Fewest taps wins.
 - MIT licence. Credit Claude Code only in the README (one line) and on the website’s About page (one small line).
 - Android 10 (API 29) and above, no Play Store. APKs ship on GitHub Releases.
+- Build Android for arm64-v8a only. Add armeabi-v7a only for release builds. Never build x86 or x86_64 (`architecture.md` 17.2).
 - Use the logo and tokens in `brand/cke-logo-package/`. Never redraw the logo.
 - Install only the versions locked in `docs/architecture.md`, section 15. Use `npx expo install` for Expo packages, commit the lockfile, and ask before upgrading anything.
 

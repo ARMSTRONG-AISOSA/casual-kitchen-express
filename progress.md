@@ -119,7 +119,8 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and two
 2. **Delivery areas.** Which areas are in range is decided (both sides of Oluku, Isihor, Iguosa, and the Oluku villages, all up to Oluku Market). Still to do: draw the boundary polygon from map pins (Uselu to Oluku Market) and confirm spellings. Extra landmarks between Uselu and Oluku may be researched, but each needs the owner’s approval before it is added.
 3. **GitHub repository (decided):** https://github.com/ARMSTRONG-AISOSA/casual-kitchen-express. The website's download button should point to its `releases/latest` once it exists.
 4. **Versions:** all locked in `architecture.md`, section 15. Re-check them for security advisories just before installing.
-5. **Machine setup:** the owner installs JDK 17 (`sudo apt install -y openjdk-17-jdk`); then the Android SDK goes in `~/Android/Sdk` (no sudo needed). Expo’s docs ask for Android SDK Platform 36.
+5. **Machine setup (done):** JDK 17.0.21 is installed through apt. The Android SDK is in `~/Android/Sdk` (command-line tools 23.0, platform-tools 37.0.1, Platform 36, build-tools 36.0.0). `JAVA_HOME`, `ANDROID_HOME`, and the SDK `PATH` are set in `~/.bashrc` (verified: adb 37.0.1 from the SDK). Note: the home router’s DNS (192.168.0.1) times out on some names, which broke apt; using 1.1.1.1 and 8.8.8.8 fixed it.
+7. **GitHub remote:** `origin` is https://github.com/ARMSTRONG-AISOSA/casual-kitchen-express.git. The repository exists and is empty. Nothing is pushed until the owner says so.
 6. **Prototypes lag the docs** on the 11 November decisions (cart, cash amounts, load display, kitchen theme, website cancel line). The docs win, and the prototypes are not being updated.
 
 **To verify at build** (the full list is in `architecture.md`, 16.1)
@@ -272,6 +273,33 @@ Append a new dated entry after each work session. Never edit or delete earlier e
 
 **Next step:**
 - The owner runs `sudo apt install -y openjdk-17-jdk`. Then install the Android SDK and do a first local Android build, then start the backend foundation (section 8, step 2).
+
+---
+
+## [2026-11-12] Machine setup, first Android build, and app running on the tablet
+
+**What was done:**
+- JDK 17.0.21 installed by the owner (apt). The home router’s DNS timed out on Ubuntu’s servers; switching to 1.1.1.1 and 8.8.8.8 fixed it.
+- Android SDK installed in `~/Android/Sdk` (command-line tools 23.0, checksum verified; platform-tools 37.0.1; Platform 36; build-tools 36.0.0). Gradle later added Platform 37 and NDK 27.1 by itself. The owner set `JAVA_HOME`, `ANDROID_HOME`, and `PATH` in `~/.bashrc`.
+- GitHub remote `origin` added (https://github.com/ARMSTRONG-AISOSA/casual-kitchen-express.git). Not pushed.
+- The first build compiled native code for four chip types and overloaded the laptop. It was stopped, 5.4 GB of x86, x86_64, and armeabi-v7a output was deleted, and builds are now arm64-v8a only.
+- First debug APK of the customer app built (arm64-v8a, Android 10+). The owner installed it on their tablet, connected it to the development server at `http://192.168.0.154:8081`, and saw the CKE placeholder screen.
+- Typed routes (an optional Expo Router feature) were switched off in all three apps: Expo’s CLI couldn’t load it with `expo-router` 58.0.28 in a workspace setup.
+
+**Files created/updated:**
+- `tools/expo-plugins/with-android-architectures.js` — sets arm64-v8a, allows armeabi-v7a for releases, refuses x86 and x86_64
+- `apps/*/app.json` — the plugin added, typed routes removed
+- `apps/*/tsconfig.json`, `apps/customer/.gitignore` — matching Expo’s clean-up
+- `docs/architecture.md` (17.2), `CLAUDE.md` (key rules) — the processor-type rule
+
+**Decisions locked in:**
+- Android builds are arm64-v8a only. Release builds add armeabi-v7a. x86 and x86_64 are never built.
+
+**Open questions / not yet decided:**
+- None new.
+
+**Next step:**
+- Build step 2, the backend foundation: Neon and Hyperdrive setup, the Drizzle schema from architecture.md section 9, Better Auth, and the 16.1 checks (PBKDF2 timing, the username plugin, Durable Object alarms).
 
 ---
 
