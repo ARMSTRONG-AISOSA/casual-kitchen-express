@@ -1,6 +1,6 @@
 # CKE ARCHITECTURE
 
-**Document Status:** Draft v0.21. Records the functions, features, and decisions for the apps and the website. Reviewed end to end on 11 November 2026, build order updated on 12 November 2026.  
+**Document Status:** Draft v0.22. Records the functions, features, and decisions for the apps and the website. Reviewed end to end on 11 November 2026, build order updated on 12 November 2026.  
 **Related documents:** `Casual-Kitchen-Express.md` (business and brand, surface level), `design.md` (UI/UX decisions and page flows), and `list-of-areas.md` (delivery areas).
 
 ---
@@ -235,7 +235,7 @@ Kitchen staff enter walk-in orders at the counter. They are kept separate from o
 | ID | Feature | Notes | Status |
 |---|---|---|---|
 | RID-01 | Sign in with a manager-created account | No public sign-up | Planned |
-| RID-02 | Online and offline toggle | One tap | Planned |
+| RID-02 | Online and offline toggle | One tap. Going offline is blocked while the rider carries an order (**Decided**, 12 November 2026); Release order (RID-12) hands an order back first. | Planned |
 | RID-03 | Order queue | Ready orders with order number, pickup point, drop-off neighbourhood, estimated distance, and the order's load against the rider's budget (for example "Load 5 of 6", section 6) | Planned |
 | RID-04 | Accept order (first to accept wins) | Order disappears from other riders' queues | Planned |
 | RID-05 | Capacity rules | One order by default, up to three if loads fit (section 6) | Planned |
@@ -247,7 +247,7 @@ Kitchen staff enter walk-in orders at the counter. They are kept separate from o
 | RID-11 | Need help | Contacts the manager (unreachable customer, code problem) | Planned |
 | RID-12 | Release order | Returns an order to the queue | Planned |
 | RID-13 | Day summary | Completed deliveries for the day | Planned |
-| RID-14 | Sound and vibration alerts | New orders in the queue, status changes | Planned |
+| RID-14 | Sound and vibration alerts | New orders in the queue, status changes. Vibration from the first build; the sound plays through push notifications, so it arrives with push (**Decided**, 12 November 2026). | Planned |
 | RID-15 | Screen stays awake only on pickup and code entry | Short windows only, to save battery | Planned |
 | RID-16 | Poor-network tolerance | Queue actions retried, last known state shown | Planned |
 | RID-17 | Light location tracking | Only during an active delivery, low frequency, balanced accuracy (section 7) | Planned |
@@ -1034,6 +1034,7 @@ At build time, a seed script fills the database with up to **two months** of his
 
 | Version | Change |
 |---|---|
+| 0.22 | Owner decisions on 12 November 2026: going offline is blocked while a rider carries an order (RID-02), and rider alert sounds come with push notifications, with vibration from the first build (RID-14). |
 | 0.21 | Owner decision on 12 November 2026: frontend first. The app screens are built on demo data before the backend, starting with the customer app (16). Added the development setup note (development build on a real device, typed routes off). |
 | 0.20 | Owner decisions on 11 November 2026: Node.js 24 LTS instead of 26; npm workspaces instead of pnpm; the cancellation limit is a manager setting from 3 to 7 in 7 days (MGR-35); an order's load is shown as a number against the budget ("Load 5 of 6"); planned CancellationRequest, HelpRequest, and Alert records, and batch distance and cancellation limit settings; the repository is ARMSTRONG-AISOSA/casual-kitchen-express. Later the same day: `@cloudflare/vitest-plugin` 1.4.10 replaces the deprecated `@cloudflare/vitest-pool-workers` 0.23.0 (which didn’t support the locked Vitest 5); Android package IDs set (17.2); Uwelu and Idunmwowina added to the delivery range; ESLint 9.39.5 replaces 10.13.0; Expo packages pinned exactly; install-script and security-check notes added (15); Android builds limited to arm64-v8a, with armeabi-v7a added for releases and x86 never built (17.2). |
 | 0.19 | Locked every version in section 15 (Expo SDK 58, React Native 0.88.1, TypeScript 6.0.3, Node.js 26 LTS, and all libraries), with a rule of stable releases at least two weeks old. Decided pnpm, Turborepo, TanStack Query, Gifted Charts, React Native styles with tokens, and no website packages. Manager order list now covers any date range, with search and paging. Online numbers run continuously, and walk-in numbers restart daily. Final uniformity review. |

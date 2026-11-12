@@ -3,7 +3,7 @@
 The working memory for Casual Kitchen Express (CKE). Read this first, then the documents it points to. The top half is the current state; the **Log** at the bottom is append-only history.
 
 **Last updated:** 12 November 2026
-**Stage:** repository setup and machine setup are done. The arm64 debug build of the customer app runs on the owner’s tablet through the development server. **The customer app’s screens are built on demo data** (frontend first, owner decision on 12 November 2026) and are waiting for the owner’s review. Next: the owner’s feedback on the customer screens, then commit them.
+**Stage:** repository setup and machine setup are done. The arm64 debug build of the customer app runs on the owner’s tablet through the development server. **The customer app’s screens are built on demo data and committed** (frontend first, owner decision on 12 November 2026). **The rider app’s screens are built on demo data and committed.** Next: the owner adds to the docs for the Business and Kitchen app before any of it is built.
 
 ---
 
@@ -27,8 +27,8 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and two
 | File | What it is | Authority |
 |---|---|---|
 | `progress.md` | This file: status, rules, next steps, log | Start here |
-| `docs/architecture.md` (v0.21) | Functions, 109 feature IDs (CUS, RID, KIT, MGR, WEB), order lifecycle, data model, decisions, free-tier limits, **locked versions (section 15)**, build order (16), **16.1 to verify at build**, seed data | Wins on anything technical |
-| `docs/design.md` (v0.17) | UI rules per app, screens, page flows, colours, components | Wins on anything visual or UX |
+| `docs/architecture.md` (v0.22) | Functions, 109 feature IDs (CUS, RID, KIT, MGR, WEB), order lifecycle, data model, decisions, free-tier limits, **locked versions (section 15)**, build order (16), **16.1 to verify at build**, seed data | Wins on anything technical |
+| `docs/design.md` (v0.18) | UI rules per app, screens, page flows, colours, components | Wins on anything visual or UX |
 | `docs/Casual-Kitchen-Express.md` (v1.8) | Brand and business, surface level only | Wins on brand (name, colours, logo, tone, menu, packaging) |
 | `docs/list-of-areas.md` | Delivery areas, boundary, landmarks, neighbourhood list | Areas still to confirm on a map |
 | `design/prototypes/*.html` | Clickable prototypes of every screen (open in a browser) | Illustrations only. If they disagree with the docs, **the docs win.** |
@@ -111,7 +111,8 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and two
 | Prototypes | 22 customer screens, 16 rider screens, 19 kitchen and manager screens, and 5 website pages, all automatically click-tested |
 | Repository | npm workspaces and Turborepo monorepo with the three apps, the API Worker, shared packages, and the website. Typecheck, lint, and the first API test pass. Two commits, not pushed. |
 | Android | JDK 17 and the Android SDK installed. arm64-v8a debug build of the customer app installed on the owner’s tablet. |
-| Customer app | Every screen built on demo data, running on the tablet through the development server. Awaiting the owner’s review. |
+| Customer app | Every screen built on demo data and committed. Claude tapped through it on the tablet and fixed what it found. |
+| Rider app | Every screen built on demo data and committed, with its own arm64 debug build on the tablet. |
 
 ---
 
@@ -124,8 +125,9 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and two
 4. **Versions:** all locked in `architecture.md`, section 15. Re-check them for security advisories just before installing.
 5. **Machine setup (done):** JDK 17.0.21 is installed through apt. The Android SDK is in `~/Android/Sdk` (command-line tools 23.0, platform-tools 37.0.1, Platforms 36 and 37, build-tools 36.0.0, NDK 27.1.12297006). `JAVA_HOME`, `ANDROID_HOME`, and the SDK `PATH` are set in `~/.bashrc` (verified: adb 37.0.1 from the SDK). Note: the home router’s DNS (192.168.0.1) times out on some names, which broke apt; using 1.1.1.1 and 8.8.8.8 fixed it.
 6. **GitHub remote:** `origin` is https://github.com/ARMSTRONG-AISOSA/casual-kitchen-express.git. The repository exists and is empty. Nothing is pushed until the owner says so.
-7. **Customer screens (awaiting review):** all customer screens are built on demo data and are not yet committed. The owner reviews them on the tablet first. The map and Google sign-in are stand-ins until their libraries and the backend are added.
-8. **Prototypes lag the docs** on the 11 November decisions (cart, cash amounts, load display, kitchen theme, website cancel line). The docs win, and the prototypes are not being updated.
+7. **App screens on demo data:** the customer and rider screens are committed. The customer map and Google sign-in are stand-ins until their libraries and the backend are added. Rider alert sounds come with push notifications (decided), so alerts only vibrate for now.
+8. **Decided (12 November 2026):** the rider can’t go offline while carrying an order (`architecture.md` RID-02, `design.md` 5.5).
+9. **Prototypes lag the docs** on the 11 November decisions (cart, cash amounts, load display, kitchen theme, website cancel line). The docs win, and the prototypes are not being updated.
 
 **To verify at build** (the full list is in `architecture.md`, 16.1)
 - Better Auth's username plugin, admin create-user, and custom password-hash setting.
@@ -145,7 +147,7 @@ Follow `architecture.md`, section 16 (build order). On 12 November 2026 the owne
 
 1. **Done (11 November 2026).** **Set up the repository** (`ARMSTRONG-AISOSA/casual-kitchen-express`) with npm workspaces and Turborepo, using only the locked versions: apps (customer, rider, business), the API Worker, shared packages (types, Zod validation, API client, brand tokens), the website, `docs/`, `design/`, and `brand/`. Add the MIT `LICENSE` and a README with the single Claude Code credit line.
 2. **In review (12 November 2026).** **Customer app screens on demo data:** browse, item, your order, checkout, address, pay, paid, track, rate, orders, profile, more, deactivate, and delete. Owner review, then commit.
-3. **Rider app screens on demo data** (next, owner decision on 12 November 2026), then the **Business and Kitchen app** screens.
+3. **Done (12 November 2026).** **Rider app screens on demo data.** Then the **Business and Kitchen app** screens, **after the owner adds to the docs** (owner, 12 November 2026).
 4. **Backend foundation:** the Hono Worker, Drizzle schema from `architecture.md` section 9, Neon through Hyperdrive, Better Auth, roles, menu, orders, and order statuses. Run the verification checks in 16.1 early.
 5. **Seed script:** two months of demo data per `architecture.md`, 18.3, as soon as the schema exists.
 6. **Connect the screens to the API:** replace the demo data in each app with real calls, add the real map (MapLibre) and Google sign-in.
@@ -374,5 +376,56 @@ Append a new dated entry after each work session. Never edit or delete earlier e
 
 **Next step:**
 - Commit the customer screens (not pushed), then build the rider app’s screens on demo data.
+
+---
+
+## [2026-11-12] Rider app screens on demo data
+
+**What was done:**
+- Committed the customer screens locally (`0c4bcee`, not pushed).
+- Installed `expo-keep-awake` 58.0.3 (locked in architecture.md 15.2) in the rider app, for keeping the screen awake on pickup and code entry only (RID-15).
+- Built the rider app’s first arm64-v8a debug APK (about 26 minutes) and installed it on the tablet over Wi-Fi. Its development server runs on port 8082, next to the customer app’s on 8081.
+- Built every rider screen from design.md section 5, on demo data: sign in (with “Forgot your password? Ask your manager.”), set a new password at first sign-in, Home (Go online and today’s summary), Queue (yellow new-order banner, “Load 3 of 6”, only orders that fit the remaining capacity), order details and Accept, Order taken, My deliveries (next stop with one big button, later stops nearest first with “Deliver this next”), Pickup (match bag numbers, one “Picked up” for every bag), Drop-off (Navigate hands the address to the phone’s own navigation app; Call is a demo message because the customers are made up), code entry (large keypad, three tries, demo code 4827), Delivered, Need help, Release order (alert colour), Earnings (today, this week, this month, per-delivery pay, demo payouts), Me (read-only profile), and Settings (theme, sound, vibration, sign out).
+- The rider palette from design.md 3.2: black on white, white on black in dark mode, Deep Tomato for alerts, Golden Yellow for new orders, green for success, always with an icon and a label. Type at 18 px and up, main buttons 72 px tall, no images, and no animation.
+- Preview tools on the Me tab (development builds only): what the rider is carrying, pay per delivery (₦1,000 or ₦1,200), whether another rider wins the next accept, and a reset.
+- Tapped through every flow on the tablet and fixed: tab labels running into Android’s navigation buttons, the confirmation message touching the footer buttons, quick keypad taps dropping digits, demo delivery times later than the current time, and a preview pair of orders whose load (7) was over the budget (6).
+
+**Files created/updated:**
+- `apps/rider/app/` — root and tab layouts, and every screen listed above; the placeholder `index.tsx` now redirects to sign-in, new password, or Home
+- `apps/rider/src/data/orders.ts` — demo queue, rider details, payouts
+- `apps/rider/src/state/` — demo store with the capacity rules (architecture.md 6), and the rider theme
+- `apps/rider/src/ui/` — rider building blocks, toast, preview tools; `apps/rider/src/nav.ts` — clears finished task screens from the back stack
+- `apps/rider/package.json`, `package-lock.json` — `expo-keep-awake`
+- `progress.md`
+
+**Decisions locked in:**
+- None new.
+
+**Open questions / not yet decided:**
+- Proposal: disable “Go offline” while the rider still carries orders (open item 9).
+- Rider sound alerts come with push notifications later; for now alerts vibrate only.
+
+**Next step:**
+- The owner reviews the rider app on the tablet (open “CKE Rider”, connect to `http://192.168.0.154:8082`). Then commit (not pushed), then the Business and Kitchen app screens.
+
+---
+
+## [2026-11-12] Rider decisions recorded, rider app committed
+
+**What was done:**
+- The owner approved both rider choices. Recorded in `design.md` (v0.18: 5.2 sound and vibration, 5.5 online toggle) and `architecture.md` (v0.22: RID-02, RID-14), each with a change log row.
+- The Settings screen now says the sound comes with notifications in a later version.
+- Stopped the idle Gradle and Kotlin build helpers left over from the rider build, which held about 4.5 GB of memory. They start again on the next build.
+- Committed the rider app (not pushed).
+
+**Decisions locked in:**
+- The rider can’t go offline while carrying an order.
+- Rider alert sounds come with push notifications; vibration works from the first build.
+
+**Open questions / not yet decided:**
+- None new.
+
+**Next step:**
+- The owner adds to the docs for the Business and Kitchen app. Don’t start building it until then.
 
 ---

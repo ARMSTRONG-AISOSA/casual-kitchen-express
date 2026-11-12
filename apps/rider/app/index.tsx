@@ -1,22 +1,10 @@
-import { fontFamily, space } from "@cke/brand-tokens";
-import { StyleSheet, Text, View } from "react-native";
+import { Redirect } from "expo-router";
+import { useStore } from "../src/state/store";
 
-// Placeholder first screen. The real first screen is sign-in (design.md 5.3).
+// The rider stays signed in on the device (design.md 5.4).
 export default function Index() {
-  return (
-    <View style={styles.screen}>
-      <Text style={styles.title}>CKE Rider</Text>
-    </View>
-  );
+  const { s } = useStore();
+  if (!s.signedIn) return <Redirect href="/sign-in" />;
+  if (s.mustSetPassword) return <Redirect href="/new-password" />;
+  return <Redirect href="/(tabs)" />;
 }
-
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#FFFFFF",
-    padding: space(2),
-  },
-  title: { fontFamily: fontFamily.heading, fontSize: 28, color: "#000000" },
-});

@@ -1,6 +1,6 @@
 # CKE DESIGN
 
-**Document Status:** Draft v0.17. Records UI and UX decisions, design choices, page flows, and design libraries. Reviewed end to end on 11 November 2026.  
+**Document Status:** Draft v0.18. Records UI and UX decisions, design choices, page flows, and design libraries. Reviewed end to end on 11 November 2026, rider decisions added on 12 November 2026.  
 **Related documents:** `Casual-Kitchen-Express.md` (business and brand, surface level), `architecture.md` (functions, features, data, technical decisions), and `list-of-areas.md` (delivery areas).
 
 ---
@@ -295,7 +295,7 @@ Menu photography follows the brand's photography direction. Images are shown in 
 | One-handed use | Controls at the bottom half of the screen. No tiny controls, no precision gestures. |
 | Safe by design | Actions that need attention are meant for when the rider has stopped. Avoid anything that needs reading while moving. |
 | Protect against mistakes | Important actions (such as "Delivered") need a clear, deliberate confirmation. |
-| Sound and vibration | New queue orders and status changes use strong alerts, because the rider may not be looking. |
+| Sound and vibration | New queue orders and status changes use strong alerts, because the rider may not be looking. **Decided (12 November 2026):** vibration works from the first build. The sound plays through push notifications, so it arrives when push is added. Until then the Sound setting is saved and the screen says it comes with notifications. |
 | Theme | The black and white palette (3.2): a white background by default for sunlight, with an optional black dark mode in Settings, which also saves battery on OLED screens |
 | Light on the phone | The app is kept lean to protect battery and avoid heat: no map, no images, no animation, and plain text screens. The screen stays awake only on the pickup and code-entry screens. |
 | Poor-network friendly | Shows the last known state when the connection drops, and retries actions quietly. |
@@ -352,7 +352,7 @@ Menu photography follows the brand's photography direction. Images are shown in 
 | Component | Notes |
 |---|---|
 | Primary bar button | Full-width, very tall: black with white text in light mode, white with black text in dark mode |
-| Online toggle | Very large, with clear on and off labels |
+| Online toggle | Very large, with clear on and off labels. **Decided (12 November 2026):** “Go offline” is disabled while the rider still carries an order, with the line “Finish your deliveries before going offline.”, so no order is left without a rider. Release order (RID-12) is the way out of a delivery. |
 | Order card | Order number large, neighbourhood, distance, and load as a number against the budget ("Load 5 of 6"), with no light, medium, or heavy label |
 | Code entry | Large numeric keypad, four boxes |
 | Status banner | Colour, icon, and label together |
@@ -668,6 +668,7 @@ Every design question is now decided. Anything that needs checking is listed in 
 
 | Version | Change |
 |---|---|
+| 0.18 | Owner decisions on 12 November 2026: in the rider app, “Go offline” is disabled while the rider carries an order, and alert sounds come with push notifications (vibration works from the start). |
 | 0.17 | Owner decisions on 11 November 2026: a separate Your order screen before checkout, rider bottom tabs, the kitchen and manager side rail, walk-in cash amounts above the total only, the rider order load as "Load 5 of 6", Follow phone in the kitchen and manager theme, the cancellation limit set by managers (3 to 7), and no mention of cancelling in the website’s feature list. |
 | 0.16 | Final uniformity review: the delivery fee is flat and set by the manager, the People screen replaces separate Riders and Staff screens, added the historic orders flow and missing screens (new password, order taken, release order, take payment, order sent, switch person), locked the design libraries to match `architecture.md` section 15, and the website uses no packages. |
 | 0.15 | Customer app: cancellation friction (quiet link, reason, confirmation tick), Orders tabs, Deactivate account, Danger zone deletion with typed confirmation, More tab with text pages, customer ID. Manager: deactivate and reactivate (owner protected), editable prices, custom report range, value columns, and the customer leaderboard. |
