@@ -66,6 +66,8 @@ export type State = {
   cart: Line[];
   mode: "delivery" | "pickup";
   open: "open" | "closed" | "paused";
+  /** Today's soup, set by a manager in the Business app (KIT-17). */
+  soupToday: SoupId;
   fee: number;
   pay: "card" | "transfer";
   order: Order | null;
@@ -99,6 +101,7 @@ export const initialState: State = {
   cart: [],
   mode: "delivery",
   open: "open",
+  soupToday: "egusi",
   fee: DEFAULTS.deliveryFee,
   pay: "card",
   order: null,
@@ -108,9 +111,10 @@ export const initialState: State = {
 
 /* ---------- menu and cart helpers ---------- */
 
-export function defaults(it: MenuItem): Options {
+/** Default options: chicken for rice meals, and today's soup with eba. */
+export function defaults(it: MenuItem, soup: SoupId = "egusi"): Options {
   if (it.opts === "protein") return { protein: "chicken" };
-  if (it.opts === "soup") return { soup: "egusi", swallow: "eba" };
+  if (it.opts === "soup") return { soup, swallow: "eba" };
   return {};
 }
 

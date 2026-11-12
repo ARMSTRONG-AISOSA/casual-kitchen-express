@@ -1,6 +1,6 @@
 # CKE ARCHITECTURE
 
-**Document Status:** Draft v0.22. Records the functions, features, and decisions for the apps and the website. Reviewed end to end on 11 November 2026, build order updated on 12 November 2026.  
+**Document Status:** Draft v0.25. Records the functions, features, and decisions for the apps and the website. Reviewed end to end on 11 November 2026, and again on 12 November 2026 after the new staff roles and Finance were added.  
 **Related documents:** `Casual-Kitchen-Express.md` (business and brand, surface level), `design.md` (UI/UX decisions and page flows), and `list-of-areas.md` (delivery areas).
 
 ---
@@ -12,14 +12,14 @@ This document records **what the system does and how it is put together** for th
 | Client | Users |
 |---|---|
 | Customer app | Customers |
-| Business and Kitchen app | Kitchen staff and managers |
+| Business and Kitchen app | Kitchen staff, dispatch officers, account officers, and managers |
 | Rider and Delivery app | Riders |
 | Website | Visitors (promotes the app) |
 
 **Status:** planning and design are complete, and the build now happens locally. `progress.md` tracks what has been built.
 
 **Conventions**
-- Feature IDs use a prefix per client (CUS, RID, KIT, MGR, WEB) so features can be tracked and referenced.
+- Feature IDs use a prefix per client or role (CUS, RID, KIT, MGR, DSP, ACC, WEB) so features can be tracked and referenced.
 - Status values: **Decided** (confirmed), **Planned** (agreed direction), **Proposal** (suggested, not agreed), **Open** (needs a decision), **Later** (not in the first version).
 - Numbers marked "proposal" are starting points to tune, not decisions. Starting values marked decided are confirmed, and are tuned from real use.
 
@@ -42,7 +42,7 @@ Business app                ├──►  Neon (Postgres database)
 
 **Architecture principles**
 1. One custom backend API is the single source of truth. The clients never talk to each other directly.
-2. One account system with roles (customer, rider, kitchen staff, manager).
+2. One account system with roles (customer, rider, kitchen staff, dispatch officer, account officer, manager).
 3. Order changes are pushed in real time to every client that needs them.
 4. Mobile-first and low-bandwidth, because networks and data costs vary.
 5. Images are compressed before they leave the device.
@@ -57,20 +57,40 @@ Business app                ├──►  Neon (Postgres database)
 | Customer | Self, with Google sign-in at checkout | Customer app | Browse, order, pay, track, cancel where allowed, rate, manage profile and addresses |
 | Rider | Manager | Rider app | Go online, accept orders from the queue, deliver, view own earnings and history |
 | Kitchen staff | Manager | Business and Kitchen app (tablet and phone) | Acknowledge, prepare, mark ready, mark collected, toggle sold out, enter walk-in orders at the counter |
-| Manager | The owner, or another manager. The first manager is set up in configuration with the owner's Google email. | Business and Kitchen app (tablet and phone) | Everything kitchen staff can do, plus menu, prices, accounts, settings, reports, refunds |
+| Dispatch officer | Manager | Business and Kitchen app (tablet and phone) | Coordinates the kitchen, riders, and customers: alerts, orders (with full customer contact details), the live riders panel, assigning an unaccepted order to a rider, rider help requests, cancellation requests (approve or decline, no other refunds), and settings except Pricing and pay and Restaurant contact |
+| Account officer | Manager | Business and Kitchen app (tablet and phone) | Record keeping and audit: reports, rider pay (including marking payouts as paid), and the Finance menu (monthly statement, daily cash-up sign-off, audit trail, exports, close month) |
+| Manager | The owner, or another manager. The first manager is set up in configuration with the owner's Google email. | Business and Kitchen app (tablet and phone) | Everything the other staff roles can do, plus menu, prices, accounts, all settings, refunds |
 
-Permissions are role-based and enforced by the backend, never only by the app screens.
+Permissions are role-based and enforced by the backend, never only by the app screens. Hiding a menu is not enough: each endpoint checks the role (12).
+
+### 3.0 What each staff role sees in the Business and Kitchen app (decided 12 November 2026)
+
+| Menu | Kitchen staff | Dispatch officer | Account officer | Manager |
+|---|---|---|---|---|
+| Board, Walk-in, Sold out | Yes | No | No | Yes |
+| Alerts | Yes | Yes | No | Yes |
+| Dashboard | No | No | No | Yes |
+| Orders (with customer contact details on online orders) | No | Yes | No | Yes |
+| Riders (live panel) | No | Yes | No | Yes |
+| People, Menu, Demo | No | No | No | Yes |
+| Rider pay | No | No | Yes | Yes |
+| Reports | No | No | Yes | Yes |
+| Finance | No | No | Yes | Yes |
+| Settings | No | Yes, without Pricing and pay and Restaurant contact | No | Yes, every section |
+| Cash-up at close | Yes (enters the count) | No | Signs it off | Yes |
+
+Dispatch officers can change hours, pausing, the delivery area, rider capacity, the tracking mode, and the cancellation limit. Only managers change the delivery fee, rider pay, and the restaurant’s WhatsApp number.
 
 ### 3.1 Staff accounts and profiles
 
-Riders, kitchen staff, and managers are **staff**. A manager creates each rider and kitchen staff account and enters the whole profile, and can edit it later. Riders and kitchen staff sign in with a username and password, and managers sign in with Google (12.1). A new manager is added by their Google email.
+Riders, kitchen staff, dispatch officers, account officers, and managers are **staff**. A manager creates each staff account and enters the whole profile, and can edit it later. Riders, kitchen staff, dispatch officers, and account officers sign in with a username and password, and managers sign in with Google (12.1). A new manager is added by their Google email.
 
 | Field | Notes | Required |
 |---|---|---|
-| Staff ID | Created automatically, unique, and never reused. A readable staff code uses a role prefix, for example R-001 for riders, K-001 for kitchen staff, and M-001 for managers. | Automatic |
+| Staff ID | Created automatically, unique, and never reused. A readable staff code uses a role prefix, for example R-001 for riders, K-001 for kitchen staff, D-001 for dispatch officers, A-001 for account officers, and M-001 for managers. | Automatic |
 | Full name | | Yes |
-| Username and temporary password | Riders and kitchen staff only. The password must be changed at the first sign-in. | Yes |
-| Role | The system role: rider, kitchen staff, or manager. It controls what the person can do. | Yes |
+| Username and temporary password | Every staff role except managers. The password must be changed at the first sign-in. | Yes |
+| Role | The system role: rider, kitchen staff, dispatch officer, account officer, or manager. It controls what the person can do (3.0). | Yes |
 | Job title | A free-text label, for example "Head cook" or "Delivery rider". It does not change permissions. | No |
 | Gender | Optional, with "prefer not to say" | No |
 | Phone number | Needed for riders, so the manager can reach them | Yes for riders |
@@ -79,8 +99,9 @@ Riders, kitchen staff, and managers are **staff**. A manager creates each rider 
 
 **Rules**
 - Accounts are **deactivated, never deleted**, so order history and reports stay accurate.
-- Any manager can deactivate or reactivate riders, kitchen staff, and other managers. A deactivated person is signed out straight away and can’t sign in until reactivated. **The owner account can’t be deactivated.**
-- Personal details (phone, home address, gender) are visible only to managers and to the person themself. Photos are access-controlled, never public.
+- Any manager can deactivate or reactivate any staff account, including other managers. A deactivated person is signed out straight away and can’t sign in until reactivated. **The owner account can’t be deactivated.**
+- Staff personal details (phone, home address, gender) are visible only to managers and to the person themself.
+- A customer’s name, phone, and delivery address on an online order are visible to managers and dispatch officers, who use them to coordinate deliveries. Opening the details isn’t logged, but every Call or WhatsApp tap is recorded in the audit log. Photos are access-controlled, never public.
 - Only collect what will be used. Home address and gender are optional, and the privacy notes state why each item is collected.
 - Customers see a rider's first name only.
 
@@ -114,7 +135,7 @@ Placed, Confirmed, Acknowledged, Preparing, then **Ready for collection** (notif
 |---|---|---|
 | Delayed | Order stuck in a stage too long, or traffic delay | "Running a little late" with the reason |
 | Item unavailable | Staff cannot make an item | Message from the manager, with options |
-| Cancelled | Cancelled by the customer (before the kitchen acknowledges) or by a manager | Reason and refund status |
+| Cancelled | Cancelled by the customer (before the kitchen acknowledges), by a manager, or after a cancellation request approved by a dispatch officer or a manager | Reason and refund status |
 | Delivery issue | Customer unreachable or code cannot be entered | "Your rider is trying to reach you" |
 | Refund pending / completed | After a cancellation or issue | Refund status |
 
@@ -122,7 +143,7 @@ Placed, Confirmed, Acknowledged, Preparing, then **Ready for collection** (notif
 
 - A 4-digit code is generated when the order is placed and shown on the customer's tracking screen.
 - The code is stored hashed, and wrong attempts are rate-limited.
-- The rider enters the code to close the delivery. If the code cannot be used, the rider taps "Need help" and a manager can approve a manual completion, which is recorded in the audit log.
+- The rider enters the code to close the delivery. If the code cannot be used, the rider taps "Need help" and a dispatch officer or a manager can approve a manual completion, which is recorded in the audit log.
 
 ### 4.5 Who did what
 
@@ -137,7 +158,12 @@ Every status change is recorded against the person who made it, using their staf
 | Delivered | The rider, confirmed by the customer's 4-digit code |
 | Walk-in order placed and paid | The kitchen staff member or manager who entered it |
 | Walk-in ready and collected | The staff member who tapped each step |
+| Assigned to a rider by dispatch | The dispatch officer or manager who assigned it (DSP-05) |
+| Cancellation requests and manual completions | The dispatch officer or manager who decided them |
 | Cancellations, refunds, and manual overrides | The manager (or, for walk-in cancellations before ready, the staff member) |
+| Cash-up counted and signed off | The person on the counter who counted it, and the person who signed it off, whichever of them is signed in: an account officer or any manager, including the owner (ACC-04) |
+| Month closed | The account officer or manager who closed it (ACC-07) |
+| Rider payout marked as paid | The account officer or manager who marked it (ACC-02) |
 
 **Shared kitchen tablet (decided).** Whoever is on shift, meaning signed in on the tablet, is recorded as the person acting. Staff sign in on the tablet with their own username and password at the start of their shift.
 - The tablet's top bar always shows who is signed in, with their name and photo.
@@ -151,21 +177,21 @@ Every status change is recorded against the person who made it, using their staf
 
 Payments are simulated, so refunds are simulated too. The statuses, rules, and records are real, and no money moves.
 
-| Stage | Customer | Manager | Refund |
+| Stage | Customer | Staff | Refund |
 |---|---|---|---|
-| Placed or confirmed (before the kitchen acknowledges) | Can cancel, after picking a reason and ticking a confirmation | Can cancel | Full, automatic |
-| Acknowledged or preparing | Can request cancellation | Approves or declines | Full if approved before it is ready |
-| Ready, rider accepted, or picked up | Cannot cancel. Can contact the business. | Decides case by case | At the manager's discretion |
-| An item cannot be made | Told, and offered a substitute or a refund | Removes the item or cancels the order | Partial or full |
-| Delivery issue (customer unreachable) | Contacted by the rider | Decides after the rider's attempts | At the manager's discretion |
+| Placed or confirmed (before the kitchen acknowledges) | Can cancel, after picking a reason and ticking a confirmation | A manager can cancel | Full, automatic |
+| Acknowledged or preparing | Can request cancellation | A dispatch officer or a manager approves or declines (DSP-06) | Full if approved before it is ready |
+| Ready, rider accepted, or picked up | Cannot cancel. Can contact the business. | A manager decides case by case | At the manager's discretion |
+| An item cannot be made | Told, and offered a substitute or a refund | A manager removes the item or cancels the order | Partial or full |
+| Delivery issue (customer unreachable) | Contacted by the rider | A manager decides after the rider's attempts | At the manager's discretion |
 
 - Refund statuses are "Refund pending" and then "Refund completed" (simulated).
 - The delivery fee is refunded with the order if the order is cancelled before pickup.
-- Every cancellation and refund records the reason, the manager, and the time in the audit log.
+- Every cancellation and refund records the reason, the staff member who decided it, and the time in the audit log.
 - The customer’s app shows the cancel option only while cancelling is allowed, as a quiet text link rather than a button.
 - **Friction (decided):** the customer must pick a reason and tick a confirmation before Cancel or Send request works.
-- **Repeat cancellations (decided):** after a set number of cancellations in 7 days, the customer can only request a cancellation, and a manager decides. The app tells them why. The limit is 3 by default, and managers can set it anywhere from 3 to 7 in Settings (MGR-35). The 7-day window is fixed.
-- Cancellation requests are stored as records (CancellationRequest, section 9) with the reason, status (pending, approved, or declined), the deciding manager, and the times.
+- **Repeat cancellations (decided):** after a set number of cancellations in 7 days, the customer can only request a cancellation, and a dispatch officer or a manager decides. The app tells them why. The limit is 3 by default, and managers can set it anywhere from 3 to 7 in Settings (MGR-35). The 7-day window is fixed.
+- Cancellation requests are stored as records (CancellationRequest, section 9) with the reason, status (pending, approved, or declined), the staff member who decided it (a dispatch officer or a manager), and the times.
 - Walk-in orders can be cancelled by staff before they are ready, with a reason. The payment is refunded (simulated), and the cancellation is recorded against the staff member.
 
 ### 4.7 Delivery area and order acceptance rules
@@ -220,7 +246,7 @@ Kitchen staff enter walk-in orders at the counter. They are kept separate from o
 | CUS-16 | Profile photo with crop and compression | See section 8 | Planned |
 | CUS-17 | Account deletion (high friction) | In a red Danger zone at the bottom of Profile. The customer must tick a box and type DELETE ACCOUNT exactly before the button works. Deactivating is offered as the gentler choice. | **Decided** |
 | CUS-18 | Rating after delivery | One tap | Planned |
-| CUS-19 | Contact the restaurant | A button that opens the WhatsApp chat (https://wa.me/2349095466063) | **Decided** |
+| CUS-19 | Contact the restaurant | A button that opens the WhatsApp chat. The number comes from a manager setting (MGR-36), https://wa.me/2349095466063 by default. | **Decided** |
 | CUS-20 | Order cancellation (with friction) | Rules in 4.6. The option is a quiet text link, shown only while cancelling is allowed. The customer must pick a reason and tick a confirmation before Cancel or Send request works. | **Decided** |
 | CUS-21 | Demo payment notice | A small, clear label on payment screens ("Demo payment. No money is taken.") | Planned |
 | CUS-22 | Sign-in | Continue with Google. No passwords (section 12.1). | **Decided** |
@@ -244,22 +270,23 @@ Kitchen staff enter walk-in orders at the counter. They are kept separate from o
 | RID-08 | Navigation to the customer | Opens the rider's installed navigation app (no map inside the rider app, section 7) | Planned |
 | RID-09 | Call the customer | From the app, using the contact phone | Planned |
 | RID-10 | Delivery code entry | Completes the delivery | Planned |
-| RID-11 | Need help | Contacts the manager (unreachable customer, code problem) | Planned |
+| RID-11 | Need help | Contacts dispatch, meaning a dispatch officer or a manager (unreachable customer, code problem). Handled under DSP-04. | Planned |
 | RID-12 | Release order | Returns an order to the queue | Planned |
 | RID-13 | Day summary | Completed deliveries for the day | Planned |
 | RID-14 | Sound and vibration alerts | New orders in the queue, status changes. Vibration from the first build; the sound plays through push notifications, so it arrives with push (**Decided**, 12 November 2026). | Planned |
 | RID-15 | Screen stays awake only on pickup and code entry | Short windows only, to save battery | Planned |
 | RID-16 | Poor-network tolerance | Queue actions retried, last known state shown | Planned |
 | RID-17 | Light location tracking | Only during an active delivery, low frequency, balanced accuracy (section 7) | Planned |
-| RID-18 | Earnings | Today, this week, this month, and a per-delivery list with each delivery's pay and its simulated payout status (18.2) | **Decided** |
+| RID-18 | Earnings | Today, this week, this month, and all time; an Owed list of everything not paid out yet (by day, with the total); today’s deliveries with each one’s pay; and the payout history (18.2) | **Decided** |
 | RID-19 | Lean by design | No maps, images, or animation in the app; power rules in section 7 | Planned |
 | RID-20 | Password handled by the manager | No forgot-password screen. The sign-in screen tells the rider to ask the manager, who resets the password. After a reset, the rider must set a new password at the next sign-in. | **Decided** |
 | RID-21 | My profile | A read-only view of their own details and staff ID. No photo is shown, to keep the app image-free. | Planned |
 | RID-22 | Settings | Theme (light, dark, or follow the phone), and sound and vibration | Planned |
+| RID-23 | Order assigned by dispatch | When a dispatch officer assigns an order (DSP-05), it joins the rider’s deliveries with a strong alert and a yellow “Assigned to you by dispatch” banner. The rider can release it like any order (RID-12). | **Decided** |
 
 ### 5.3 Business and Kitchen app
 
-One app, two roles. The tablet (counter) shows the full order board, and phones show alerts and quick actions.
+One app for four staff roles: kitchen staff, dispatch officers, account officers, and managers. Each sees only its own menus (3.0). The tablet (counter) shows the full order board, and phones show alerts and quick actions.
 
 **Kitchen**
 
@@ -278,18 +305,21 @@ One app, two roles. The tablet (counter) shows the full order board, and phones 
 | KIT-11 | Staff attribution | Each action is recorded against whoever is signed in on the tablet or phone (4.5) | **Decided** |
 | KIT-12 | On-shift sign-in on the tablet | Staff sign in with their own username and password, the top bar shows who is signed in, "Switch person" hands over, and the tablet signs out at 8:30 pm | **Decided** |
 | KIT-13 | Walk-in order entry | Staff enter an order at the counter with big item tiles by category, choose eat in or take away, add an optional name, and see the order number to call out (4.8) | **Decided** |
-| KIT-14 | Walk-in payment at the counter | Cash (amount received, change due) or online (card or transfer), all simulated, taken at the point of placing the order | **Decided** |
+| KIT-14 | Walk-in payment at the counter | Cash (amount received, change due; the amount is **Exact** or typed into an **Other amount** box, which can’t be less than the total) or online (card or transfer), all simulated, taken at the point of placing the order | **Decided** |
 | KIT-15 | Walk-in tickets on the board | A "Walk-in" badge, eat in or take away shown, and the steps Preparing, Ready, and Collected | **Decided** |
 | KIT-16 | Board filter | Filter the board to All, Online, or Walk-in | **Decided** |
+| KIT-17 | Soup of the day | Kitchen staff pick today’s soup (for example egusi, efo riro, or ogbono) on the Sold out screen each morning, and managers (including the owner) can also pick it there or on the Menu screen. The change is written to the audit log. The customer app shows it straight away on the menu and the dish screen, and only today’s soup can be ordered. | **Decided** |
 
 **Manager**
+
+Account officers also use the reports (MGR-17 to MGR-23, MGR-27, and MGR-34, the leaderboard as noted there) and rider pay (MGR-30). Dispatch officers also use the order list and detail (MGR-13, MGR-24), alerts (MGR-14), manual completion (MGR-16), and the Settings sections in 3.0. Everything else here is for managers only.
 
 | ID | Feature | Notes | Status |
 |---|---|---|---|
 | MGR-01 | Live dashboard | Today's orders and sales with the online and walk-in split, and orders in progress | Planned |
-| MGR-02 | Rider overview | Who is online, who is delivering what | Planned |
+| MGR-02 | Rider overview | Who is online, who is delivering what. Built as the Riders screen (DSP-03). | Planned |
 | MGR-03 | Create, edit, deactivate, and reactivate rider accounts | Username and password, plus the profile in 3.1 (name, role, job title, gender, phone, home address, photo). The manager enters everything and can edit it later. | **Decided** |
-| MGR-04 | Create, edit, deactivate, and reactivate kitchen staff and manager accounts | The same profile fields. Kitchen staff use a username and password, and managers use Google. The owner account can’t be deactivated. | **Decided** |
+| MGR-04 | Create, edit, deactivate, and reactivate kitchen staff, dispatch officer, account officer, and manager accounts | The same profile fields. Kitchen staff, dispatch officers, and account officers use a username and password, and managers use Google. The owner account can’t be deactivated. | **Decided** |
 | MGR-05 | Menu management | Add, edit, delete items | Planned |
 | MGR-06 | Item images with compression | Upload, crop, compress, replace, remove (section 8) | Planned |
 | MGR-07 | Prices and availability | Edit prices, mark sold out | Planned |
@@ -299,28 +329,56 @@ One app, two roles. The tablet (counter) shows the full order board, and phones 
 | MGR-11 | Delivery area settings | The neighbourhood list, with each area flagged in or out of range. The boundary is Oluku Market in the north and Uselu on the city side (4.7). | Planned |
 | MGR-12 | Rider capacity settings | Load values and capacity budget (section 6) | Planned |
 | MGR-13 | Order list and search | Today, yesterday, or **any date range back to the first order**. Search by order number or customer ID. Filter by channel (online or walk-in), status, staff member, and payment method. Sort by time placed or amount. Shows the count and total value, and loads long ranges in pages. | **Decided** |
-| MGR-14 | Alerts | Order unaccepted by riders, order stuck, item unavailable | Planned |
+| MGR-14 | Alerts | Order unaccepted by riders, order stuck, item unavailable, a rider’s help request, and a customer’s cancellation request (the Alert record in section 9) | Planned |
 | MGR-15 | Cancellations and refunds | Rules in 4.6, with simulated refunds | **Decided** |
-| MGR-16 | Manual completion approval | For delivery-code problems | Planned |
+| MGR-16 | Manual completion approval | For delivery-code problems. Dispatch officers can approve too (DSP-04). | Planned |
 | MGR-17 | Order volume reports | Orders by hour, day, week, and month; peak times; delivery and pickup split; online and walk-in split; completed and cancelled | Planned |
 | MGR-18 | Sales reports | Total sales, average order value, payment method split (cash, card, transfer), online and walk-in split, refunds | Planned |
 | MGR-19 | Timing reports | Time the order was placed, time to acknowledge, preparation time, wait for a rider, delivery time, and total time; averages and slowest orders | Planned |
 | MGR-20 | Rider and area reports | Per rider: deliveries, order value delivered, delivery fees, rider pay, and average delivery time. Per neighbourhood: orders and average delivery time. | Planned |
 | MGR-21 | Menu reports | Top items, revenue by item and category, how often items sell out | Planned |
 | MGR-22 | Customer reports | New and returning customers, order frequency (online orders only) | Planned |
-| MGR-23 | Historic data | 7, 30, or 60 days, or a **custom range** of dates; comparison with the previous period of the same length where data exists; CSV export; order history is kept permanently | **Decided** |
+| MGR-23 | Historic data | 7, 30, or 60 days, or a **custom range** of dates; CSV export; order history is kept permanently | **Decided** |
 | MGR-24 | Order-level detail | Full timeline of every order with each status timestamp | Planned |
 | MGR-25 | Reset a rider or staff password | Shows a temporary password once. The person must change it at the next sign-in. | **Decided** |
 | MGR-26 | Manager sign-in | Managers continue with Google, so there is no password to recover (section 12.1) | **Decided** |
 | MGR-27 | Kitchen staff reports | Per staff member: orders handled (online and walk-in), order value handled, and average preparation time. Shows who was signed in (4.5). | Planned |
 | MGR-28 | Demo controls | Create orders, auto-play a simulated kitchen and riders, and set the speed (18.4) | Planned |
 | MGR-29 | Reset demo data | Wipes and regenerates the historic mock data (18.3), with confirmation | Planned |
-| MGR-30 | Rider pay and payouts | Each rider's owed balance and per-delivery pay, mark a period as paid (simulated), and payout history | Planned |
+| MGR-30 | Rider pay and payouts | Each rider's owed balance and per-delivery pay, mark a period as paid (simulated), and payout history. Account officers too (ACC-02). | Planned |
 | MGR-31 | Pricing and pay settings | The delivery fee (₦1,500 by default) and the rider pay per delivery (₦1,000 by default) are both editable. Changes show in the customer app and rider app straight away, apply to new orders and deliveries only, and are written to the audit log. Rider pay can’t exceed the delivery fee. | **Decided** |
 | MGR-32 | Rider tracking mode setting | Light (default) or milestones only (section 7) | **Decided** |
 | MGR-33 | Channel filter and sort | The order list, dashboard, and reports can be filtered to online, walk-in, or all, and sorted by time placed, amount, staff member, or payment method | **Decided** |
-| MGR-34 | Customer leaderboard | Customers ranked by customer ID for any report period, sortable by total spent or number of orders. Managers only, online orders only. | **Decided** |
+| MGR-34 | Customer leaderboard | Customers ranked by customer ID for any report period, sortable by total spent or number of orders. Managers only, online orders only. **Proposal (12 November 2026):** account officers see it too, as they have Reports; awaiting the owner. The demo app shows it to account officers for now. | **Decided** |
 | MGR-35 | Cancellation limit setting | The number of cancellations in 7 days after which a customer can only request a cancellation. 3 by default, adjustable from 3 to 7. Changes are written to the audit log. (4.6) | **Decided** |
+| MGR-36 | Restaurant contact number | The WhatsApp number behind “Contact the restaurant” in the customer app (CUS-19). One editable number, managers only. The change shows straight away and is written to the audit log. | **Decided** |
+
+### 5.3.1 Dispatch officer (Business and Kitchen app)
+
+Decided on 12 November 2026. Managers can do all of this too.
+
+| ID | Feature | Notes | Status |
+|---|---|---|---|
+| DSP-01 | Dispatch officer role | Sees Alerts, Orders, Riders, and Settings (without Pricing and pay and Restaurant contact), as in 3.0 | **Decided** |
+| DSP-02 | Customer contact on online orders | The order detail shows the customer’s name, customer ID, phone, and delivery address (label, neighbourhood, landmark), with **Call** and **WhatsApp** buttons. Walk-in orders show only the optional name. | **Decided** |
+| DSP-03 | Live riders panel | Riders online now, what each is carrying, their load against the budget, and a Call rider button. It also covers the manager’s rider overview (MGR-02). | **Decided** |
+| DSP-04 | Rider help requests | Takes riders’ “Need help” requests from Alerts, contacts the rider or customer, and approves a manual completion or keeps the order open (MGR-16) | **Decided** |
+| DSP-05 | Assign an order to a rider | An order waiting for a rider can be assigned to a chosen online rider whose remaining capacity fits it (section 6). It goes straight into that rider’s deliveries (RID-23), and the assignment is recorded. | **Decided** |
+| DSP-06 | Cancellation requests | Approves or declines customers’ cancellation requests. An approved request refunds under the rules in 4.6. Other refunds stay with managers. | **Decided** |
+
+### 5.3.2 Account officer and Finance (Business and Kitchen app)
+
+Decided on 12 November 2026. Managers can do all of this too. Reports are for running the business; Finance holds fixed monthly figures for record keeping and the accountant’s monthly report.
+
+| ID | Feature | Notes | Status |
+|---|---|---|---|
+| ACC-01 | Account officer role | Sees Reports, Rider pay, and Finance, as in 3.0 | **Decided** |
+| ACC-02 | Rider payouts | Marks a rider’s owed period as paid (simulated), like MGR-30. Each payout records who paid and when. | **Decided** |
+| ACC-03 | Monthly statement | For any month: sales by channel (online, walk-in) and by payment method (cash, card, transfer), refunds, delivery fees collected, rider pay earned and paid, cash variances, and the net figure. Each line opens the orders behind it. | **Decided** |
+| ACC-04 | Daily cash-up | At close, the person on the counter enters the cash counted in the drawer. The app shows the cash expected from that day’s walk-in cash payments, minus cash refunds, and the difference. The account officer (or a manager) reviews each day and signs it off, with a note for any difference. The sign-off records whichever of them is signed in: an account officer or any manager, including the owner, by name and staff ID, with the time; the cash-up shows it, and the audit trail lists it. | **Decided** |
+| ACC-05 | Audit trail | Every money-related action in one list: refunds, payouts, price and pay changes, cash-ups and sign-offs, and month closes, with who, what, and when. Filter by date, person, and kind. | **Decided** |
+| ACC-06 | Finance export | The monthly statement, the cash-ups, and the audit trail as CSV and PDF | **Decided** |
+| ACC-07 | Close month | Locks a month’s figures once every day is signed off. After that, a correction is entered as an adjustment in the next open month, with a reason, so closed figures never change. The close records who closed the month (an account officer or a manager) and when, shown on the month. | **Decided** |
 
 ### 5.4 Website
 
@@ -445,7 +503,7 @@ Entities and key fields, as a starting point for the Drizzle schema. Better Auth
 | User | id, email, password or sign-in method, role, status, created at |
 | CustomerProfile | user id, customer code (unique, for example C-00418), name, gender (optional), photo, default address id, account status (active, deactivated, or deleted), recent cancellation count |
 | Address | id, user id, label, street, area or landmark, neighbourhood, contact phone, coordinates, is default |
-| StaffProfile | user id, staff code (unique, never reused), full name, username, role (rider, kitchen staff, manager), job title, gender (optional), phone, home address (optional), photo (link), status (active or deactivated), created by, created at |
+| StaffProfile | user id, staff code (unique, never reused), full name, username, role (rider, kitchen staff, dispatch officer, account officer, manager), job title, gender (optional), phone, home address (optional), photo (link), status (active or deactivated), created by, created at |
 | RiderState | user id, status (online or offline), capacity budget override |
 | MenuCategory | id, name, sort order |
 | MenuItem | id, category id, name, description, price, image id, available, station, load value, archived |
@@ -454,7 +512,7 @@ Entities and key fields, as a starting point for the Drizzle schema. Better Auth
 | OrderItem | id, order id, item id, name and price at time of order, quantity, options, notes |
 | OrderStatusEvent | id, order id, status, actor (a staff ID, a customer ID, or the system), time |
 | Payment | id, order id, method (card, transfer, or cash, all simulated), demo reference, amount, cash received and change due (cash only), taken by (walk-ins), status. No card numbers are stored. |
-| Delivery | id, order id, rider id, batch group, stop number, picked up at, delivered at, distance, rider pay |
+| Delivery | id, order id, rider id, batch group, stop number, assigned by (a dispatch officer or manager, empty when the rider accepted from the queue), picked up at, delivered at, distance, rider pay |
 | Payout | id, rider id, period start and end, amount, status (owed or paid, simulated), paid at, paid by |
 | Refund | id, order id, amount, kind (full or partial), reason, status (pending or completed, simulated), requested by, decided by, times |
 | Rating | id, order id, customer id, stars, time |
@@ -462,12 +520,15 @@ Entities and key fields, as a starting point for the Drizzle schema. Better Auth
 | DeviceToken | id, user id, platform, token |
 | Notification | id, user id, type, content, sent at |
 | MediaAsset | id, owner, storage path, size, dimensions, format |
-| Setting | online order hours, walk-in hours, tablet sign-out time, pause flag, delivery boundary, capacity defaults, batch drop-off distance (about 1.5 km by default), rider tracking mode, delivery fee (₦1,500 by default), rider pay per delivery (₦1,000 by default), cancellation limit (3 in 7 days by default, adjustable from 3 to 7). Price and limit changes are written to the audit log. |
+| Setting | online order hours, walk-in hours, tablet sign-out time, pause flag, delivery boundary, capacity defaults, batch drop-off distance (about 1.5 km by default), rider tracking mode, delivery fee (₦1,500 by default), rider pay per delivery (₦1,000 by default), cancellation limit (3 in 7 days by default, adjustable from 3 to 7), restaurant WhatsApp number (MGR-36), soup of the day (KIT-17). Price, limit, and contact changes are written to the audit log. |
+| CashUp | id, business date, cash expected, cash counted, difference, counted by, counted at, signed off by, signed off at, note |
+| MonthClose | id, month, closed by, closed at, snapshot of the statement totals |
+| Adjustment | id, month it applies to, amount, reason, related order or cash-up, entered by, time |
 | CancellationRequest (planned) | id, order id, customer id, reason, status (pending, approved, or declined), decided by, requested at, decided at |
 | HelpRequest (planned) | id, order id, rider id, reason (customer unreachable, code doesn’t work, or other), status (open or resolved), resolution (manual completion or kept open), resolved by, times |
 | Alert (planned) | id, kind (order waiting for a rider, order stuck, item unavailable, cancellation request, rider needs help), order id, related request id, created at, cleared by, cleared at |
-| AuditLog | id, actor, action, target, time |
-| ReportView | Pre-computed summaries (daily and hourly totals, timings, per rider, per item) so manager reports stay fast and historic data stays queryable |
+| AuditLog | id, actor, action, kind (money, account, setting, contact, or other), target, before and after values, time |
+| ReportView | Pre-computed summaries (daily and hourly totals, timings, per rider, per item, and monthly finance totals) so reports and Finance stay fast and historic data stays queryable |
 
 ---
 
@@ -478,6 +539,8 @@ Entities and key fields, as a starting point for the Drizzle schema. Better Auth
 - Status changes to the customer's tracking screen.
 - New ready orders appear in rider queues, and accepted orders disappear from other riders' queues immediately.
 - Rider location to the customer while delivering, at the low frequency set in section 7.
+- Alerts (an order waiting for a rider, a rider’s help request, a cancellation request) to dispatch officers and managers, and an assigned order to its rider (RID-23).
+- Setting changes that customers see straight away: prices, the restaurant’s WhatsApp number, and the soup of the day.
 
 **Race handling:** two riders tapping "Accept" at the same time must result in one winner, enforced by the backend.
 
@@ -500,9 +563,9 @@ Entities and key fields, as a starting point for the Drizzle schema. Better Auth
 ## 12. SECURITY AND PRIVACY
 
 - Role-based access enforced in the custom API. Because access is not handled by database-level row rules, every endpoint checks the caller's role and ownership of the data.
-- Customers and managers sign in with Google. Rider and kitchen staff accounts are created by managers and use a username and password (12.1).
+- Customers and managers sign in with Google. Every other staff account is created by a manager and uses a username and password (12.1).
 - Delivery codes are hashed and rate-limited.
-- Manual overrides and account changes are written to an audit log.
+- Manual overrides, account changes, money actions, and customer contact taps are written to an audit log. A closed month can’t be edited (ACC-07).
 - Personal data collected: for customers, email, address, optional gender, name, and photo; for staff, name, phone, optional gender and home address, and photo. Each item has a stated purpose, in line with Nigeria's data protection rules, and customers can deactivate or delete their account in the app.
 - Rider location is collected only while a rider is online with an active delivery.
 - All traffic is encrypted, and secrets are never stored in the apps.
@@ -512,7 +575,7 @@ Entities and key fields, as a starting point for the Drizzle schema. Better Auth
 
 ### 12.1 Sign-in and password recovery (decided)
 
-**Do we need a "forgot password" feature?** No. Customers and managers use Google sign-in, which has no password, and riders and kitchen staff have passwords that a manager resets.
+**Do we need a "forgot password" feature?** No. Customers and managers use Google sign-in, which has no password, and riders and the other staff roles have passwords that a manager resets.
 
 | Account | Created by | Sign-in | Forgot-password feature? | Recovery |
 |---|---|---|---|---|
@@ -520,6 +583,8 @@ Entities and key fields, as a starting point for the Drizzle schema. Better Auth
 | Manager | The owner or another manager | Continue with Google. No password. | No | Nothing to recover |
 | Rider | A manager, who also enters the profile (3.1) | Username and a password set by the manager | No self-service | The manager resets it, and a temporary password is shown once |
 | Kitchen staff | A manager | Same as riders | No self-service | Same as riders |
+| Dispatch officer | A manager | Same as riders | No self-service | Same as riders |
+| Account officer | A manager | Same as riders | No self-service | Same as riders |
 
 **Why:** a forgot-password flow needs email sending, and so does an email one-time-code sign-in. Free email services typically require a verified sending domain to reach other people. Resend's free plan, for example, allows 3,000 emails a month, 100 a day, and one verified domain, and a domain usually costs a small yearly fee (not verified here). Google sign-in needs no email sending, no domain, and no password, and it is one tap on Android.
 
@@ -558,7 +623,7 @@ Entities and key fields, as a starting point for the Drizzle schema. Better Auth
 | Password sign-in (riders and staff) | **The risk.** Workers Free allows about 10 ms of CPU per request. Common password hashes (bcrypt, scrypt) take about 70 ms or more and fail. The workable option is PBKDF2 through the native Web Crypto API. The Workers runtime refuses more than 100,000 iterations, whatever the plan. Measurements from open-source projects: about 13 ms at 100,000 iterations and about 6 ms at 50,000. The usual OWASP recommendation of 600,000 cannot run on Workers. |
 | Not verified | Better Auth's username plugin, its admin features for creating users, and its custom password-hash setting. To confirm when building. |
 
-**Decided: riders and kitchen staff keep username and password.** Hash with native PBKDF2 at about 50,000 iterations, measured on a real deployment, and rate-limit logins with a Durable Object. This is weaker than the usual recommendation, which is acceptable because these accounts guard only simulated data, and the trade-off is stated here. The alternative is Google sign-in for staff as well, which removes passwords completely.
+**Decided: riders and kitchen staff keep username and password** (and so do dispatch officers and account officers, decided 12 November 2026). Hash with native PBKDF2 at about 50,000 iterations, measured on a real deployment, and rate-limit logins with a Durable Object. This is weaker than the usual recommendation, which is acceptable because these accounts guard only simulated data, and the trade-off is stated here. The alternative is Google sign-in for staff as well, which removes passwords completely.
 
 ---
 
@@ -618,7 +683,7 @@ Entities and key fields, as a starting point for the Drizzle schema. Better Auth
 | Price changes | Fixed prices; editable by managers | Editable in Settings, shown in the customer and rider apps straight away, for new orders and deliveries only | **Decided** |
 | Cancellation friction | One tap; reason and confirmation | A reason and a confirmation tick, with a limit after 3 cancellations in 7 days (managers can set 3 to 7) | **Decided** |
 | Customer account removal | Delete only; deactivate and delete | Deactivate (reversible) and delete (Danger zone, tick, and typed DELETE ACCOUNT) | **Decided** |
-| Customer IDs and leaderboard | No ranking; manager leaderboard; public leaderboard | Unique customer IDs and a manager-only leaderboard by spend or orders | **Decided** |
+| Customer IDs and leaderboard | No ranking; manager leaderboard; public leaderboard | Unique customer IDs and a manager-only leaderboard by spend or orders (account officer access is a Proposal, MGR-34) | **Decided** |
 | Report periods | Fixed periods only; fixed and custom | 7, 30, and 60 days, plus a custom date range | **Decided** |
 | Owner protection | Any manager can be deactivated; owner protected | The owner account can’t be deactivated | **Decided** |
 | Rider pay per delivery | A fixed amount set by the manager; the full delivery fee; a percentage | A fixed amount set by the manager, default ₦1,000 | **Decided** |
@@ -638,7 +703,19 @@ Entities and key fields, as a starting point for the Drizzle schema. Better Auth
 | Image compression values | Tune at build; set now | 1200 px and 250 KB for menu images, 512 px and 80 KB for profiles, quality about 78 | **Decided** |
 | Battery target | Set after testing; set now | No more than about 10% an hour during an active delivery (7.5) | **Decided** |
 | Tracking values | Tune at build; set now | Balanced accuracy, about every 45 seconds and 100 metres, and a geofence of about 300 metres | **Decided** |
-| Staff code format | Role prefix with a number; random IDs only | R-001, K-001, and M-001 style codes alongside the unique ID | **Decided** |
+| Staff code format | Role prefix with a number; random IDs only | R-001, K-001, D-001, A-001, and M-001 style codes alongside the unique ID | **Decided** |
+| Staff roles | Kitchen staff and managers only; separate dispatch and account roles | Four staff roles in the Business and Kitchen app: kitchen staff, dispatch officer, account officer, and manager, each with its own menus (3.0). Owner decision, 12 November 2026. | **Decided** |
+| Finance records | Reports and rider pay only; a Finance menu | A Finance menu with the monthly statement, daily cash-up, audit trail, exports, and close month (5.3.2). Owner decision, 12 November 2026. | **Decided** |
+| Soup of the day | Customer picks any soup; one soup a day set by a manager | One soup a day, set by kitchen staff on Sold out or by a manager on Sold out or Menu (KIT-17). Owner decisions, 12 November 2026. | **Decided** |
+| Report comparison | In the first release; later | Later (14.0). Owner decision, 12 November 2026. | **Decided** |
+
+### 14.0 Possible future updates
+
+Ideas kept for later. They are not built and not planned for the first release.
+
+| Idea | Notes |
+|---|---|
+| Compare with the previous period | In reports, show the previous period of the same length beside the current one. Taken out of the first release on 12 November 2026 (owner decision). |
 
 ### 14.1 Database decision
 
@@ -877,8 +954,6 @@ The website uses **no packages**. It is plain HTML, CSS, and JavaScript.
 
 ---
 
----
-
 ## 16. BUILD ORDER
 
 0. Repository setup (https://github.com/ARMSTRONG-AISOSA/casual-kitchen-express): npm workspaces and Turborepo, the three Expo apps, the API Worker, shared packages (types, validation, API client, brand tokens), and the website, using the versions in section 15.
@@ -891,7 +966,7 @@ The website uses **no packages**. It is plain HTML, CSS, and JavaScript.
 7. Website (static, on GitHub Pages).
 8. Reports, rider payouts, and polish.
 
-**Changed on 12 November 2026 (owner decision): frontend first.** The app screens are built first on demo data held in each app, so the owner can see and review them. The customer app comes first, then the rider and the Kitchen and Business apps when the owner asks. The backend foundation (step 1) and the seed script (step 2) follow, and then each app’s demo data is replaced with real API calls. The rest of the order is unchanged.
+**Changed on 12 November 2026 (owner decision): frontend first.** The app screens are built first on demo data held in each app, so the owner can see and review them. The customer app came first, then the rider app, then the Kitchen and Business app (all three built on demo data by 12 November 2026; `progress.md` has the status). The backend foundation (step 1) and the seed script (step 2) follow, and then each app’s demo data is replaced with real API calls. The rest of the order is unchanged.
 
 **Platform:** every step targets Android first. iOS is added later.
 
@@ -978,7 +1053,8 @@ What this means:
 | Refunds | Status changes and records only ("Refund pending", then "Refund completed"). |
 | Walk-in payments | Cash is recorded as received at the counter, with the change due. An online payment (card or transfer) gets a fake confirmation. No real money moves. |
 | Delivery | The demo simulator can act as the kitchen and the riders, and move a rider along a route between the kitchen and the customer's pin (18.4). |
-| Rider pay and payouts | Calculated from real order records. "Paid" is a status the manager sets, and no money moves. |
+| Rider pay and payouts | Calculated from real order records. "Paid" is a status an account officer or a manager sets, and no money moves. |
+| Cash-ups and month closes | The cash counted is typed in by staff, and signing off and closing a month are records only. No real cash is involved. |
 | Customers and staff in the history | Fake people with fake details (18.3). |
 | Notifications | Push notifications stay real, because they are free and carry no money or personal risk. They can be switched to logged-only. Email and SMS are not used. |
 | Sign-in | Real Google sign-in, so a real person can try the apps. The orders they place are demo orders. |
@@ -990,7 +1066,7 @@ What this means:
 - The apps read prices from the API, so a change shows on the next screen that loads.
 - **Rider pay:** paid for each delivered order. The amount per delivery is set by the manager in Settings, ₦1,000 by default, and can’t exceed the delivery fee. A change applies to deliveries completed after it and shows in the rider app straight away.
 - No pay for an order cancelled before pickup. For an order that fails after pickup (for example, the customer is unreachable), the manager decides.
-- **Earnings and payouts:** each delivered order adds to the rider's owed balance. The manager marks a period as paid (a simulated payout), which creates a payout record showing who paid and when. Riders see their owed and paid amounts in the Earnings screen (RID-18).
+- **Earnings and payouts:** each delivered order adds to the rider's owed balance. An account officer or a manager marks a period as paid (a simulated payout), which creates a payout record showing who paid and when. Riders see their owed and paid amounts in the Earnings screen (RID-18).
 
 ### 18.3 Historic mock data
 
@@ -1008,10 +1084,10 @@ At build time, a seed script fills the database with up to **two months** of his
 | Order size | About 2.4 items per online order and about 2.0 per walk-in order. Jollof rice is the most popular item, and combos sell well. |
 | Outcomes | Online: about 92% completed, 4% cancelled before acknowledgement, 2% cancelled later with full or partial refunds, and 2% delivery issues. Walk-in: about 98% collected and 2% cancelled before ready, with refunds. |
 | Timings | Online: acknowledged in 1 to 3 minutes, prepared in 8 to 20 minutes, 2 to 10 minutes waiting for a rider, and 10 to 25 minutes to deliver, with some delays and a few slow outliers. About 15% of delivery orders are batched. Walk-in: prepared in 6 to 15 minutes, then collected within a few minutes of being ready. |
-| People | About 250 fake customers (online only), 4 riders, 4 kitchen staff, and 1 to 2 managers, with fake names and staff IDs. About 60% of online customers reorder. Ratings skew positive. Walk-ins have no customer records. |
+| People | About 250 fake customers (online only), 4 riders, 4 kitchen staff, 1 dispatch officer, 1 account officer, and 1 to 2 managers, with fake names and staff IDs. About 60% of online customers reorder. Ratings skew positive. Walk-ins have no customer records. |
 | Staff shifts | Two kitchen shifts: 08:00 to 14:00 and 14:00 to 20:30. Every order of both kinds is attributed to the staff member signed in at that time. Riders work from 08:00 until their last delivery, about 18:45. |
 | Order numbers | Online numbers run continuously from O-0001 on the first day, so the last day of history ends near O-2163. Walk-in numbers restart at W-001 each day. |
-| Money | The delivery fee (₦1,500 by default) on every delivery order, rider pay per delivery, and weekly payouts (older weeks paid, the latest week owed). Walk-in orders carry no fee and no rider pay. Sales are split by channel and payment method. |
+| Money | The delivery fee (₦1,500 by default) on every delivery order, rider pay per delivery, and weekly payouts (older weeks paid, the latest week owed). Walk-in orders carry no fee and no rider pay. Sales are split by channel and payment method. A cash-up for every past day, signed off, with a few small differences and notes. Every full month before the current one is closed (ACC-07). |
 | Places | The neighbourhoods in `list-of-areas.md` (to be confirmed), all inside the delivery range from Uselu to Oluku Market |
 
 **Quality rules**
@@ -1034,6 +1110,9 @@ At build time, a seed script fills the database with up to **two months** of his
 
 | Version | Change |
 |---|---|
+| 0.25 | Owner decisions on 12 November 2026: kitchen staff can set the soup of the day on the Sold out screen, as well as managers (KIT-17); walk-in cash is Exact or an Other amount box, replacing the ₦500 to ₦5,000 buttons (KIT-14); the cash-up sign-off and the month close record who did it, an account officer or any manager, by name, staff ID, and time (ACC-04, ACC-07, 4.5). |
+| 0.24 | Consistency review on 12 November 2026, with no new decisions: the dispatch officer and account officer added wherever staff roles are listed (users, attribution 4.5, cancellation rules 4.6, sign-in 12.1, seed people 18.3, payouts 18.1 and 18.2); a note on which Manager features the officers also use; Need help goes to dispatch (RID-11); alerts and live setting changes in section 10; decision rows for staff roles, Finance, the soup of the day, and report comparison; account officer access to the leaderboard recorded as a Proposal (MGR-34); seeded cash-ups and closed months; feature rows put in number order. |
+| 0.23 | Owner decisions on 12 November 2026: the soup of the day is set by a manager each day and shows in the customer app (KIT-17); two new staff roles, the dispatch officer (DSP-01 to DSP-06: customer contact with Call and WhatsApp, live riders panel, rider help, assigning orders to riders, cancellation requests) and the account officer (ACC-01 to ACC-07: rider payouts, a Finance menu with the monthly statement, daily cash-up, audit trail, exports, and close month); a role and menu table (3.0); a manager setting for the restaurant’s WhatsApp number (MGR-36, CUS-19); orders assigned by dispatch in the rider app (RID-23); CashUp, MonthClose, and Adjustment records; and report comparison moved to possible future updates (14.0). Rider earnings gain an All time period and an Owed list (RID-18). |
 | 0.22 | Owner decisions on 12 November 2026: going offline is blocked while a rider carries an order (RID-02), and rider alert sounds come with push notifications, with vibration from the first build (RID-14). |
 | 0.21 | Owner decision on 12 November 2026: frontend first. The app screens are built on demo data before the backend, starting with the customer app (16). Added the development setup note (development build on a real device, typed routes off). |
 | 0.20 | Owner decisions on 11 November 2026: Node.js 24 LTS instead of 26; npm workspaces instead of pnpm; the cancellation limit is a manager setting from 3 to 7 in 7 days (MGR-35); an order's load is shown as a number against the budget ("Load 5 of 6"); planned CancellationRequest, HelpRequest, and Alert records, and batch distance and cancellation limit settings; the repository is ARMSTRONG-AISOSA/casual-kitchen-express. Later the same day: `@cloudflare/vitest-plugin` 1.4.10 replaces the deprecated `@cloudflare/vitest-pool-workers` 0.23.0 (which didn’t support the locked Vitest 5); Android package IDs set (17.2); Uwelu and Idunmwowina added to the delivery range; ESLint 9.39.5 replaces 10.13.0; Expo packages pinned exactly; install-script and security-check notes added (15); Android builds limited to arm64-v8a, with armeabi-v7a added for releases and x86 never built (17.2). |

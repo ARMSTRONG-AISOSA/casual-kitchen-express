@@ -1,22 +1,38 @@
 import { naira } from "@cke/brand-tokens";
 import { useState } from "react";
 import { View } from "react-native";
-import { PAYOUTS } from "../../src/data/orders";
+import { PAID_ALL_TIME, PAID_THIS_MONTH, PAYOUTS, UNPAID_DAYS } from "../../src/data/orders";
 import { useStore } from "../../src/state/store";
 import { Card, KV, Screen, Segmented, T, TopBar } from "../../src/ui/kit";
 
-type Period = "today" | "week" | "month";
+type Period = "today" | "week" | "month" | "all";
 
 // Earnings (RID-18). Pay per delivery follows the manager's setting, and payouts are simulated:
-// the manager marks a week as paid.
+// an account officer or a manager marks a week as paid. Owed lists everything not paid out yet.
 export default function Earnings() {
   const { s } = useStore();
   const [period, setPeriod] = useState<Period>("today");
-  const today = s.delivered.length;
-  // Demo figures for the week and month. Today's count is live.
-  const count = period === "today" ? today : period === "week" ? 21 + today : 99 + today;
-  const earned = period === "today" ? s.delivered.reduce((a, d) => a + d.pay, 0) : count * s.pay;
-  const paid = period === "month" ? PAYOUTS.reduce((a, p) => a + p.amount, 0) : 0;
+
+  const todayCount = s.delivered.length;
+  const todayPay = s.delivered.reduce((a, d) => a + d.pay, 0);
+  const unpaidEarlier = UNPAID_DAYS.reduce(
+    (a, d) => ({ deliveries: a.deliveries + d.deliveries, amount: a.amount + d.amount }),
+    { deliveries: 0, amount: 0 },
+  );
+  const owedTotal = todayPay + unpaidEarlier.amount;
+
+  // Everything unpaid falls in this week, so "owed" is the same for every period except today.
+  const unpaid =
+    period === "today"
+      ? { deliveries: todayCount, amount: todayPay }
+      : { deliveries: todayCount + unpaidEarlier.deliveries, amount: owedTotal };
+  const paid =
+    period === "month"
+      ? PAID_THIS_MONTH
+      : period === "all"
+        ? PAID_ALL_TIME
+        : { deliveries: 0, amount: 0 };
+
   return (
     <Screen tabs header={<TopBar title="Earnings" />}>
       <Segmented
@@ -25,18 +41,36 @@ export default function Earnings() {
           ["today", "Today"],
           ["week", "This week"],
           ["month", "This month"],
+          ["all", "All time"],
         ]}
         value={period}
         onChange={setPeriod}
       />
       <Card strong>
-        <KV k="Deliveries" v={count} />
-        <KV k="Earned" v={naira(earned)} />
-        <KV k="Owed to you" v={naira(earned - paid)} />
-        <KV k="Already paid" v={naira(paid)} />
+        <KV k="Deliveries" v={unpaid.deliveries + paid.deliveries} />
+        <KV k="Earned" v={naira(unpaid.amount + paid.amount)} />
+        <KV k="Owed to you" v={naira(unpaid.amount)} />
+        <KV k="Already paid" v={naira(paid.amount)} />
       </Card>
       <T muted style={{ marginTop: 10 }}>
         {naira(s.pay)} per delivery, set by your manager.
+      </T>
+
+      <T v="h2" style={{ marginTop: 22 }}>
+        Owed
+      </T>
+      <Card strong>
+        <KV
+          k={`Today, ${todayCount} deliver${todayCount === 1 ? "y" : "ies"}`}
+          v={naira(todayPay)}
+        />
+        {UNPAID_DAYS.map((d) => (
+          <KV key={d.day} k={`${d.day}, ${d.deliveries} deliveries`} v={naira(d.amount)} />
+        ))}
+        <KV k="Total owed" v={naira(owedTotal)} />
+      </Card>
+      <T v="small" muted style={{ marginTop: 10 }}>
+        Not paid out yet. CKE pays out each week.
       </T>
 
       <T v="h2" style={{ marginTop: 22 }}>
@@ -68,7 +102,11 @@ export default function Earnings() {
       </T>
       <Card>
         {PAYOUTS.map((p) => (
-          <KV key={p.week} k={p.week} v={`${naira(p.amount)} paid`} />
+          <KV
+            key={p.week}
+            k={`${p.week}, ${p.deliveries} deliveries`}
+            v={`${naira(p.amount)} paid`}
+          />
         ))}
       </Card>
       <T v="small" muted style={{ marginTop: 10 }}>

@@ -6,8 +6,8 @@ import { HELP_REASONS } from "../src/data/orders";
 import { alertRider, useStore } from "../src/state/store";
 import { Button, Screen, StateBanner, T, TopBar } from "../src/ui/kit";
 
-// Need help (RID-11): problems go straight to the manager, who can call the customer or approve a
-// manual completion. Release order hands the order back to the queue (RID-12).
+// Need help (RID-11): problems go straight to dispatch (a dispatch officer or a manager), who can
+// call the customer or approve a manual completion. Release order hands the order back to the queue (RID-12).
 export default function Help() {
   const { s } = useStore();
   const [sent, setSent] = useState(false);
@@ -18,7 +18,7 @@ export default function Help() {
         footer={<Button label="Back to my delivery" onPress={() => router.back()} />}
       >
         <StateBanner kind="success" label="Help request sent" />
-        <T style={{ marginTop: 14 }}>The manager will call you. Stay where you are if you can.</T>
+        <T style={{ marginTop: 14 }}>Dispatch will call you. Stay where you are if you can.</T>
       </Screen>
     );
   }

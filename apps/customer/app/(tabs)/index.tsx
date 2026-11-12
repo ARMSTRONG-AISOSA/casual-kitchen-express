@@ -3,7 +3,7 @@ import { router } from "expo-router";
 import { Plus, Search } from "lucide-react-native";
 import { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
-import { CATEGORIES, MENU, type CategoryId, type MenuItem } from "../../src/data/menu";
+import { CATEGORIES, describe, MENU, type CategoryId, type MenuItem } from "../../src/data/menu";
 import {
   addLine,
   cartCount,
@@ -52,7 +52,7 @@ export default function MenuScreen() {
   const open = s.open === "open";
 
   const quickAdd = (m: MenuItem) => {
-    set((st) => ({ cart: addLine(st.cart, makeLine(m.id)) }));
+    set((st) => ({ cart: addLine(st.cart, makeLine(m.id, defaults(m, st.soupToday))) }));
     toast(`${m.name} added`);
   };
 
@@ -177,7 +177,8 @@ function OpenPill() {
 
 function MenuCard({ item, onAdd }: { item: MenuItem; onAdd: () => void }) {
   const t = useTheme();
-  const d = defaults(item);
+  const { s } = useStore();
+  const d = defaults(item, s.soupToday);
   const label = optLabel(item, d);
   return (
     <View
@@ -196,7 +197,7 @@ function MenuCard({ item, onAdd }: { item: MenuItem; onAdd: () => void }) {
         >
           <T v="h3">{item.name}</T>
           <T v="small" muted numberOfLines={2}>
-            {item.desc}
+            {describe(item, s.soupToday)}
           </T>
           {label ? (
             <T v="small" bold style={{ marginTop: 2 }}>

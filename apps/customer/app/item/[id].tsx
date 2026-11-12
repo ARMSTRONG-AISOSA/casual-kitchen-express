@@ -2,7 +2,7 @@ import { naira } from "@cke/brand-tokens";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { View } from "react-native";
-import { findItem, PROTEINS, SOUPS, SWALLOWS } from "../../src/data/menu";
+import { describe, findItem, PROTEINS, SOUPS, SWALLOWS } from "../../src/data/menu";
 import {
   addLine,
   defaults,
@@ -19,9 +19,9 @@ import { useToast } from "../../src/ui/toast";
 export default function ItemScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const item = findItem(id ?? "");
-  const { set } = useStore();
+  const { s, set } = useStore();
   const toast = useToast();
-  const [opt, setOpt] = useState<Options>(item ? defaults(item) : {});
+  const [opt, setOpt] = useState<Options>(item ? defaults(item, s.soupToday) : {});
   const [qty, setQty] = useState(1);
 
   if (!item) {
@@ -55,7 +55,7 @@ export default function ItemScreen() {
         {item.name}
       </T>
       <T muted style={{ marginTop: 4 }}>
-        {item.desc}
+        {describe(item, s.soupToday)}
       </T>
       <T style={{ marginTop: 8 }}>
         <T bold>{naira(item.price)}</T>
@@ -79,13 +79,16 @@ export default function ItemScreen() {
 
       {item.opts === "soup" ? (
         <>
-          <Group title="Soup" hint="Today’s pot is egusi">
+          <Group
+            title="Soup"
+            hint={`Today’s pot is ${(SOUPS.find((x) => x.id === s.soupToday)?.label ?? "").toLowerCase()}`}
+          >
             {SOUPS.map((p) => (
               <Option
                 key={p.id}
-                label={p.today ? `${p.label} (today)` : `${p.label} (not today)`}
+                label={p.id === s.soupToday ? `${p.label} (today)` : `${p.label} (not today)`}
                 selected={opt.soup === p.id}
-                disabled={!p.today}
+                disabled={p.id !== s.soupToday}
                 onPress={() => setOpt({ ...opt, soup: p.id })}
               />
             ))}

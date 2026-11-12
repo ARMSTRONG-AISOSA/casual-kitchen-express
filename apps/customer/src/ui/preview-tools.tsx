@@ -1,5 +1,6 @@
 import { router } from "expo-router";
 import { StyleSheet, View } from "react-native";
+import { SOUPS } from "../data/menu";
 import { DELIVERY_STEPS, PICKUP_STEPS } from "../data/order";
 import { firstTimeCustomer, makeLine, returningCustomer, useStore } from "../state/store";
 import { useTheme } from "../state/theme";
@@ -84,6 +85,19 @@ export function PreviewTools() {
             selected={s.open === "paused"}
             onPress={() => set({ open: "paused" })}
           />
+        </>,
+      )}
+      {row(
+        "Soup of the day (set by the manager)",
+        <>
+          {SOUPS.map((soup) => (
+            <Chip
+              key={soup.id}
+              label={soup.label}
+              selected={s.soupToday === soup.id}
+              onPress={() => set({ soupToday: soup.id })}
+            />
+          ))}
         </>,
       )}
       {row(

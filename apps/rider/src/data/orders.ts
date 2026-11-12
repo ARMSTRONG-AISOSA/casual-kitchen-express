@@ -105,7 +105,7 @@ export function clockTime(ms: number) {
   return `${h % 12 || 12}:${String(d.getMinutes()).padStart(2, "0")} ${h < 12 ? "am" : "pm"}`;
 }
 
-/** Earlier deliveries today, so Home and Earnings aren't empty. Times count back from now. */
+/** Earlier deliveries today, so Home and Earnings aren't empty. Times count back from now, within opening hours. */
 export const earlierToday = () =>
   [
     { no: "O-2170", area: "Ekosodin" },
@@ -113,12 +113,31 @@ export const earlierToday = () =>
     { no: "O-2165", area: "BDPA estate" },
     { no: "O-2164", area: "Osasogie" },
     { no: "O-2161", area: "Ugbowo" },
-  ].map((d, i) => ({ ...d, time: clockTime(Date.now() - (i + 1) * 38 * 60_000) }));
+  ].map((d, i, all) => {
+    // Spread across the time since online orders opened at 8:00 am, at most 38 minutes apart.
+    const opened = new Date().setHours(8, 0, 0, 0);
+    const gap = Math.max(4, Math.min(38, (Date.now() - opened) / 60_000 / (all.length + 1)));
+    return { ...d, time: clockTime(Date.now() - (i + 1) * gap * 60_000) };
+  });
 
+/** Demo payouts. An account officer or a manager marks each week as paid (a simulated payout, architecture.md 18.2). */
 export const PAYOUTS = [
-  { week: "Week to Sun 8 Nov", amount: 31000 },
-  { week: "Week to Sun 1 Nov", amount: 28000 },
+  { week: "Week to Sun 8 Nov", deliveries: 31, amount: 31000 },
+  { week: "Week to Sun 1 Nov", deliveries: 28, amount: 28000 },
+  { week: "Week to Sun 25 Oct", deliveries: 30, amount: 30000 },
+  { week: "Week to Sun 18 Oct", deliveries: 27, amount: 27000 },
 ];
+
+/** Earlier days this week, delivered but not paid out yet. Today's deliveries are added live. */
+export const UNPAID_DAYS = [
+  { day: "Wed 11 Nov", deliveries: 5, amount: 5000 },
+  { day: "Tue 10 Nov", deliveries: 5, amount: 5000 },
+  { day: "Mon 9 Nov", deliveries: 6, amount: 6000 },
+];
+
+/** Paid deliveries earlier this month (from Sun 1 Nov), and since the rider started. */
+export const PAID_THIS_MONTH = { deliveries: 35, amount: 35000 };
+export const PAID_ALL_TIME = { deliveries: 232, amount: 232000 };
 
 export const HELP_REASONS = [
   "The customer isn’t answering",

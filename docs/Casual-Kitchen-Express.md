@@ -1,6 +1,6 @@
 # CASUAL KITCHEN EXPRESS (CKE)
 ## Brand Strategy & Business Foundation
-**Document Status:** Working Brand Strategy — Version 1.8  
+**Document Status:** Working Brand Strategy — Version 1.9  
 **Scope:** Surface-level brand and business decisions. Depth on the apps and website is in `architecture.md` (functions, features, data, technical decisions) and `design.md` (UI/UX decisions and page flows).
 
 ---
@@ -94,7 +94,7 @@ The menu is built around Nigerian meals, with rice-based dishes as the primary p
 
 **Soups and Swallows**
 
-Soups are limited to a rotating selection of two to three varieties at any time, so the kitchen can stay fast and consistent. Examples of rotating soups: egusi, efo riro, ogbono.
+Soups are limited to a rotating selection of two to three varieties at any time, so the kitchen can stay fast and consistent. Examples of rotating soups: egusi, efo riro, ogbono. The kitchen or a manager sets the soup of the day each morning, and the customer app shows it when people order.
 
 | Item | Mock Price |
 |---|---|
@@ -329,13 +329,13 @@ CKE runs on three apps and a website. This section gives the high-level picture.
 | Part | Used by | Purpose |
 |---|---|---|
 | Customer app | Customers | Browse, order, pay, and track |
-| Business and Kitchen app | Kitchen staff and managers (on a tablet and on phones) | Take and prepare orders (including walk-in orders at the counter), and manage the menu, riders, and settings |
+| Business and Kitchen app | Kitchen staff, dispatch officers, account officers, and managers (on a tablet and on phones) | Take and prepare orders (including walk-in orders at the counter), coordinate deliveries, keep the money records, and manage the menu, staff, and settings |
 | Rider and Delivery app | CKE riders | Pick up and deliver orders |
 | Website | Visitors | Promotes the business and mainly the app, and hosts the app download |
 
 The apps are Android apps (Android 10 and above). For now they are installed directly from the website rather than through an app store.
 
-All four are in development, with clickable prototypes of every screen as the visual reference.
+All four are in development. The screens of all three apps are built and being reviewed, and clickable prototypes of every screen serve as the visual reference.
 
 ### Design Approach
 
@@ -369,6 +369,8 @@ Across all of them, every task takes as few taps as possible.
 - Kitchen staff also enter walk-in orders at the counter, taking payment in cash or online. Managers can view and filter online and walk-in orders separately, and see sales by channel and payment method.
 - Managers create rider and staff accounts, manage menu items, prices, and images, set opening hours, and can pause new orders.
 - Managers can deactivate staff and manager accounts (except the owner’s), and rank customers by spend and number of orders.
+- A dispatch officer coordinates the kitchen, riders, and customers: they can contact customers, see where riders are, hand an order to a rider, and settle cancellation requests.
+- An account officer keeps the money records: reports, rider pay, a monthly statement, the daily cash-up, an audit trail, and closing each month.
 - Every staff member and every customer has a unique ID. Staff IDs let each order be traced to who acknowledged it, who prepared it, and which rider collected and delivered it.
 - Images are compressed on the device before upload, to keep storage small.
 - Managers can see current and historic data: the full order list for any date range, order volumes, sales amounts, the time each order was placed, and preparation and delivery times, by day, week, month, rider, and area.

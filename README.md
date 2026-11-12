@@ -8,7 +8,7 @@ This repository holds the whole platform:
 |---|---|
 | `apps/customer` | Customer app (Expo, Android): browse, order, pay, track, reorder |
 | `apps/rider` | Rider app (Expo, Android): queue, pickup, delivery code, earnings |
-| `apps/business` | Business and Kitchen app (Expo, Android tablet and phone): order board, walk-in orders, menu, people, reports |
+| `apps/business` | Business and Kitchen app (Expo, Android tablet and phone): order board, walk-in orders, dispatch, menu, people, reports, finance |
 | `apps/api` | The API: Hono on Cloudflare Workers, with Neon Postgres through Hyperdrive |
 | `apps/website` | The promotional website: plain HTML, CSS, and JavaScript on GitHub Pages |
 | `packages/*` | Shared code: types, validation, API client, and brand tokens |

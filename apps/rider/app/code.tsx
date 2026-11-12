@@ -58,7 +58,7 @@ export default function Code() {
       {locked ? (
         <StateBanner
           kind="alert"
-          label="Too many tries. Tap Need help and the manager will sort it out."
+          label="Too many tries. Tap Need help and dispatch will sort it out."
         />
       ) : (
         <>

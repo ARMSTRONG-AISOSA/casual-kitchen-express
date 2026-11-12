@@ -3,7 +3,7 @@
 The working memory for Casual Kitchen Express (CKE). Read this first, then the documents it points to. The top half is the current state; the **Log** at the bottom is append-only history.
 
 **Last updated:** 12 November 2026
-**Stage:** repository setup and machine setup are done. The arm64 debug build of the customer app runs on the owner’s tablet through the development server. **The customer app’s screens are built on demo data and committed** (frontend first, owner decision on 12 November 2026). **The rider app’s screens are built on demo data and committed.** Next: the owner adds to the docs for the Business and Kitchen app before any of it is built.
+**Stage:** repository setup and machine setup are done. The arm64 debug build of the customer app runs on the owner’s tablet through the development server. **The customer app’s screens are built on demo data and committed** (frontend first, owner decision on 12 November 2026). **The rider app’s screens are built on demo data and committed.** The owner’s additions for the Business and Kitchen app (dispatch officer and account officer roles, a Finance menu, the restaurant WhatsApp setting, the soup of the day, no report comparison) are in the docs, and **the Business and Kitchen app’s screens are built on demo data and committed**, for the owner’s review.
 
 ---
 
@@ -14,7 +14,7 @@ A fast-casual, home-style Nigerian food business in Ugbowo, Benin City, near the
 | Part | Users | Purpose |
 |---|---|---|
 | Customer app | Customers | Browse, order, pay (simulated), track, reorder |
-| Business and Kitchen app | Kitchen staff and managers (tablet and phones) | Order board, walk-in orders at the counter, menu, people, reports, settings |
+| Business and Kitchen app | Kitchen staff, dispatch officers, account officers, and managers (tablet and phones) | Order board, walk-in orders at the counter, dispatch, menu, people, reports, rider pay, finance, settings |
 | Rider app | CKE riders | Queue, pickup, delivery with a 4-digit code, earnings |
 | Website | Visitors | Promotes the business and mainly the customer app, hosts the download |
 
@@ -27,9 +27,9 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and two
 | File | What it is | Authority |
 |---|---|---|
 | `progress.md` | This file: status, rules, next steps, log | Start here |
-| `docs/architecture.md` (v0.22) | Functions, 109 feature IDs (CUS, RID, KIT, MGR, WEB), order lifecycle, data model, decisions, free-tier limits, **locked versions (section 15)**, build order (16), **16.1 to verify at build**, seed data | Wins on anything technical |
-| `docs/design.md` (v0.18) | UI rules per app, screens, page flows, colours, components | Wins on anything visual or UX |
-| `docs/Casual-Kitchen-Express.md` (v1.8) | Brand and business, surface level only | Wins on brand (name, colours, logo, tone, menu, packaging) |
+| `docs/architecture.md` (v0.25) | Functions, 126 feature IDs (CUS, RID, KIT, MGR, DSP, ACC, WEB), order lifecycle, data model, decisions, free-tier limits, **locked versions (section 15)**, build order (16), **16.1 to verify at build**, seed data | Wins on anything technical |
+| `docs/design.md` (v0.21) | UI rules per app, screens, page flows, colours, components | Wins on anything visual or UX |
+| `docs/Casual-Kitchen-Express.md` (v1.9) | Brand and business, surface level only | Wins on brand (name, colours, logo, tone, menu, packaging) |
 | `docs/list-of-areas.md` | Delivery areas, boundary, landmarks, neighbourhood list | Areas still to confirm on a map |
 | `design/prototypes/*.html` | Clickable prototypes of every screen (open in a browser) | Illustrations only. If they disagree with the docs, **the docs win.** |
 | `brand/cke-logo-package/` | Logo SVG and PNG files, app icons, favicons, brand tokens (CSS and JSON), web snippet, build script | Use these files, never redraw the logo |
@@ -56,6 +56,9 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and two
 9. **Footer and contact details:** LinkedIn https://www.linkedin.com/in/armstrong-omoregie-02367a271/, email ammycan6@gmail.com (labelled Google), WhatsApp https://wa.me/2349095466063, developer site https://bossstrong-dev.vercel.app/, GitHub https://github.com/ARMSTRONG-AISOSA.
 10. **Ask before adding scope.** Record proposals as "Proposal" until the owner confirms.
 11. **Use only the locked versions** in `docs/architecture.md`, section 15. Install Expo packages with `npx expo install`, commit the lockfile, and ask the owner before upgrading anything.
+12. **Android builds are arm64-v8a only.** Release builds add armeabi-v7a. Never build x86 or x86_64 (`architecture.md` 17.2).
+13. **Git:** ask the owner before each commit, and don’t push until the owner says so.
+14. **Owner-side instructions are fully detailed:** exact keys, commands, expected output, and how to check the result.
 
 ---
 
@@ -71,7 +74,7 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and two
 | Real-time | Cloudflare Durable Objects (WebSockets with hibernation) |
 | Background jobs | Cron Triggers and Durable Object alarms |
 | Images | Cloudflare R2. Files in object storage, links in the database. Compressed on the device before upload. |
-| Auth | Better Auth 1.7.14 in the Worker, with its Expo plugin. Customers and managers use Google sign-in. Riders and kitchen staff use a username and password set by a manager (PBKDF2, about 50,000 iterations, rate-limited). No forgot-password anywhere. |
+| Auth | Better Auth 1.7.14 in the Worker, with its Expo plugin. Customers and managers use Google sign-in. Riders, kitchen staff, dispatch officers, and account officers use a username and password set by a manager (PBKDF2, about 50,000 iterations, rate-limited). No forgot-password anywhere. |
 | Maps | Customer app only: MapLibre with OpenFreeMap tiles. The rider app has no map and hands off to the phone's navigation app. |
 | Push | Expo push service with Firebase for Android. No email or SMS. |
 | Website | Plain HTML, CSS, and JavaScript on GitHub Pages, with no packages |
@@ -87,10 +90,13 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and two
 - **Delivery area:** from Uselu to Oluku Market. Nothing beyond Oluku Market. Pins are checked against a boundary polygon, and pickup is offered outside it.
 - **Prices:** a flat delivery fee, ₦1,500 by default, and rider pay ₦1,000 per delivery by default. Managers can edit both, and the changes show in the customer and rider apps for new orders. Rider pay can't exceed the fee.
 - **Riders:** all deliveries by CKE's own riders. They pick from a queue (first to accept wins), carry one order by default and up to three when the load fits (light 1, medium 2, heavy 3, budget 6), and confirm delivery with the customer's 4-digit code.
-- **Walk-in orders:** entered on the kitchen tablet, paid at the counter in cash (with change due) or online, W- order numbers, a separate channel in all data and reports.
+- **Walk-in orders:** entered on the kitchen tablet, paid at the counter in cash (Exact or an Other amount box, with change due) or online, W- order numbers, a separate channel in all data and reports.
 - **Attribution:** every action is recorded against a staff ID. On the shared tablet, actions belong to whoever is signed in.
 - **Cancellation:** a quiet link, a required reason, and a confirmation tick. Free cancel before the kitchen acknowledges, a request after that, and none once ready. After 3 cancellations in 7 days, request only (managers can set the limit from 3 to 7).
-- **Accounts:** customers can deactivate (reversible) or delete (Danger zone, tick, and typing DELETE ACCOUNT). Managers can deactivate any account except the owner's. Every customer and staff member has a unique ID (C-00418, R-001, K-002, M-001).
+- **Accounts:** customers can deactivate (reversible) or delete (Danger zone, tick, and typing DELETE ACCOUNT). Managers can deactivate any account except the owner's. Every customer and staff member has a unique ID (C-00418, R-001, K-002, D-001, A-001, M-001).
+- **Staff roles:** kitchen staff (Board, Walk-in, Sold out, Alerts), dispatch officers (Alerts, Orders, Riders, Settings without Pricing and pay and Restaurant contact), account officers (Reports, Rider pay, Finance), and managers (everything). The backend checks the role on every action (`architecture.md` 3.0).
+- **Soup of the day:** kitchen staff pick it each morning on Sold out (managers on Sold out or Menu), and the customer app shows it; only today’s soup can be ordered.
+- **Finance:** the person on the counter counts the cash at close, and an account officer or any manager (including the owner) signs it off; whoever signs off or closes a month is recorded by name, staff ID, and time. A closed month is locked, and later corrections are adjustments.
 - **Order numbers:** online numbers run continuously from O-0001 on the first seeded day, and walk-in numbers restart at W-001 each day.
 - **Manager order list:** today, yesterday, or any date range back to the first order, with search by order number or customer ID and paging for long ranges.
 - **Seed data:** 60 days of history at about 40 online and 13 walk-in orders on a weekday and 25 and 8 at weekends, respecting the hours (`architecture.md`, 18.3).
@@ -109,10 +115,11 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and two
 | Design plan | Philosophy per app (customer expressive, kitchen practical, rider functional and black-and-white), screens, and flows |
 | Areas | Scouted area list, with the boundary at Oluku Market (the road there is reported clear) |
 | Prototypes | 22 customer screens, 16 rider screens, 19 kitchen and manager screens, and 5 website pages, all automatically click-tested |
-| Repository | npm workspaces and Turborepo monorepo with the three apps, the API Worker, shared packages, and the website. Typecheck, lint, and the first API test pass. Two commits, not pushed. |
-| Android | JDK 17 and the Android SDK installed. arm64-v8a debug build of the customer app installed on the owner’s tablet. |
+| Repository | npm workspaces and Turborepo monorepo with the three apps, the API Worker, shared packages, and the website. Typecheck, lint, and the first API test pass. Five commits, not pushed. |
+| Android | JDK 17 and the Android SDK installed. arm64-v8a debug builds of all three apps installed on the owner’s tablet. |
 | Customer app | Every screen built on demo data and committed. Claude tapped through it on the tablet and fixed what it found. |
 | Rider app | Every screen built on demo data and committed, with its own arm64 debug build on the tablet. |
+| Business and Kitchen app | Every screen for kitchen staff, dispatch officers, account officers, and managers built on demo data and committed. |
 
 ---
 
@@ -125,9 +132,11 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and two
 4. **Versions:** all locked in `architecture.md`, section 15. Re-check them for security advisories just before installing.
 5. **Machine setup (done):** JDK 17.0.21 is installed through apt. The Android SDK is in `~/Android/Sdk` (command-line tools 23.0, platform-tools 37.0.1, Platforms 36 and 37, build-tools 36.0.0, NDK 27.1.12297006). `JAVA_HOME`, `ANDROID_HOME`, and the SDK `PATH` are set in `~/.bashrc` (verified: adb 37.0.1 from the SDK). Note: the home router’s DNS (192.168.0.1) times out on some names, which broke apt; using 1.1.1.1 and 8.8.8.8 fixed it.
 6. **GitHub remote:** `origin` is https://github.com/ARMSTRONG-AISOSA/casual-kitchen-express.git. The repository exists and is empty. Nothing is pushed until the owner says so.
-7. **App screens on demo data:** the customer and rider screens are committed. The customer map and Google sign-in are stand-ins until their libraries and the backend are added. Rider alert sounds come with push notifications (decided), so alerts only vibrate for now.
+7. **App screens on demo data:** the customer and rider screens are committed; the Business and Kitchen app is committed too. The customer map and Google sign-in are stand-ins until their libraries and the backend are added. Rider alert sounds come with push notifications (decided), so alerts only vibrate for now.
 8. **Decided (12 November 2026):** the rider can’t go offline while carrying an order (`architecture.md` RID-02, `design.md` 5.5).
-9. **Prototypes lag the docs** on the 11 November decisions (cart, cash amounts, load display, kitchen theme, website cancel line). The docs win, and the prototypes are not being updated.
+9. **Prototypes lag the docs** on the 11 November decisions (cart, cash amounts, load display, kitchen theme, website cancel line) and on everything decided on 12 November (new roles, Finance, soup of the day). The docs win, and the prototypes are not being updated.
+10. **Decided (12 November 2026):** walk-in cash is an Exact button and an Other amount box; the ₦500 to ₦5,000 buttons are gone (`design.md` 6.5).
+11. **Customer leaderboard for account officers (owner to confirm).** Decided as managers only (`architecture.md` MGR-34). Showing it to account officers is a Proposal; the demo app shows it to them for now.
 
 **To verify at build** (the full list is in `architecture.md`, 16.1)
 - Better Auth's username plugin, admin create-user, and custom password-hash setting.
@@ -146,14 +155,15 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and two
 Follow `architecture.md`, section 16 (build order). On 12 November 2026 the owner chose to build the app screens first on demo data, so the order is now:
 
 1. **Done (11 November 2026).** **Set up the repository** (`ARMSTRONG-AISOSA/casual-kitchen-express`) with npm workspaces and Turborepo, using only the locked versions: apps (customer, rider, business), the API Worker, shared packages (types, Zod validation, API client, brand tokens), the website, `docs/`, `design/`, and `brand/`. Add the MIT `LICENSE` and a README with the single Claude Code credit line.
-2. **In review (12 November 2026).** **Customer app screens on demo data:** browse, item, your order, checkout, address, pay, paid, track, rate, orders, profile, more, deactivate, and delete. Owner review, then commit.
-3. **Done (12 November 2026).** **Rider app screens on demo data.** Then the **Business and Kitchen app** screens, **after the owner adds to the docs** (owner, 12 November 2026).
+2. **Done (12 November 2026, `0c4bcee`).** **Customer app screens on demo data:** browse, item, your order, checkout, address, pay, paid, track, rate, orders, profile, more, deactivate, and delete.
+3. **Done (12 November 2026, `cd8284c`).** **Rider app screens on demo data.**
+3b. **Done (12 November 2026).** **Business and Kitchen app screens on demo data,** for all four staff roles.
 4. **Backend foundation:** the Hono Worker, Drizzle schema from `architecture.md` section 9, Neon through Hyperdrive, Better Auth, roles, menu, orders, and order statuses. Run the verification checks in 16.1 early.
 5. **Seed script:** two months of demo data per `architecture.md`, 18.3, as soon as the schema exists.
 6. **Connect the screens to the API:** replace the demo data in each app with real calls, add the real map (MapLibre) and Google sign-in.
 7. **Capacity rules, batching, and the demo simulator.**
 8. **Website:** turn `design/prototypes/cke-website.html` into the static GitHub Pages site.
-9. **Reports, rider payouts, and polish,** then release APKs on GitHub.
+9. **Reports, rider payouts, Finance, and polish,** then release APKs on GitHub.
 
 The prototypes are the visual reference for every screen. Reuse their copy, layout, and flows, but write production code fresh rather than copying prototype code.
 
@@ -427,5 +437,85 @@ Append a new dated entry after each work session. Never edit or delete earlier e
 
 **Next step:**
 - The owner adds to the docs for the Business and Kitchen app. Don’t start building it until then.
+
+---
+
+## [2026-11-12] New staff roles, Finance, and the Business and Kitchen app screens
+
+**What was done:**
+- Rider app: Earnings now has All time beside Today, This week, and This month, and an **Owed** section listing everything not paid out yet (today and each earlier unpaid day, with the total). Payouts show the number of deliveries. Demo delivery times stay within opening hours.
+- Owner decisions recorded in `architecture.md` (v0.23) and `design.md` (v0.19), each with a change log row:
+  - **Dispatch officer** (D-001, username and password): Alerts, Orders, Riders, and Settings without Pricing and pay and Restaurant contact. Customer contact on online orders (name, customer ID, phone, address with landmark, Call and WhatsApp buttons), the live riders panel, rider help requests, assigning an unaccepted order to a rider (with RID-23 in the rider app), and cancellation requests (approve or decline, no other refunds). DSP-01 to DSP-06.
+  - **Account officer** (A-001, username and password): Reports, Rider pay (can mark payouts as paid), and a new **Finance** menu: monthly statement, daily cash-up (counted at close by the person on the counter, signed off by the account officer or a manager), audit trail, CSV and PDF export, and close month (locks the figures; later corrections are adjustments). ACC-01 to ACC-07.
+  - A role and menu table (`architecture.md` 3.0) and side rail items by role (`design.md` 6.3).
+  - **Restaurant contact** setting (MGR-36, managers only): one editable WhatsApp number behind “Contact the restaurant”.
+  - **Soup of the day** (KIT-17): a manager or the owner picks it each morning on the Menu screen; the customer app shows it on the menu and dish screen, and only today’s soup can be ordered. The customer app’s preview tools can switch it for the demo.
+  - **Report comparison removed** from the first release and kept as a possible future update (`architecture.md` 14.0).
+  - New records: CashUp, MonthClose, Adjustment; Delivery gains “assigned by”; AuditLog gains kind and before and after values.
+- Installed the locked `expo-keep-awake` 58.0.3, `expo-linear-gradient` 58.0.3, and `react-native-gifted-charts` 1.4.81 in the business app, and built its first arm64 debug APK.
+- Built the Business and Kitchen app on demo data: sign in (username and password, Continue with Google for managers, demo accounts), the side rail by role, the order board (New, Preparing, Ready, channel filter, pause switch), ticket with station checklist, Ready and Collected, walk-in entry, payment with cash amounts above the total only, the order number to call out, sold out, alerts with actions, cash-up at close (offered at sign-out), dashboard, orders with search, order detail with the Customer card and refunds (managers), assign to a rider, the live riders panel, people (all five roles, reset password, deactivate, owner protected), person editor, menu and item editor, rider pay with payouts, reports with a Gifted Charts bar chart, Finance (statement, cash-ups with sign-off, audit trail, close month), settings by role, and demo controls.
+
+**Decisions locked in:**
+- The roles, menus, and Finance features above (owner, 12 November 2026). Dispatch officers get all four suggested extras.
+
+**Open questions / not yet decided:**
+- None new. The customer leaderboard was opened to account officers as well as managers; the owner can reverse this.
+
+**Next step:**
+- The owner reviews the Business and Kitchen app on the tablet. Then commit (not pushed).
+
+---
+
+## [2026-11-12] Consistency review of all documents
+
+**What was done:**
+- Read every Markdown file (`progress.md`, `README.md`, `CLAUDE.md`, `architecture.md`, `design.md`, `Casual-Kitchen-Express.md`, `list-of-areas.md`, the logo package README) and checked them against each other and against the built apps.
+- Added the dispatch officer and account officer wherever staff roles were still listed as kitchen staff and managers only: users and scope, attribution (4.5), the cancellation table (4.6), sign-in (12.1 and 12.2), alerts, the People screen (five tabs, as built), seed people (18.3), and payouts (18.1 and 18.2).
+- `architecture.md`: a note under the Manager features on which ones the officers also use; Need help goes to dispatch (RID-11); alerts and live setting changes in section 10; decision rows for staff roles, Finance, the soup of the day, and report comparison; seeded cash-ups and closed months; KIT-16 and KIT-17 and MGR-35 and MGR-36 put in number order; a duplicate divider removed; the build order note now says all three apps’ screens are built.
+- `design.md`: today’s soup on the item detail, a flow for orders assigned by dispatch, the officer roles on the manual completion and rider pay flows, the side rail decision row updated for roles.
+- `Casual-Kitchen-Express.md` (surface level): the soup of the day, the two new roles, and the build status.
+- Stale copy in the rider app: Need help and the code screen now say dispatch will call, and Earnings says CKE pays out each week (account officers or managers mark payouts).
+- Found one mismatch: `design.md` said account officers see the customer leaderboard, but `architecture.md` (Decided) says managers only. Recorded as a Proposal in both, awaiting the owner (open item 11).
+
+**Files created/updated:**
+- `docs/architecture.md` (v0.24), `docs/design.md` (v0.20), `docs/Casual-Kitchen-Express.md` (v1.9), `README.md`, `progress.md`
+- `apps/rider/app/help.tsx`, `app/code.tsx`, `app/(tabs)/earnings.tsx`, `src/data/orders.ts`
+
+**Decisions locked in:**
+- None new. Owner rules on arm64 builds, asking before commits, not pushing, and detailed instructions added to section 3.
+
+**Open questions / not yet decided:**
+- Walk-in cash amounts above ₦5,000 (open item 10) and the leaderboard for account officers (open item 11).
+
+**Next step:**
+- The owner answers open items 10 and 11 and reviews the Business and Kitchen app. Then commit (not pushed).
+
+---
+
+## [2026-11-12] Soup on Sold out, cash amounts, sign-off records, and the Business app committed
+
+**What was done:**
+- Owner decisions recorded in `architecture.md` (v0.25) and `design.md` (v0.21), with change log rows, and in the brand document and this file:
+  - **Soup of the day:** kitchen staff pick it on the Sold out screen each morning; managers (including the owner) can use Sold out or Menu. One shared picker in the app (`src/ui/soup.tsx`), logged in the audit trail.
+  - **Walk-in cash:** an Exact button and an Other amount box. The ₦500 to ₦5,000 buttons are gone. An amount below the total says so and can’t be confirmed (open item 10 closed).
+  - **Who signed off:** the cash-up sign-off records whoever is signed in, an account officer or any manager, by name, staff ID, and time. The sheet says who it will be recorded as, and each day shows “Signed off by”. Closing a month records who closed it and when, shown as “Closed by”. Counted-by now shows the name too.
+- Tested on the tablet: Blessing (kitchen) set Efo riro on Sold out; a ₦11,400 walk-in refused ₦10,000 and showed ₦3,600 change for ₦15,000; the owner signed off Tue 10 Nov and it showed “Efosa Igbinedion (M-001), 12:11 pm”; October shows “Closed by Ngozi Bello (A-001)”.
+- Fixed the formatting of `packages/brand-tokens/scripts/build-logos.mjs`.
+- Typecheck and lint pass (11 of 11), and Prettier is clean.
+- Committed everything locally (not pushed).
+
+**Files created/updated:**
+- `apps/business/src/ui/soup.tsx` (new), `app/(app)/sold-out.tsx`, `app/(app)/menu.tsx`, `app/(app)/walk-in-pay.tsx`, `app/(app)/finance.tsx`, `src/data/seed.ts`, `src/state/store.tsx`
+- `packages/brand-tokens/scripts/build-logos.mjs`
+- `docs/architecture.md`, `docs/design.md`, `docs/Casual-Kitchen-Express.md`, `progress.md`
+
+**Decisions locked in:**
+- The three above (owner, 12 November 2026).
+
+**Open questions / not yet decided:**
+- The customer leaderboard for account officers (open item 11).
+
+**Next step:**
+- The owner answers open item 11. Then the backend foundation (section 8, step 4).
 
 ---

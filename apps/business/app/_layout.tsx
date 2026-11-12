@@ -5,9 +5,31 @@ import {
   Inter_700Bold,
 } from "@expo-google-fonts/inter";
 import { Nunito_700Bold, Nunito_800ExtraBold } from "@expo-google-fonts/nunito";
+import { useKeepAwake } from "expo-keep-awake";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { StoreProvider } from "../src/state/store";
+import { useTheme } from "../src/state/theme";
+import { ToastProvider } from "../src/ui/toast";
+
+function Root() {
+  // The counter tablet's screen stays on while the app is open (design.md 6.2).
+  useKeepAwake();
+  const t = useTheme();
+  return (
+    <>
+      <StatusBar style={t.mode === "dark" ? "light" : "dark"} />
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: t.bg },
+          animation: "fade",
+        }}
+      />
+    </>
+  );
+}
 
 export default function RootLayout() {
   const [loaded] = useFonts({
@@ -20,9 +42,10 @@ export default function RootLayout() {
   });
   if (!loaded) return null;
   return (
-    <>
-      <StatusBar style="auto" />
-      <Stack screenOptions={{ headerShown: false }} />
-    </>
+    <StoreProvider>
+      <ToastProvider>
+        <Root />
+      </ToastProvider>
+    </StoreProvider>
   );
 }

@@ -186,11 +186,18 @@ export const PROTEINS: { id: ProteinId; label: string; price: number; soldOut?: 
   { id: "none", label: "No protein", price: 0 },
 ];
 
-export const SOUPS: { id: SoupId; label: string; today: boolean }[] = [
-  { id: "egusi", label: "Egusi", today: true },
-  { id: "efo", label: "Efo riro", today: false },
-  { id: "ogbono", label: "Ogbono", today: false },
+/** Soups the kitchen cooks. A manager picks one as the soup of the day (KIT-17). */
+export const SOUPS: { id: SoupId; label: string }[] = [
+  { id: "egusi", label: "Egusi" },
+  { id: "efo", label: "Efo riro" },
+  { id: "ogbono", label: "Ogbono" },
 ];
+
+/** A dish's description, with today's soup filled in. */
+export const describe = (it: MenuItem, soup: SoupId) =>
+  it.id === "soup"
+    ? `Today it’s ${(SOUPS.find((x) => x.id === soup)?.label ?? "egusi").toLowerCase()}. Comes with one swallow.`
+    : it.desc;
 
 export const SWALLOWS: { id: SwallowId; label: string }[] = [
   { id: "eba", label: "Eba" },

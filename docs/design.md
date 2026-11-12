@@ -1,6 +1,6 @@
 # CKE DESIGN
 
-**Document Status:** Draft v0.18. Records UI and UX decisions, design choices, page flows, and design libraries. Reviewed end to end on 11 November 2026, rider decisions added on 12 November 2026.  
+**Document Status:** Draft v0.21. Records UI and UX decisions, design choices, page flows, and design libraries. Reviewed end to end on 11 November 2026, and again on 12 November 2026 after the new staff roles and Finance were added.  
 **Related documents:** `Casual-Kitchen-Express.md` (business and brand, surface level), `architecture.md` (functions, features, data, technical decisions), and `list-of-areas.md` (delivery areas).
 
 ---
@@ -10,7 +10,7 @@
 This document records **how each app and the website should look, feel, and flow**. It covers:
 
 - Customer app
-- Business and Kitchen app (kitchen staff and managers)
+- Business and Kitchen app (kitchen staff, dispatch officers, account officers, and managers)
 - Rider and Delivery app
 - Website
 
@@ -168,7 +168,7 @@ Expressive and appetising: large food photography, warm cream backgrounds, frien
 | Screen | Purpose |
 |---|---|
 | Home / Menu | Browse categories and items, with search; reorder card for returning customers; the open or closed state |
-| Item detail | Photo, description, default options, price, add button |
+| Item detail | Photo, description, default options, price, add button. For the soup, only today’s soup (set each morning by the kitchen or a manager) can be chosen, and the menu card names it. |
 | Order bar | Sticky bar with the item count and running total. Tapping it opens Your order. |
 | Your order (cart) | The item list with quantities, Add more, delivery or pickup, and the food, delivery, and total lines, then Go to checkout |
 | Checkout | Delivery or pickup, address, the flat delivery fee (₦1,500 by default, set by the manager), payment, pay button |
@@ -215,7 +215,7 @@ Expressive and appetising: large food photography, warm cream backgrounds, frien
 **Cancel an order**
 1. Before the kitchen acknowledges the order, a quiet "Cancel order" text link sits on the tracking screen. It is deliberately not a big button, so it isn’t tapped by accident.
 2. The link opens a sheet. The customer must pick a reason and tick "I understand this order will be cancelled and can’t be restored". Only then does Cancel order work, and the refund is automatic.
-3. After acknowledgement, the link becomes "Request cancellation", with the same reason and confirmation tick. A manager approves or declines.
+3. After acknowledgement, the link becomes "Request cancellation", with the same reason and confirmation tick. A dispatch officer or a manager approves or declines.
 4. After 3 cancellations in 7 days (a limit managers can set from 3 to 7), the customer can only send a request, and the sheet explains why.
 5. Once the food is ready, there is no cancel option, only "Contact the restaurant" (WhatsApp).
 6. The timeline then shows "Cancelled" and the refund status ("Refund pending", then "Refund completed"), and the order moves to Order history.
@@ -316,11 +316,12 @@ Menu photography follows the brand's photography direction. Images are shown in 
 | Pickup | Match the bag number, "Picked up" |
 | Navigate | Opens the rider's own navigation app with the customer's address |
 | Delivery code | Enter the 4-digit code |
-| Need help | Contact the manager |
+| Need help | Send a help request to dispatch (a dispatch officer or a manager), who calls back |
 | Order taken | Shown when another rider accepted the order first |
 | Release order | A confirmation, in the alert colour, before an order goes back to the queue |
 | Day summary | Completed deliveries |
-| Earnings | Today, this week, and this month, a per-delivery list with each delivery's pay, and the simulated payout status. The pay per delivery follows the manager’s setting. |
+| Assigned order | When a dispatch officer assigns an order, it joins My deliveries with a strong alert and a yellow “Assigned to you by dispatch” banner (`architecture.md` RID-23). |
+| Earnings | Today, This week, This month, and All time at the top; an **Owed** section listing everything not paid out yet (today and each earlier unpaid day, with the total); today’s deliveries with each one’s pay; and Payouts. The pay per delivery follows the manager’s setting. |
 
 **Navigation (decided):** a bottom tab bar with four tabs: **Home** (online toggle and day summary), **Queue**, **Earnings**, and **Me** (My profile, with Settings inside). Task screens (order detail, pickup, drop-off, code entry, help, release) open full screen without the tab bar, so the one big action stays at the bottom.
 
@@ -344,8 +345,11 @@ Menu photography follows the brand's photography direction. Images are shown in 
 5. With several stops, the app shows the next stop only, with the rest listed below.
 
 **Problems**
-- Customer unreachable or code cannot be used: tap "Need help" to contact the manager.
+- Customer unreachable or code cannot be used: tap "Need help" to send a help request to dispatch, who calls back.
 - Cannot continue: tap "Release order", with confirmation, and it returns to the queue.
+
+**Assigned by dispatch**
+- When a dispatch officer assigns an order, it joins My deliveries with a strong alert and the yellow “Assigned to you by dispatch” banner. Pickup and delivery then work as usual, and Release order is still available.
 
 ### 5.5 Key components
 
@@ -387,21 +391,31 @@ Menu photography follows the brand's photography direction. Images are shown in 
 
 **Phone:** a list of active orders with the most urgent first, and tap-through to a ticket. Alerts arrive as notifications.
 
-**Navigation (decided):** a side rail on the left with the logo at the top and Sign out at the bottom. Everyone sees **Board**, **Walk-in**, **Sold out**, and **Alerts** (with a count). Managers also see a Manager group: **Dashboard**, **Orders**, **People**, **Menu**, **Rider pay**, **Reports**, **Settings**, and **Demo**. The top bar shows the screen title, the Demo chip on manager screens, the signed-in person, and Switch person on kitchen screens.
+**Navigation (decided):** a side rail on the left with the logo at the top and Sign out at the bottom. Each role sees only its own items (`architecture.md` 3.0, decided 12 November 2026):
+
+| Role | Side rail |
+|---|---|
+| Kitchen staff | Board, Walk-in, Sold out, Alerts (with a count) |
+| Dispatch officer | Alerts, Orders, Riders, Settings (without Pricing and pay and Restaurant contact) |
+| Account officer | Reports, Rider pay, Finance |
+| Manager | Board, Walk-in, Sold out, Alerts, then a Manager group: Dashboard, Orders, Riders, People, Menu, Rider pay, Reports, Finance, Settings, and Demo |
+
+The top bar shows the screen title, the Demo chip on manager screens, the signed-in person, and Switch person on kitchen screens. A person who opens the app lands on their first item (the Board, Alerts, or Reports).
 
 ### 6.4 Kitchen screen inventory
 
 | Screen | Purpose |
 |---|---|
-| Sign in | Managers: Continue with Google. Kitchen staff: username and password from a manager. |
+| Sign in | Managers: Continue with Google. Kitchen staff, dispatch officers, and account officers: username and password from a manager. |
 | Order board | The main working screen |
 | Ticket detail | Items, notes, delivery or pickup, checklist by station |
-| Sold-out list | Quickly switch items on or off |
+| Sold-out list | **Soup of the day** at the top (one tap picks today’s soup, and the customer app shows it straight away), then every item to switch on or off |
 | New walk-in order | Big item tiles by category, the order summary, eat in or take away, and an optional name |
-| Take payment | Cash (amount received and change due) or online (card or transfer), simulated |
+| Take payment | Cash (Exact, or an Other amount box, then the change due) or online (card or transfer), simulated |
 | Walk-in order sent | The order number to call out, shown large |
 | Switch person | Signs the current person out so the next one can sign in |
-| Alerts | Delays and unaccepted orders |
+| Alerts | Unaccepted orders, delays, unavailable items, rider help requests, and cancellation requests. Kitchen staff see them; dispatch officers and managers also act on them (7.3). |
+| Cash-up at close | The cash expected in the drawer, a field for the cash counted, the difference, and Save. Shown to the person on the counter before the 8:30 pm sign-out. |
 
 ### 6.5 Kitchen page flows
 
@@ -411,33 +425,38 @@ Menu photography follows the brand's photography direction. Images are shown in 
 4. **Handoff:** the Ready column shows the accepting rider's name. The ticket clears when the rider taps "Picked up", or when staff tap "Collected" for pickup orders.
 5. **Sold out:** tap an item in the sold-out list to switch it off, and tap again to bring it back.
 6. **On shift:** each person signs in on the tablet with their own username and password at the start of their shift. The top bar always shows who is signed in, with their name and photo, and "Switch person" hands over to the next person. Every action is recorded against whoever is signed in (`architecture.md`, 4.5). The tablet signs out automatically at 8:30 pm, the walk-in closing time.
-7. **Take a walk-in order:** tap "New walk-in order", then tap item tiles to add items. Choose Eat in or Take away, and add a name if wanted. Tap Charge, then choose **Cash** or **Online**. For cash, tap the amount received: Exact, or ₦500, ₦1,000, ₦2,000, or ₦5,000, where only amounts above the total are shown (decided). The app shows the change due. For online, confirm the simulated payment. The order number (for example W-006) is shown to call out, and the ticket appears on the board with a Walk-in badge, recorded against the signed-in person.
+7. **Take a walk-in order:** tap "New walk-in order", then tap item tiles to add items. Choose Eat in or Take away, and add a name if wanted. Tap Charge, then choose **Cash** or **Online**. For cash, tap **Exact**, or type the amount received into the **Other amount** box (decided 12 November 2026). An amount below the total says so and can’t be confirmed. The app shows the change due. For online, confirm the simulated payment. The order number (for example W-006) is shown to call out, and the ticket appears on the board with a Walk-in badge, recorded against the signed-in person.
 8. **Walk-in ticket:** it moves through Preparing and Ready like an online ticket. Ready shows the number to call out, and Collected clears it when the customer takes the order. There is no rider step.
 9. **Cancel a walk-in order:** before it is ready, open the ticket, tap Cancel, choose a reason, and confirm. The payment is refunded (simulated) and the cancellation is recorded against the signed-in person.
+10. **Soup of the day:** each morning, open Sold out and tap today’s soup at the top. The customer app shows it straight away, and only that soup can be ordered.
+11. **Cash-up at close:** at the end of the day (before the 8:30 pm sign-out), the person on the counter opens Cash-up, counts the drawer, enters the amount, and taps Save. The app shows the cash expected from the day’s walk-in cash payments and the difference. The account officer or a manager signs it off later in Finance.
 
 ---
 
-## 7. MANAGER SCREENS (BUSINESS APP)
+## 7. MANAGER AND OFFICER SCREENS (BUSINESS APP)
 
 ### 7.1 Direction
 
-Same philosophy as the kitchen: practical first, polished second. Larger controls and clear lists over dense tables, because managers also use phones and tablets.
+Same philosophy as the kitchen: practical first, polished second. Larger controls and clear lists over dense tables, because managers also use phones and tablets. Dispatch officers and account officers use the same screens, limited to their own menus (6.3).
 
 ### 7.2 Screen inventory
 
 | Screen | Purpose |
 |---|---|
 | Dashboard | Today's orders and sales with the online and walk-in split, cash and online payments, orders in progress, alerts |
-| People | Three tabs: Riders, Kitchen staff, and Managers, with staff IDs and status. Reset password, Deactivate, and Reactivate for every account except the owner’s. |
+| People | Five tabs: Riders, Kitchen staff, Dispatch officers, Account officers, and Managers, with staff IDs and status. Reset password, Deactivate, and Reactivate for every account except the owner’s. Managers only. |
 | Add or edit a person | Username and temporary password (or a Google email for managers), plus the profile: name, role, job title, gender (optional), phone, home address (optional), and photo |
-| Menu list | Categories and items with availability and prices |
+| Menu list | Categories and items with availability and prices, and **Soup of the day** at the top: one tap picks today’s soup, and the customer app shows it straight away (kitchen staff set it on Sold out) |
 | Item editor | Name, description, price, image, options, load value, station |
 | Orders | All orders for Today, Yesterday, or any date range back to the first order. Search by order number or customer ID, filter by channel (All, Online, Walk-in), status, staff member, and payment method, and sort by time placed or amount. Shows the count and total value, and loads long ranges 150 rows at a time. |
-| Order detail | The full timeline with timestamps and staff IDs, payment, and Refund |
-| Rider pay | Each rider's owed balance, per-delivery pay, mark a period as paid (simulated), and payout history |
+| Order detail | The full timeline with timestamps and staff IDs, payment, and Refund (managers only). Online orders show a **Customer** card: name, customer ID, phone, and delivery address (label, neighbourhood, landmark), with **Call** and **WhatsApp** buttons. Waiting orders show **Assign to a rider**. |
+| Riders | Riders online now, what each is carrying and their load (“Load 5 of 6”), and Call rider. Offline riders are listed below. |
+| Assign to a rider | Online riders whose remaining capacity fits the order, with their load and current stops. One tap assigns. |
+| Rider pay | Each rider's owed balance, per-delivery pay, mark a period as paid (simulated), and payout history. Account officers and managers. |
+| Finance | Four tabs: **Statement** (a month’s sales by channel and payment method, refunds, delivery fees, rider pay earned and paid, cash variances, and net), **Cash-ups** (each day’s expected, counted, difference, who counted, Sign off, and who signed it off with the time), **Audit trail** (every money action with who and when, with filters), and **Close month**. Export as CSV or PDF. Account officers and managers. |
 | Demo controls | Create orders, auto-play the kitchen and riders, set the speed, and reset the demo data |
-| Settings | Online order hours (8:00 am to 6:00 pm) and walk-in hours (8:00 am to 8:30 pm), pause orders, the neighbourhood list and delivery boundary, rider capacity and the batch drop-off distance, rider tracking mode (light or milestones only), the cancellation limit (3 to 7 in 7 days), the delivery fee (₦1,500 by default), and the rider pay per delivery (₦1,000 by default). The delivery fee and rider pay are editable, and changes show in the customer and rider apps straight away. |
-| Reports | Orders, sales, timings, riders, areas and staff, menu, and customers (with a leaderboard), for 7, 30, or 60 days or a custom date range, with a channel filter |
+| Settings | Online order hours (8:00 am to 6:00 pm) and walk-in hours (8:00 am to 8:30 pm), pause orders, the neighbourhood list and delivery boundary, rider capacity and the batch drop-off distance, rider tracking mode (light or milestones only), the cancellation limit (3 to 7 in 7 days), the delivery fee (₦1,500 by default), and the rider pay per delivery (₦1,000 by default). The delivery fee and rider pay are editable, and changes show in the customer and rider apps straight away. **Restaurant contact** holds the WhatsApp number behind “Contact the restaurant” in the customer app. Pricing and pay and Restaurant contact are shown to managers only; dispatch officers see the other sections. |
+| Reports | Orders, sales, timings, riders, areas and staff, menu, and customers (with a leaderboard), for 7, 30, or 60 days or a custom date range, with a channel filter. Account officers and managers. |
 
 ### 7.3 Page flows
 
@@ -489,13 +508,14 @@ Same philosophy as the kitchen: practical first, polished second. Larger control
 
 **View reports and historic data**
 1. Open Reports and choose a report: Orders, Sales, Times, Riders, areas, and staff, Menu, or Customers.
-2. Pick 7, 30, or 60 days with one tap, or choose Custom range and pick a From and To date. Compare works when there’s enough earlier data for a period of the same length.
+2. Pick 7, 30, or 60 days with one tap, or choose Custom range and pick a From and To date.
 3. Each report opens with summary cards (for example total orders, total sales, average delivery time), then a simple chart, then a list.
-4. Turn on "Compare" to see the previous period beside the current one.
-5. Tap any row or bar to drill down to the individual orders. Tap an order to see its full timeline with every timestamp (placed, acknowledged, ready, picked up, delivered).
-6. Export the current view as a CSV file.
+4. Tap any row or bar to drill down to the individual orders. Tap an order to see its full timeline with every timestamp (placed, acknowledged, ready, picked up, delivered).
+5. Export the current view as a CSV file.
 
-**Pay a rider (simulated)**
+Comparing with the previous period is a possible future update (`architecture.md` 14.0), not part of the first release.
+
+**Pay a rider (simulated; account officers and managers)**
 1. Open Rider pay and choose a rider.
 2. See the owed balance, the deliveries behind it, and each delivery's pay.
 3. Tap "Mark as paid" for the period and confirm. No money moves, and a payout record shows who paid and when.
@@ -509,9 +529,9 @@ Same philosophy as the kitchen: practical first, polished second. Larger control
 1. Open Orders and choose the order, or open a customer's cancellation request from Alerts.
 2. Choose Approve or Decline for a request, or Cancel or Refund for an order the manager is acting on.
 3. For a refund, choose full or partial, pick a reason, and confirm.
-4. The customer is notified, the refund shows "Refund pending" and then "Refund completed" (simulated), and the action is recorded with the manager's staff ID.
+4. The customer is notified, the refund shows "Refund pending" and then "Refund completed" (simulated), and the action is recorded with the staff ID of the person who decided it.
 
-**Approve a manual completion**
+**Approve a manual completion (dispatch officers and managers)**
 1. A rider's "Need help" request appears in Alerts.
 2. Open it, contact the rider or the customer if needed, and choose Approve completion or Keep open.
 3. Approval closes the delivery and is recorded in the audit log.
@@ -539,6 +559,40 @@ Same philosophy as the kitchen: practical first, polished second. Larger control
 - A "Pause new orders" switch sits in the top bar for busy moments or early closing.
 - Online order hours (8:00 am to 6:00 pm) and walk-in hours (8:00 am to 8:30 pm) are set in Settings as weekly schedules with overrides.
 
+**Contact a customer (dispatch officers and managers)**
+1. Open Orders, or an alert, and tap an online order.
+2. The Customer card shows the name, customer ID, phone, and delivery address with the landmark.
+3. Tap **Call** to open the phone’s dialer, or **WhatsApp** to open a chat with that number. The tap is recorded in the audit log.
+
+**Assign an order to a rider (dispatch officers and managers)**
+1. An order waiting too long for a rider appears in Alerts (“No rider has accepted O-2177”).
+2. Open it and tap **Assign to a rider**.
+3. The list shows online riders whose remaining capacity fits, with their load and stops. Tap one and confirm.
+4. The order joins that rider’s deliveries with a strong alert. It leaves the queue for everyone else, and the assignment is recorded.
+
+**Handle a cancellation request (dispatch officers)**
+1. A customer’s request appears in Alerts.
+2. Open it, contact the customer if needed, and choose Approve or Decline.
+3. An approved request refunds under the rules (`architecture.md` 4.6). Other refunds are for managers.
+
+**Change the restaurant’s WhatsApp number (managers)**
+1. Open Settings, then Restaurant contact.
+2. Enter the new number and tap Save.
+3. “Contact the restaurant” in the customer app uses it straight away. The change is logged with who made it and when.
+
+**Sign off a cash-up (account officers and managers)**
+1. Open Finance, then Cash-ups.
+2. Each day shows the cash expected, the cash counted, the difference, and who counted it.
+3. Tap a day, add a note if there’s a difference, and tap Sign off. The sheet says who it will be recorded as.
+4. The person signed in, an account officer or any manager (including the owner), is recorded by name and staff ID with the time. The day then shows “Signed off by” with that name, and the sign-off appears in the audit trail.
+
+**Close a month (account officers and managers)**
+1. Open Finance, then Close month, and choose the month.
+2. The app checks that every day’s cash-up is signed off, and lists any that aren’t.
+3. Review the statement and tap Close month, then confirm. The figures are locked, and the month shows “Closed by” with the name, staff ID, and time of whoever closed it.
+4. A later correction is added as an adjustment in the next open month, with a reason.
+5. Export the statement, cash-ups, or audit trail as CSV or PDF at any time.
+
 ### 7.4 Reports
 
 | Report | Shows |
@@ -548,7 +602,7 @@ Same philosophy as the kitchen: practical first, polished second. Larger control
 | Times | Time each order was placed, time to acknowledge, preparation time, wait for a rider, delivery time, and total time; averages and the slowest orders |
 | Riders, areas, and staff | Per rider: deliveries, order value delivered, delivery fees, rider pay, and average delivery time. Per neighbourhood: orders and average delivery time. Per kitchen staff member: orders handled (online and walk-in), order value handled, and average preparation time. |
 | Menu | Top items, revenue by item and category, how often items sell out |
-| Customers | New and returning customers, order frequency, and a **leaderboard** of the top customers by customer ID, sortable by total spent or number of orders (online orders only, because walk-ins have no account; managers only) |
+| Customers | New and returning customers, order frequency, and a **leaderboard** of the top customers by customer ID, sortable by total spent or number of orders (online orders only, because walk-ins have no account). Managers only (decided); showing it to account officers too is a Proposal awaiting the owner (`architecture.md` MGR-34), and the demo app shows it to them for now. |
 
 **Design notes:** large summary numbers, one clear chart per section, plain labels, and lists that collapse into cards on phones. Colour is never the only cue. Reports use pre-computed summaries so they load quickly, even over long periods. Charts are simple bars and lines, with the lists below them for detail.
 
@@ -657,8 +711,8 @@ Every design question is now decided. Anything that needs checking is listed in 
 | Walk-in orders | In the kitchen app; left out | **Decided:** in the kitchen app, with cash or online payment (6.5) |
 | Customer cart | Order bar straight to checkout; a separate Your order screen | **Decided:** a separate Your order screen between the order bar and checkout (4.2) |
 | Rider navigation | Bottom tabs; single home screen | **Decided:** bottom tabs Home, Queue, Earnings, and Me (5.3) |
-| Kitchen and manager navigation | Side rail; bottom tabs | **Decided:** a side rail with kitchen sections for everyone and a Manager group for managers (6.3) |
-| Walk-in cash amounts | A fixed list; amounts above the total | **Decided:** Exact, then ₦500, ₦1,000, ₦2,000, and ₦5,000, showing only amounts above the total (6.5) |
+| Kitchen and manager navigation | Side rail; bottom tabs | **Decided:** a side rail. Since 12 November 2026 each staff role sees its own items, and managers see the kitchen items plus a Manager group (6.3). |
+| Walk-in cash amounts | A fixed list; amounts above the total | **Decided (changed 12 November 2026):** an Exact button and an Other amount box. The earlier ₦500, ₦1,000, ₦2,000, and ₦5,000 buttons are removed, because they left only Exact for totals above ₦5,000 (6.5) |
 | Rider order load | Light, medium, or heavy labels; a number against the budget | **Decided:** a number against the budget, for example "Load 5 of 6" (5.5) |
 | Kitchen and manager theme choices | Light and dark; light, dark, and follow phone | **Decided:** Light, Dark, and Follow phone, like the other apps (3.9) |
 
@@ -668,6 +722,9 @@ Every design question is now decided. Anything that needs checking is listed in 
 
 | Version | Change |
 |---|---|
+| 0.21 | Owner decisions on 12 November 2026: kitchen staff set the soup of the day on the Sold out screen (managers can also use Menu); walk-in cash is Exact or an Other amount box; the cash-up sign-off and month close show who did it (an account officer or any manager), with the time. |
+| 0.20 | Consistency review on 12 November 2026, with no new decisions: the dispatch officer and account officer added to the scope, sign in, alerts, People (five tabs), the manual completion and rider pay flows, and the side rail decision; rider Need help goes to dispatch, and an Assigned by dispatch flow; today’s soup on the item detail; the leaderboard for account officers marked as a Proposal. |
+| 0.19 | Owner decisions on 12 November 2026: the soup of the day is picked by a manager on the Menu screen and shows in the customer app; side rail items by role, with two new roles, the dispatch officer (Alerts, Orders, Riders, Settings without Pricing and pay) and the account officer (Reports, Rider pay, Finance); a Customer card with Call and WhatsApp on online orders; the Riders screen and Assign to a rider; the Finance screen (statement, cash-ups, audit trail, close month) and the cash-up at close on the counter; the Restaurant contact setting; report comparison moved to future updates; the rider’s Earnings gain All time and an Owed section, and assigned orders get a banner. |
 | 0.18 | Owner decisions on 12 November 2026: in the rider app, “Go offline” is disabled while the rider carries an order, and alert sounds come with push notifications (vibration works from the start). |
 | 0.17 | Owner decisions on 11 November 2026: a separate Your order screen before checkout, rider bottom tabs, the kitchen and manager side rail, walk-in cash amounts above the total only, the rider order load as "Load 5 of 6", Follow phone in the kitchen and manager theme, the cancellation limit set by managers (3 to 7), and no mention of cancelling in the website’s feature list. |
 | 0.16 | Final uniformity review: the delivery fee is flat and set by the manager, the People screen replaces separate Riders and Staff screens, added the historic orders flow and missing screens (new password, order taken, release order, take payment, order sent, switch person), locked the design libraries to match `architecture.md` section 15, and the website uses no packages. |
