@@ -1,6 +1,6 @@
 # CKE ARCHITECTURE
 
-**Document Status:** Draft v0.38. Records the functions, features, and decisions for the apps and the website. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day with the backend foundation in progress), and again on 14 November 2026 after sign-in was built.  
+**Document Status:** Draft v0.39. Records the functions, features, and decisions for the apps and the website. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day with the backend foundation in progress), and again on 14 November 2026 after sign-in was built.  
 **Related documents:** `Casual-Kitchen-Express.md` (business and brand, surface level), `design.md` (UI/UX decisions and page flows), and `list-of-areas.md` (delivery areas).
 
 ---
@@ -355,6 +355,7 @@ Account officers also use the reports (MGR-17 to MGR-23, MGR-27, and MGR-34, the
 | MGR-36 | Restaurant contact number | The WhatsApp number behind “Contact the restaurant” in the customer app (CUS-19). One editable number, managers only. The change shows straight away and is written to the audit log. | **Decided** |
 | MGR-37 | Refunds report | A Refunds tab in Reports, with the same date range, channel filter, and CSV export as the other reports: count, total, and average; refunds by reason and by person; and every refund (order, amount, full or partial, reason, time, and who made it: name, role, staff ID), newest or largest first. Managers and account officers. Owner decision, 12 November 2026. | **Decided** |
 | MGR-38 | View profile | On People, each person has View profile: everything from the editor (role, staff ID, status, job title, username or Google email, phone, gender, home address) and their photo, or their initials until a photo is added. The photo also shows in the top bar when they sign in. Owner decision, 12 November 2026. | **Decided** |
+| MGR-39 | Tour guide | Managers only. **Start tour** in the Tour guide section of Demo controls (the only place it starts) walks the manager’s side rail from top to bottom in one straight tour of 14 steps. Each step opens that screen, dims the app, rings its menu item, and shows a card beside the rail: “Step 3 of 14”, a progress bar, the screen’s name, a short explanation of what it gets done, **Skip tour**, **Back**, and **Next** (**Finish** on the last step). The tablet’s back button goes back a step. Skip and Finish return to Demo controls. The tour only moves between screens and never changes data; it is never shown on its own at first launch. Owner decision, 15 November 2026. | **Decided** |
 
 ### 5.3.1 Dispatch officer (Business and Kitchen app)
 
@@ -1160,6 +1161,7 @@ At build time, a seed script fills the database with up to **two months** of his
 
 | Version | Change |
 |---|---|
+| 0.39 | Owner decision on 15 November 2026: a tour guide for managers (MGR-39), started only from Demo controls, one straight tour of the manager’s 14 menu items, each step opening its screen. |
 | 0.38 | Owner decisions on 14 November 2026: ammycan6@gmail.com is the owner, as staff ID M-001, set up from configuration (`OWNER_GOOGLE_EMAIL`, `OWNER_NAME`), which closes the 0.37 gap (3, 9 notes). Customer profiles built: the CustomerProfile row and customer ID at the first visit, name and gender saved, and the profile photo with on-phone compression, private to the customer, managers, and dispatch (3.1, 8.1, 9 notes). |
 | 0.37 | Review on 14 November 2026 after Google sign-in was tested on the tablet: 16.1 items 1 and 5 marked done (5 except the privacy link and publishing); the signing row no longer ties Google sign-in to the key; the accounts note and the status lines are current; `GET /people` hides the placeholder address of username staff; a gap recorded: the owner’s Google email isn’t configured for the deployed database yet (3). |
 | 0.36 | 14 November 2026: Hono upgraded from 4.13.14 to 4.13.16 for its security fixes (15.3). The owner approved the upgrade one day before it was two weeks old. Rider app sign-in built. Google sign-in built (browser-based flow, a Web client; no Android client or SHA-1 needed) in the API, the Business app, and the customer app, waiting for the owner’s Google client (section 9 notes). `GET /me` returns the person’s own profile details and Google email. The sign-in packages, `better-auth`, and expo-image installed in the customer app; `better-auth` declared in the Business and rider apps too (15.2). |

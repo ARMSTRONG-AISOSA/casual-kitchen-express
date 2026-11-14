@@ -27,8 +27,8 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and two
 | File | What it is | Authority |
 |---|---|---|
 | `progress.md` | This file: status, rules, next steps, log | Start here |
-| `docs/architecture.md` (v0.38) | Functions, 128 feature IDs (CUS, RID, KIT, MGR, DSP, ACC, WEB), order lifecycle, data model, the API routes built so far, decisions, free-tier limits, **locked versions (section 15)**, build order (16), **16.1 to verify at build**, seed data | Wins on anything technical |
-| `docs/design.md` (v0.31) | UI rules per app, screens, page flows, colours, components | Wins on anything visual or UX |
+| `docs/architecture.md` (v0.39) | Functions, 129 feature IDs (CUS, RID, KIT, MGR, DSP, ACC, WEB), order lifecycle, data model, the API routes built so far, decisions, free-tier limits, **locked versions (section 15)**, build order (16), **16.1 to verify at build**, seed data | Wins on anything technical |
+| `docs/design.md` (v0.32) | UI rules per app, screens, page flows, colours, components | Wins on anything visual or UX |
 | `docs/Casual-Kitchen-Express.md` (v1.10) | Brand and business, surface level only | Wins on brand (name, colours, logo, tone, menu, packaging) |
 | `docs/list-of-areas.md` | Delivery areas, boundary, landmarks, neighbourhood list | Areas still to confirm on a map |
 | `docs/photo-credits.md` | Every starting menu photo’s author, licence, and source, and the staff photos | The record the brand document asks for |
@@ -123,7 +123,7 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and two
 | Android | JDK 17 and the Android SDK installed. arm64-v8a debug builds of all three apps on the owner’s tablet. Rebuilt on 14 November 2026: the Business app (sign-in libraries), the rider app (56 minutes), and the customer app (24 minutes, with sign-in libraries and expo-image). |
 | Customer app | Every screen built on demo data. Reads the menu, soups, today’s soup, and photos from the API (with a 304 when nothing changed), and shows Photo credits. Continue with Google (checkout and Profile) signs in for real (tested 14 November 2026; a staff Google account is refused), and photos use expo-image. Profile is real: the customer ID, name, and gender come from the API and save, the profile photo is taken or chosen, cropped, compressed on the phone, and uploaded (a Profile photo section and a camera badge on the photo), and a Sign out section sits between Theme and Help. Ordering, addresses, and the map are still demo stand-ins. |
 | Rider app | Every screen built on demo data. Real sign-in (username and password, with a show-password eye), the new-password screen, staying signed in (even when it opens without signal), Sign out, and the Me tab’s details from the API. Deliveries are still demo data. |
-| Business and Kitchen app | Every screen for all four staff roles built on demo data. Real sign-in (usernames for staff with a show-password eye, Continue with Google for managers, tested 14 November 2026), Your profile with Sign out from the photo in the top bar, People connected to the API, and the tablet sign-out. Connected to the API for: the soup of the day and the soup rotation, photo upload for dishes, soups, and staff (crop, compression, credits; replacing deletes the old photo), and staff photos. Refund confirmation ticks with the refunder recorded, the Refunds report, View profile, and Back to Orders work on demo data. |
+| Business and Kitchen app | Every screen for all four staff roles built on demo data. Real sign-in (usernames for staff with a show-password eye, Continue with Google for managers, tested 14 November 2026), Your profile with Sign out from the photo in the top bar, the managers’ tour guide on Demo controls (MGR-39, tested in landscape and portrait 15 November 2026), People connected to the API, and the tablet sign-out. Connected to the API for: the soup of the day and the soup rotation, photo upload for dishes, soups, and staff (crop, compression, credits; replacing deletes the old photo), and staff photos. Refund confirmation ticks with the refunder recorded, the Refunds report, View profile, and Back to Orders work on demo data. |
 | API and database | Postgres 17.10 in Docker (local). 30-table schema and four migrations (`0000` to `0003`). Seeds: the menu (22 items, options), 3 soups, 10 areas, settings, 10 staff, and 33 photos (23 menu, 10 staff) in local R2. Routes: health, bootstrap (ETag and 304), soups, soup of the day, photos (upload, replace, remove), media (image and credits), staff photos, sign-in (Better Auth: usernames and Google), `/me` (with the customer’s profile, name, gender, and private photo), and People. The owner is M-001 from `OWNER_GOOGLE_EMAIL`. Every change route checks the role. Hono 4.13.16. |
 | Photos | All 23 starting menu photos are in: 19 freely licensed from Wikimedia Commons and Flickr, and 4 made by the owner with Google Gemini (credited “Casual Kitchen Express (made with Gemini)”). 10 staff headshots made with Gemini, with no credit. None are flagged as demo (`docs/photo-credits.md`). |
 
@@ -928,3 +928,31 @@ Append a new dated entry after each work session. Never edit or delete earlier e
 
 **Next step:**
 - The owner tests the customer Profile (photo, sign-out) and the owner account, then commit. Then build step 4c, the orders backend.
+- Done: the owner tested both and they were fine; committed as `8785e25`.
+
+---
+
+## [2026-11-15] Tour guide for managers
+
+**What was done:**
+- The owner tested the customer Profile (photo, Sign out) and the owner account: fine. Committed as `8785e25`.
+- The apps seemed down to the owner: the laptop side was running, but the tablet’s `adb reverse` links had dropped (they are lost whenever the wireless adb connection reconnects, which happened twice this session). Restoring them fixed it; an app can also show a grey screen for 10 to 20 seconds while it loads.
+- **Tour guide for managers (MGR-39, owner decisions):** managers only, started only from Demo controls, one straight tour, and each step opens its screen. Claude suggested the shape (a highlight plus a card, Back as well as Next and Skip, steps that open the screen); the owner chose one straight tour over two parts and managers only over every role.
+  - Demo controls now has three sections: **Tour guide** (one line and **Start tour**), **Practice orders** (New online order, auto-play, speed), and **Reset**, with a one-line explanation under New online order and Reset, which had confused the owner.
+  - The tour walks the manager’s 14 menu items from Board to Demo. Each step opens the screen, dims the app, puts a yellow ring around the menu item (scrolling the rail to it), and shows a card beside the rail with a pointer: “Tour guide · Step N of 14”, a progress bar, the name, one or two sentences, Skip tour, Back, and Next (Finish on the last step, with no Skip). The tablet’s back button goes back a step; Skip and Finish return to Demo controls; taps on the dimmed app do nothing. It only moves between screens and changes no data. No new libraries and no rebuild (JavaScript only).
+  - Tested on the tablet: all 14 steps in portrait and in landscape, turning the tablet mid-tour (the ring and card follow), Back, the tablet’s back button, Skip tour, Finish, and the dark theme. Fixed while testing: white corners around the ring (the ring is now nearly square to match the cut-out) and a redundant Close next to Finish on the last step.
+- Checks: typecheck 8 of 8, lint 3 of 3, Prettier clean. The API was not changed.
+- Documents: `architecture.md` v0.39 (MGR-39; 129 feature IDs), `design.md` v0.32 (Demo controls row in 7.2, the “Take the tour guide” flow in 7.3, and a note on the onboarding decision that the tour is opt-in, not an onboarding screen), this file.
+
+**Files created/updated:**
+- `apps/business/src/ui/tour.tsx` (new), `apps/business/src/ui/shell.tsx`, `apps/business/app/(app)/demo.tsx`
+- `docs/architecture.md`, `docs/design.md`, `progress.md`
+
+**Decisions locked in:**
+- Tour guide: managers only, one straight tour, each step opens its screen, started only from Demo controls (owner, 15 November 2026).
+
+**Open questions / not yet decided:**
+- None new.
+
+**Next step:**
+- The owner tries the tour on the tablet. Then go over the API call-reduction plan (architecture.md 14.4) with the owner, and build step 4c, the orders backend.

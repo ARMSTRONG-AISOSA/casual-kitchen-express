@@ -21,8 +21,10 @@ import {
   Wallet,
   type LucideIcon,
 } from "lucide-react-native";
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ComponentRef, type ReactNode } from "react";
 import {
+  AccessibilityInfo,
+  BackHandler,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -39,6 +41,7 @@ import { useTheme } from "../state/theme";
 import { Button, Sheet, T } from "./kit";
 import { Avatar } from "./avatar";
 import { useToast } from "./toast";
+import { TOUR, TourOverlay, TourProvider, type Rect } from "./tour";
 
 // The side rail and top bar (design.md 6.3). Each role sees only its own items
 // (architecture.md 3.0). The backend checks every role too; hiding a menu is not enough.
@@ -177,7 +180,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const t = useTheme();
   const toast = useToast();
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const wide = width >= 900;
   // Room for the title, the pause switch, the person, and Switch person on one row.
   const roomy = width >= 1100;
@@ -189,6 +192,64 @@ export function Shell({ children }: { children: ReactNode }) {
   // Tapping your photo in the top bar opens your profile, with Sign out.
   const [profile, setProfile] = useState(false);
   const active = SCREEN_OWNER[screen];
+
+  // The managers' tour guide (MGR-39): each step opens a screen and rings its menu item.
+  const [tourStep, setTourStep] = useState<number | null>(null);
+  // The measured menu item, kept with the step and screen size it was measured for.
+  const [measured, setMeasured] = useState<{ key: string; rect: Rect } | null>(null);
+  const tourKey = `${tourStep}-${width}x${height}`;
+  const target = measured?.key === tourKey ? measured.rect : null;
+  const [area, setArea] = useState({ w: width, h: height });
+  const rootRef = useRef<ComponentRef<typeof View>>(null);
+  const railRef = useRef<ComponentRef<typeof ScrollView>>(null);
+  const itemRefs = useRef<Partial<Record<NavId, ComponentRef<typeof View> | null>>>({});
+  const itemY = useRef<Partial<Record<NavId, number>>>({});
+  const endTour = () => {
+    setTourStep(null);
+    router.navigate("/demo");
+  };
+  useEffect(() => {
+    if (tourStep === null) return;
+    const s = TOUR[tourStep]!;
+    router.navigate(`/${s.id}`);
+    AccessibilityInfo.announceForAccessibility(
+      `Step ${tourStep + 1} of ${TOUR.length}. ${s.title}. ${s.body}`,
+    );
+  }, [tourStep]);
+  // Scroll the rail to the item, then measure where it sits (again after the tablet turns).
+  useEffect(() => {
+    if (tourStep === null) return;
+    const id = TOUR[tourStep]!.id;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    timers.push(
+      setTimeout(() => {
+        railRef.current?.scrollTo({
+          y: Math.max(0, (itemY.current[id] ?? 0) - 120),
+          animated: false,
+        });
+        timers.push(
+          setTimeout(() => {
+            rootRef.current?.measureInWindow((rx, ry, rw, rh) => {
+              setArea({ w: rw, h: rh });
+              itemRefs.current[id]?.measureInWindow((x, y, w, h) =>
+                setMeasured({ key: tourKey, rect: { x: x - rx, y: y - ry, w, h } }),
+              );
+            });
+          }, 120),
+        );
+      }, 80),
+    );
+    return () => timers.forEach(clearTimeout);
+  }, [tourStep, tourKey]);
+  // The tablet's back button goes to the previous step.
+  useEffect(() => {
+    if (tourStep === null) return;
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      setTourStep((n) => (n ? n - 1 : n));
+      return true;
+    });
+    return () => sub.remove();
+  }, [tourStep]);
   const isManagerScreen = MANAGER.includes(active ?? "board") || screen === "assign";
   const showPause = screen === "board" && (role === "manager" || role === "kitchen");
   const pauseControl = (
@@ -233,6 +294,12 @@ export function Shell({ children }: { children: ReactNode }) {
     return (
       <Pressable
         key={id}
+        ref={(v) => {
+          itemRefs.current[id] = v;
+        }}
+        onLayout={(e) => {
+          itemY.current[id] = e.nativeEvent.layout.y;
+        }}
         onPress={() => router.navigate(`/${id}`)}
         accessibilityRole="button"
         accessibilityLabel={count ? `${n.label}, ${count}` : n.label}
@@ -269,175 +336,197 @@ export function Shell({ children }: { children: ReactNode }) {
   const icon = t.mode === "dark" ? logos.iconCharcoal : logos.iconCream;
 
   return (
-    <View style={{ flex: 1, flexDirection: "row", backgroundColor: t.bg }}>
-      <View
-        style={[
-          styles.rail,
-          {
-            width: wide ? 210 : 96,
-            backgroundColor: t.rail,
-            borderRightColor: t.line,
-            paddingTop: insets.top + 10,
-            paddingBottom: insets.bottom + 10,
-          },
-        ]}
-      >
+    <TourProvider value={{ start: () => setTourStep(0) }}>
+      <View ref={rootRef} style={{ flex: 1, flexDirection: "row", backgroundColor: t.bg }}>
         <View
-          style={{
-            alignItems: wide ? "flex-start" : "center",
-            paddingHorizontal: wide ? 16 : 0,
-            marginBottom: 10,
-          }}
+          style={[
+            styles.rail,
+            {
+              width: wide ? 210 : 96,
+              backgroundColor: t.rail,
+              borderRightColor: t.line,
+              paddingTop: insets.top + 10,
+              paddingBottom: insets.bottom + 10,
+            },
+          ]}
         >
-          <SvgXml xml={icon.xml} width={wide ? 52 : 44} height={(wide ? 52 : 44) / icon.ratio} />
-        </View>
-        {/* Scrolls when the menu is taller than the screen (the manager has 14 items). */}
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ gap: 2, paddingBottom: 8 }}>
-          {rail.main.map(item)}
-          {rail.manager ? (
-            <>
-              <Text
-                style={[
-                  styles.group,
-                  { color: t.muted },
-                  !wide && { textAlign: "center", paddingHorizontal: 0 },
-                ]}
-              >
-                Manager
-              </Text>
-              {rail.manager.map(item)}
-            </>
-          ) : null}
-        </ScrollView>
-        <Pressable
-          onPress={() => set({ themePref: t.mode === "dark" ? "light" : "dark" })}
-          accessibilityRole="button"
-          accessibilityLabel={t.mode === "dark" ? "Light theme" : "Dark theme"}
-          style={[styles.item, wide ? styles.itemWide : styles.itemNarrow]}
-        >
-          {t.mode === "dark" ? <Sun size={22} color={t.text} /> : <Moon size={22} color={t.text} />}
-          <Text style={[styles.itemText, { color: t.text }, !wide && { fontSize: 12 }]}>
-            {t.mode === "dark" ? "Light" : "Dark"}
-          </Text>
-        </Pressable>
-        <Pressable
-          onPress={askSignOut}
-          accessibilityRole="button"
-          style={[styles.item, wide ? styles.itemWide : styles.itemNarrow]}
-        >
-          <LogOut size={22} color={t.text} />
-          <Text style={[styles.itemText, { color: t.text }, !wide && { fontSize: 12 }]}>
-            Sign out
-          </Text>
-        </Pressable>
-      </View>
-
-      <View style={{ flex: 1 }}>
-        <View
-          style={{
-            paddingTop: insets.top + 8,
-            borderBottomWidth: 1,
-            borderBottomColor: t.line,
-            backgroundColor: t.bg,
-          }}
-        >
-          <View style={styles.top}>
-            <T v="title" style={{ flexShrink: 0 }} numberOfLines={1}>
-              {TITLES[screen] ?? "CKE"}
-            </T>
-            {isManagerScreen ? (
-              <View style={[styles.demo, { backgroundColor: t.newBg }]}>
-                <Text style={[styles.demoText, { color: t.onNew }]}>Demo</Text>
-              </View>
+          <View
+            style={{
+              alignItems: wide ? "flex-start" : "center",
+              paddingHorizontal: wide ? 16 : 0,
+              marginBottom: 10,
+            }}
+          >
+            <SvgXml xml={icon.xml} width={wide ? 52 : 44} height={(wide ? 52 : 44) / icon.ratio} />
+          </View>
+          {/* Scrolls when the menu is taller than the screen (the manager has 14 items). */}
+          <ScrollView
+            ref={railRef}
+            style={{ flex: 1 }}
+            contentContainerStyle={{ gap: 2, paddingBottom: 8 }}
+          >
+            {rail.main.map(item)}
+            {rail.manager ? (
+              <>
+                <Text
+                  style={[
+                    styles.group,
+                    { color: t.muted },
+                    !wide && { textAlign: "center", paddingHorizontal: 0 },
+                  ]}
+                >
+                  Manager
+                </Text>
+                {rail.manager.map(item)}
+              </>
             ) : null}
-            <View style={{ flex: 1 }} />
-            {showPause && roomy ? pauseControl : null}
-            <Pressable
-              onPress={() => setProfile(true)}
-              accessibilityRole="button"
-              accessibilityLabel={`Your profile, ${user?.name ?? ""}`}
-              style={styles.who}
-            >
-              <Avatar code={user?.id} name={user?.name} size={44} />
-              {/* On the board the pause switch needs the room, so only the initials show there. */}
-              {wide && (screen !== "board" || width >= 1400) ? (
-                <View style={{ flexShrink: 1 }}>
-                  <T v="label" numberOfLines={1}>
-                    {user?.name}
-                  </T>
-                  <T v="small" muted>
-                    {ROLE_LABEL[role]}, {user?.id}
-                  </T>
+          </ScrollView>
+          <Pressable
+            onPress={() => set({ themePref: t.mode === "dark" ? "light" : "dark" })}
+            accessibilityRole="button"
+            accessibilityLabel={t.mode === "dark" ? "Light theme" : "Dark theme"}
+            style={[styles.item, wide ? styles.itemWide : styles.itemNarrow]}
+          >
+            {t.mode === "dark" ? (
+              <Sun size={22} color={t.text} />
+            ) : (
+              <Moon size={22} color={t.text} />
+            )}
+            <Text style={[styles.itemText, { color: t.text }, !wide && { fontSize: 12 }]}>
+              {t.mode === "dark" ? "Light" : "Dark"}
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={askSignOut}
+            accessibilityRole="button"
+            style={[styles.item, wide ? styles.itemWide : styles.itemNarrow]}
+          >
+            <LogOut size={22} color={t.text} />
+            <Text style={[styles.itemText, { color: t.text }, !wide && { fontSize: 12 }]}>
+              Sign out
+            </Text>
+          </Pressable>
+        </View>
+
+        <View style={{ flex: 1 }}>
+          <View
+            style={{
+              paddingTop: insets.top + 8,
+              borderBottomWidth: 1,
+              borderBottomColor: t.line,
+              backgroundColor: t.bg,
+            }}
+          >
+            <View style={styles.top}>
+              <T v="title" style={{ flexShrink: 0 }} numberOfLines={1}>
+                {TITLES[screen] ?? "CKE"}
+              </T>
+              {isManagerScreen ? (
+                <View style={[styles.demo, { backgroundColor: t.newBg }]}>
+                  <Text style={[styles.demoText, { color: t.onNew }]}>Demo</Text>
                 </View>
               ) : null}
-            </Pressable>
-            {isKitchenScreen ? (
-              <Button label="Switch person" variant="ghost" small onPress={signOut} />
-            ) : null}
-          </View>
-          {/* Narrow screens (a tablet in portrait) put the pause switch on its own row. */}
-          {showPause && !roomy ? <View style={styles.topRow2}>{pauseControl}</View> : null}
-        </View>
-        <View style={{ flex: 1 }}>{children}</View>
-      </View>
-
-      <Sheet visible={profile} onClose={() => setProfile(false)} title="Your profile">
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
-          <Avatar code={user?.id} name={user?.name} size={72} />
-          <View style={{ flexShrink: 1 }}>
-            <T v="h2">{user?.name}</T>
-            <T muted>
-              {ROLE_LABEL[role]}, {user?.id}
-            </T>
-          </View>
-        </View>
-        {[
-          ["Job", user?.job],
-          user ? [signInOf(user).label, signInOf(user).value] : ["", ""],
-          ["Phone", user?.phone],
-        ].map(([label, value]) =>
-          value ? (
-            <View key={label} style={{ marginTop: 12 }}>
-              <T v="small" muted>
-                {label}
-              </T>
-              <T>{value}</T>
+              <View style={{ flex: 1 }} />
+              {showPause && roomy ? pauseControl : null}
+              <Pressable
+                onPress={() => setProfile(true)}
+                accessibilityRole="button"
+                accessibilityLabel={`Your profile, ${user?.name ?? ""}`}
+                style={styles.who}
+              >
+                <Avatar code={user?.id} name={user?.name} size={44} />
+                {/* On the board the pause switch needs the room, so only the initials show there. */}
+                {wide && (screen !== "board" || width >= 1400) ? (
+                  <View style={{ flexShrink: 1 }}>
+                    <T v="label" numberOfLines={1}>
+                      {user?.name}
+                    </T>
+                    <T v="small" muted>
+                      {ROLE_LABEL[role]}, {user?.id}
+                    </T>
+                  </View>
+                ) : null}
+              </Pressable>
+              {isKitchenScreen ? (
+                <Button label="Switch person" variant="ghost" small onPress={signOut} />
+              ) : null}
             </View>
-          ) : null,
-        )}
-        <Button
-          label="Sign out"
-          style={{ marginTop: 20 }}
-          onPress={() => {
-            setProfile(false);
-            askSignOut();
-          }}
-        />
-      </Sheet>
+            {/* Narrow screens (a tablet in portrait) put the pause switch on its own row. */}
+            {showPause && !roomy ? <View style={styles.topRow2}>{pauseControl}</View> : null}
+          </View>
+          <View style={{ flex: 1 }}>{children}</View>
+        </View>
 
-      <Sheet visible={leaving} onClose={() => setLeaving(false)} title="Cash up before you go?">
-        <T muted>
-          Count the cash in the drawer and enter it, so today’s cash-up is ready for sign-off.
-        </T>
-        <Button
-          label="Cash up now"
-          style={{ marginTop: 16 }}
-          onPress={() => {
-            setLeaving(false);
-            router.navigate("/cash-up");
-          }}
-        />
-        <Button
-          label="Sign out anyway"
-          variant="ghost"
-          style={{ marginTop: 8 }}
-          onPress={() => {
-            setLeaving(false);
-            signOut();
-          }}
-        />
-      </Sheet>
-    </View>
+        <Sheet visible={profile} onClose={() => setProfile(false)} title="Your profile">
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+            <Avatar code={user?.id} name={user?.name} size={72} />
+            <View style={{ flexShrink: 1 }}>
+              <T v="h2">{user?.name}</T>
+              <T muted>
+                {ROLE_LABEL[role]}, {user?.id}
+              </T>
+            </View>
+          </View>
+          {[
+            ["Job", user?.job],
+            user ? [signInOf(user).label, signInOf(user).value] : ["", ""],
+            ["Phone", user?.phone],
+          ].map(([label, value]) =>
+            value ? (
+              <View key={label} style={{ marginTop: 12 }}>
+                <T v="small" muted>
+                  {label}
+                </T>
+                <T>{value}</T>
+              </View>
+            ) : null,
+          )}
+          <Button
+            label="Sign out"
+            style={{ marginTop: 20 }}
+            onPress={() => {
+              setProfile(false);
+              askSignOut();
+            }}
+          />
+        </Sheet>
+
+        <Sheet visible={leaving} onClose={() => setLeaving(false)} title="Cash up before you go?">
+          <T muted>
+            Count the cash in the drawer and enter it, so today’s cash-up is ready for sign-off.
+          </T>
+          <Button
+            label="Cash up now"
+            style={{ marginTop: 16 }}
+            onPress={() => {
+              setLeaving(false);
+              router.navigate("/cash-up");
+            }}
+          />
+          <Button
+            label="Sign out anyway"
+            variant="ghost"
+            style={{ marginTop: 8 }}
+            onPress={() => {
+              setLeaving(false);
+              signOut();
+            }}
+          />
+        </Sheet>
+
+        {tourStep !== null ? (
+          <TourOverlay
+            step={tourStep}
+            target={target}
+            area={{ ...area, top: insets.top, bottom: insets.bottom }}
+            railWidth={wide ? 210 : 96}
+            onBack={() => setTourStep((n) => (n ? n - 1 : n))}
+            onNext={() => (tourStep < TOUR.length - 1 ? setTourStep(tourStep + 1) : endTour())}
+            onSkip={endTour}
+          />
+        ) : null}
+      </View>
+    </TourProvider>
   );
 }
 

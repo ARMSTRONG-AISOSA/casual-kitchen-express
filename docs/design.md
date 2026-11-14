@@ -1,6 +1,6 @@
 # CKE DESIGN
 
-**Document Status:** Draft v0.31. Records UI and UX decisions, design choices, page flows, and design libraries. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day).  
+**Document Status:** Draft v0.32. Records UI and UX decisions, design choices, page flows, and design libraries. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day).  
 **Related documents:** `Casual-Kitchen-Express.md` (business and brand, surface level), `architecture.md` (functions, features, data, technical decisions), and `list-of-areas.md` (delivery areas).
 
 ---
@@ -460,7 +460,7 @@ Same philosophy as the kitchen: practical first, polished second. Larger control
 | Assign to a rider | Online riders whose remaining capacity fits the order, with their load and current stops. One tap assigns. |
 | Rider pay | Each rider's owed balance, per-delivery pay, mark a period as paid (simulated), and payout history. Account officers and managers. |
 | Finance | Four tabs: **Statement** (a month’s sales by channel and payment method, refunds, delivery fees, rider pay earned and paid, cash variances, and net), **Cash-ups** (each day’s expected, counted, difference, who counted, Sign off, and who signed it off with the time), **Audit trail** (every money action with who and when, with filters), and **Close month**. Export as CSV or PDF. Account officers and managers. |
-| Demo controls | Create orders, auto-play the kitchen and riders, set the speed, and reset the demo data |
+| Demo controls | Three sections. **Tour guide** (managers only, MGR-39): one line on what it shows and **Start tour** (7.3). **Practice orders:** New online order (adds one pretend customer order to the Board), auto-play (a simulated kitchen and riders move orders along), and the speed. **Reset:** puts today’s orders, alerts, cash-ups, payouts, and settings back to the start, with confirmation. Each control has a one-line explanation under it. |
 | Settings | Online order hours (8:00 am to 6:00 pm) and walk-in hours (8:00 am to 8:30 pm), pause orders, the neighbourhood list and delivery boundary, rider capacity and the batch drop-off distance, rider tracking mode (light or milestones only), the cancellation limit (3 to 7 in 7 days), the delivery fee (₦1,500 by default), and the rider pay per delivery (₦1,000 by default). The delivery fee and rider pay are editable, and changes show in the customer and rider apps straight away. **Restaurant contact** holds the WhatsApp number behind “Contact the restaurant” in the customer app. **Tablet sign-out** (managers only) turns the tablet’s automatic sign-out at 8:30 pm on or off; it’s on by default. Pricing and pay, Restaurant contact, and Tablet sign-out are shown to managers only; dispatch officers see the other sections. |
 | Reports | Orders, sales, timings, riders, areas and staff, menu, customers (with a leaderboard), and refunds, for 7, 30, or 60 days or a custom date range, with a channel filter. The report tabs sit on top under a “Report” label; below a divider, the **Date range** and the **Channel** (All, Online, Walk-in) each sit in their own labelled box, side by side on wide screens and stacked otherwise, so the three kinds of choice are never confused. Account officers and managers. |
 
@@ -540,6 +540,13 @@ Comparing with the previous period is a possible future update (`architecture.md
 1. Open Demo controls.
 2. Tap New online order or New walk-in order to place a simulated order, or turn on auto-play to let a simulated kitchen and rider handle orders.
 3. Choose the speed (1x, 5x, or 20x), and pause or reset when finished. Reset asks for confirmation and regenerates the historic demo data.
+
+**Take the tour guide** (managers only, MGR-39; owner decision, 15 November 2026)
+1. Open Demo controls and tap **Start tour** in the Tour guide section. This is the only place the tour starts.
+2. The tour goes down the manager’s side rail in one straight run of 14 steps: Board, Walk-in, Sold out, Alerts, Dashboard, Orders, Riders, People, Menu, Rider pay, Reports, Finance, Settings, and Demo.
+3. Each step opens that screen and dims the app, with a yellow ring around its menu item (the rail scrolls to it if needed). A card beside the rail, with a small pointer to the item, shows “Tour guide · Step 3 of 14”, a progress bar, the screen’s name, and one or two sentences on what the screen gets done.
+4. **Next** moves on, **Back** (from step 2) and the tablet’s back button go back a step, and **Skip tour** ends it. The last step shows **Finish** instead of Next and no Skip.
+5. Skip and Finish return to Demo controls. Taps on the dimmed app do nothing, so nobody leaves the tour by accident. The tour only moves between screens and never changes data. It works in landscape and portrait, and the ring and card follow when the tablet turns.
 
 **Handle a cancellation or refund**
 1. Open Orders and choose the order, or open a customer's cancellation request from Alerts.
@@ -722,7 +729,7 @@ Every design question is now decided. Anything that needs checking is listed in 
 | Map style | Standard map; simplified branded map | **Decided:** a light, muted OpenFreeMap style with brand-coloured markers (4.4) |
 | Kitchen alert sounds | Single tone; different tones per event | **Decided:** two tones, one for new online orders and one for attention (6.2) |
 | Customer app navigation | Bottom tab bar; single-screen with menus | **Decided:** a bottom tab bar with Menu, Orders, Profile, and More (4.6) |
-| Onboarding screens | None; short intro | **Decided:** none |
+| Onboarding screens | None; short intro | **Decided:** none. The managers’ tour guide (7.3) is started only by choice from Demo controls, so it isn’t an onboarding screen. |
 | Report charts | Simple bars and lines; richer interactive charts | **Decided:** simple bars and lines (7.4) |
 | Address entry | Neighbourhood, pin, and landmark; address search | **Decided:** neighbourhood, pin, and landmark |
 | Website ordering | Promote only; promote and order | **Decided:** promote only |
@@ -740,6 +747,7 @@ Every design question is now decided. Anything that needs checking is listed in 
 
 | Version | Change |
 |---|---|
+| 0.32 | Owner decision on 15 November 2026: a tour guide for managers on Demo controls (7.2, 7.3), one straight tour where each step opens its screen. Demo controls now has Tour guide, Practice orders, and Reset sections, each control with a one-line explanation. |
 | 0.31 | Owner requests on 14 November 2026: the customer app’s Profile gets a Profile photo section (with real compression and a size note) and a camera badge on the photo, and a Sign out section between Theme and Help (4.2, 4.3). |
 | 0.30 | Owner request on 14 November 2026: tapping your photo in the Business app’s top bar opens Your profile, with Sign out (6.3, 7). |
 | 0.29 | Owner request on 14 November 2026: an eye button on every password field to show or hide the password (3.6). |
