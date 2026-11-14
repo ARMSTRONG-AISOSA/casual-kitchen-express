@@ -1,6 +1,6 @@
 # CKE DESIGN
 
-**Document Status:** Draft v0.25. Records UI and UX decisions, design choices, page flows, and design libraries. Reviewed end to end on 11 November 2026, and again on 12 November 2026 after the new staff roles and Finance were added.  
+**Document Status:** Draft v0.26. Records UI and UX decisions, design choices, page flows, and design libraries. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day).  
 **Related documents:** `Casual-Kitchen-Express.md` (business and brand, surface level), `architecture.md` (functions, features, data, technical decisions), and `list-of-areas.md` (delivery areas).
 
 ---
@@ -183,7 +183,7 @@ Expressive and appetising: large food photography, warm cream backgrounds, frien
 | Address editor | Add, edit, delete, set default |
 | Deactivate account | One confirmation tick, then the customer is signed out. Signing in again offers to reactivate. |
 | Delete account | A red Danger zone: a checkbox and typing DELETE ACCOUNT exactly, with Deactivate offered as the gentler choice |
-| More | A list of text pages: Terms and conditions, Privacy policy, About us, Support us, Partner with us, and FAQs Photo credits lists each menu photo’s author and licence. |
+| More | A list of text pages: Terms and conditions, Privacy policy, About us, Support us, Partner with us, FAQs, and Photo credits. Photo credits lists each menu photo’s credit (author and licence, or “Casual Kitchen Express” for CKE’s own photos) and opens its source. |
 | Text page | One plain text page with a back button to More |
 
 ### 4.3 Page flows
@@ -427,7 +427,7 @@ The top bar shows the screen title, the Demo chip on manager screens, the signed
 6. **On shift:** each person signs in on the tablet with their own username and password at the start of their shift. The top bar always shows who is signed in, with their name and photo, and "Switch person" hands over to the next person. Every action is recorded against whoever is signed in (`architecture.md`, 4.5). The tablet signs out automatically at 8:30 pm, the walk-in closing time.
 7. **Take a walk-in order:** tap "New walk-in order", then tap item tiles to add items. Choose Eat in or Take away, and add a name if wanted. Tap Charge, then choose **Cash** or **Online**. For cash, tap **Exact**, or type the amount received into the **Other amount** box (decided 12 November 2026). An amount below the total says so and can’t be confirmed. The app shows the change due. For online, confirm the simulated payment. The order number (for example W-006) is shown to call out, and the ticket appears on the board with a Walk-in badge, recorded against the signed-in person.
 8. **Walk-in ticket:** it moves through Preparing and Ready like an online ticket. Ready shows the number to call out, and Collected clears it when the customer takes the order. There is no rider step.
-9. **Cancel a walk-in order:** before it is ready, open the ticket, tap Cancel, choose a reason, and confirm. The payment is refunded (simulated) and the cancellation is recorded against the signed-in person.
+9. **Cancel a walk-in order:** before it is ready, open the ticket, tap Cancel, choose a reason, tick “I’m sure I want to refund ₦… for …” (the sheet says who it will be recorded as), and confirm. The payment is refunded (simulated), and the refund is recorded with the name, role, and staff ID of the signed-in person and the time.
 10. **Soup of the day:** each morning, open Sold out and tap today’s soup at the top. The customer app shows it straight away, and only that soup can be ordered.
 11. **Cash-up at close:** at the end of the day (before the 8:30 pm sign-out), the person on the counter opens Cash-up, counts the drawer, enters the amount, and taps Save. The app shows the cash expected from the day’s walk-in cash payments and the difference. The account officer or a manager signs it off later in Finance.
 
@@ -446,7 +446,7 @@ Same philosophy as the kitchen: practical first, polished second. Larger control
 | Dashboard | Today's orders and sales with the online and walk-in split, cash and online payments, orders in progress, alerts |
 | People | Five tabs: Riders, Kitchen staff, Dispatch officers, Account officers, and Managers, with staff IDs and status. Reset password, Deactivate, and Reactivate for every account except the owner’s. Managers only. Each card shows the person’s photo (or initials) and has **View profile**, Edit, Reset password, and Deactivate. View profile shows every detail from the editor and the photo, or a large initials placeholder. |
 | Add or edit a person | Username and temporary password (or a Google email for managers), plus the profile: name, role, job title, phone, gender (optional: female, male, or prefer not to say), home address (optional), and an optional photo (cropped square and compressed, then shown in the top bar when they sign in) |
-| Menu list | Categories and items with availability and prices, and **Soup of the day** at the top: one tap picks today’s soup, and the customer app shows it straight away (kitchen staff set it on Sold out). Below the soups, **Soups in the rotation** lists each soup with Remove, and an **Add a soup** box adds a new one. Each item and soup shows a small photo. |
+| Menu list | Categories and items with availability and prices, and **Soup of the day** at the top: one tap picks today’s soup, and the customer app shows it straight away (kitchen staff set it on Sold out). Below the soups, **Soups in the rotation** lists each soup with Remove, and an **Add a soup** box adds a new one. Each item and soup shows a small photo; tapping it opens the photo dialog (7.3, Image upload). |
 | Item editor | Name, description, price, image, options, load value, station |
 | Orders | All orders for Today, Yesterday, or any date range back to the first order. Search by order number or customer ID, filter by channel (All, Online, Walk-in), status, staff member, and payment method, and sort by time placed or amount. Shows the count and total value, and loads long ranges 150 rows at a time. |
 | Order detail | The full timeline with timestamps and staff IDs, payment, and Refund (managers only). Online orders show a **Customer** card: name, customer ID, phone, and delivery address (label, neighbourhood, landmark), with **Call** and **WhatsApp** buttons. Waiting orders show **Assign to a rider**. A **Back to Orders** button sits at the top. Refunds need an “I’m sure…” tick, and each refund shows who made it (name, role, staff ID, time). |
@@ -516,7 +516,7 @@ Same philosophy as the kitchen: practical first, polished second. Larger control
 8. When a soup is added, its photo dialog opens straight away (optional, it can be skipped and added later).
 
 **View reports and historic data**
-1. Open Reports and choose a report from the tabs at the top: Orders, Sales, Times, Riders, areas, and staff, Menu, or Customers.
+1. Open Reports and choose a report from the tabs at the top: Orders, Sales, Times, Riders, areas, and staff, Menu, Customers, or Refunds.
 2. In the Date range box, pick 7, 30, or 60 days with one tap, or choose Custom range and pick a From and To date.
 3. In the Channel box, pick All, Online, or Walk-in.
 4. Each report opens with summary cards (for example total orders, total sales, average delivery time), then a simple chart, then the details. Every figure follows the chosen date range and channel.
@@ -584,7 +584,7 @@ Comparing with the previous period is a possible future update (`architecture.md
 **Handle a cancellation request (dispatch officers)**
 1. A customer’s request appears in Alerts.
 2. Open it, contact the customer if needed, and choose Approve or Decline.
-3. An approved request refunds under the rules (`architecture.md` 4.6). Other refunds are for managers.
+3. Approving needs the “I’m sure I want to refund ₦… for …” tick. The approved request refunds under the rules (`architecture.md` 4.6), recorded with the name, role, and staff ID of the person signed in. Other refunds are for managers.
 
 **Change the restaurant’s WhatsApp number (managers)**
 1. Open Settings, then Restaurant contact.
@@ -734,6 +734,7 @@ Every design question is now decided. Anything that needs checking is listed in 
 
 | Version | Change |
 |---|---|
+| 0.26 | End-of-day review on 12 November 2026, with no new decisions: the Refunds tab in the reports flow, the refund tick in the walk-in cancel and cancellation-request flows, Photo credits wording on More, and photo taps on the Menu list. |
 | 0.25 | Owner decisions on 12 November 2026: photo upload with crop, compression, and credit fields wherever photos are added, replacing deletes the old photo everywhere; a refund confirmation tick and the refunder recorded; a Refunds report; View profile and staff photos on People, with gender and home address in the editor; Back to Orders on the order detail; the Board top bar on narrow screens. |
 | 0.24 | 12 November 2026: menu photos in the customer app and as thumbnails on the Business app’s Menu screen; soup dishes carry the soup’s name and photo; a Photo credits page under More. |
 | 0.23 | Owner decision on 12 November 2026: managers add and remove soups in the rotation from the Menu screen (Soups in the rotation, Add a soup). |

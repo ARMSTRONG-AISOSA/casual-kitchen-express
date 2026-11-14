@@ -1,6 +1,6 @@
 # CKE ARCHITECTURE
 
-**Document Status:** Draft v0.31. Records the functions, features, and decisions for the apps and the website. Reviewed end to end on 11 November 2026, and again on 12 November 2026 after the new staff roles and Finance were added.  
+**Document Status:** Draft v0.32. Records the functions, features, and decisions for the apps and the website. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day with the backend foundation in progress).  
 **Related documents:** `Casual-Kitchen-Express.md` (business and brand, surface level), `design.md` (UI/UX decisions and page flows), and `list-of-areas.md` (delivery areas).
 
 ---
@@ -16,7 +16,7 @@ This document records **what the system does and how it is put together** for th
 | Rider and Delivery app | Riders |
 | Website | Visitors (promotes the app) |
 
-**Status:** planning and design are complete, and the build now happens locally. `progress.md` tracks what has been built.
+**Status:** planning and design are complete. The three apps’ screens are built on demo data, and the backend foundation is in progress (16). `progress.md` tracks what has been built and what is left.
 
 **Conventions**
 - Feature IDs use a prefix per client or role (CUS, RID, KIT, MGR, DSP, ACC, WEB) so features can be tracked and referenced.
@@ -330,7 +330,7 @@ Account officers also use the reports (MGR-17 to MGR-23, MGR-27, and MGR-34, the
 | MGR-12 | Rider capacity settings | Load values and capacity budget (section 6) | Planned |
 | MGR-13 | Order list and search | Today, yesterday, or **any date range back to the first order**. Search by order number or customer ID. Filter by channel (online or walk-in), status, staff member, and payment method. Sort by time placed or amount. Shows the count and total value, and loads long ranges in pages. | **Decided** |
 | MGR-14 | Alerts | Order unaccepted by riders, order stuck, item unavailable, a rider’s help request, and a customer’s cancellation request (the Alert record in section 9) | Planned |
-| MGR-15 | Cancellations and refunds | Rules in 4.6, with simulated refunds Every refund (a manager’s refund, a dispatch officer’s or manager’s approval of a cancellation request, and kitchen staff cancelling a walk-in) needs an **“I’m sure I want to refund ₦… for …” tick** first, and is recorded with the **name, role, and staff ID** of the person signed in, and the time (shown on the order and in the audit trail). Owner decision, 12 November 2026. | **Decided** |
+| MGR-15 | Cancellations and refunds | Rules in 4.6, with simulated refunds. Every refund (a manager’s refund, a dispatch officer’s or manager’s approval of a cancellation request, and kitchen staff cancelling a walk-in) needs an **“I’m sure I want to refund ₦… for …” tick** first, and is recorded with the **name, role, and staff ID** of the person signed in, and the time (shown on the order and in the audit trail). Owner decision, 12 November 2026. | **Decided** |
 | MGR-16 | Manual completion approval | For delivery-code problems. Dispatch officers can approve too (DSP-04). | Planned |
 | MGR-17 | Order volume reports | Orders by hour, day, week, and month; peak times; delivery and pickup split; online and walk-in split; completed and cancelled | Planned |
 | MGR-18 | Sales reports | Total sales, average order value, payment method split (cash, card, transfer), online and walk-in split, refunds. Each split shows the amount first, then its share, for example “Card ₦735,730 (51%)”. | Planned |
@@ -464,7 +464,7 @@ Test on a mid-range Android phone through a two-hour delivery shift. The target 
 
 ### 8.1 Compression before upload
 
-Images are compressed **on the device before they leave the app**, so uploads are small and storage stays low. This applies to menu item images (managers) and profile photos (customers).
+Images are compressed **on the device before they leave the app**, so uploads are small and storage stays low. This applies to dish and soup photos and staff photos (the Business app, MGR-06; built 12 November 2026) and to customers’ profile photos (CUS-16). Dishes and soups use the menu values below, and staff and customer photos use the profile values.
 
 | Step | Detail (decided starting values) |
 |---|---|
@@ -479,9 +479,9 @@ Images are compressed **on the device before they leave the app**, so uploads ar
 
 The backend **re-validates** every upload (type, size, dimensions) and can create smaller thumbnails for lists, so the app never trusts the client alone.
 
-### 8.1.1 Menu photos (12 November 2026)
+### 8.1.1 Starting photos (12 November 2026)
 
-22 menu photos were sourced from Wikimedia Commons and Flickr (through Openverse), processed to the values above (4:3, at most 1200 px, WebP quality 78, all under 250 KB), and recorded with author, licence, and source in `docs/photo-credits.md` and `apps/api/seed-media/menu/credits.json`. The seed script (`npm run db:seed-media --workspace @cke/api`) puts them in R2 and links them to the menu items and the three soups. MediaAsset rows keep each photo’s title, author, licence, and source, and `GET /media/credits` lists them for the customer app’s Photo credits page. The Office Lunch Combo has no photo yet (`docs/photo-credits.md`, Still to do).
+All 23 starting menu photos are in. 19 were sourced from Wikimedia Commons and Flickr (through Openverse) under licences that allow commercial use and changes; 4 (the Office Lunch Combo, Yoghurt drink, Moi moi, and Home Plate) were made by the owner with Google Gemini under the brand document’s AI fallback rules, and are credited “Casual Kitchen Express (made with Gemini)”. All were processed to the values above (4:3, at most 1200 px, WebP quality 78, all under 250 KB). The 10 starting staff photos were also made with Gemini; they are square, under 80 KB, and carry no credit (owner decision). Records: `docs/photo-credits.md` and `apps/api/seed-media/menu/credits.json`; staff files in `apps/api/seed-media/staff/`. The seed script (`npm run db:seed-media --workspace @cke/api`) puts them in R2 and links them to the menu items, the three soups, and the staff. MediaAsset rows keep each photo’s source kind, title, author, licence, and source, and `GET /media/credits` lists the credits of the menu and soup photos in use for the customer app’s Photo credits page. The starting photos are **not flagged as demo**: they carry on to the release (owner decision, 12 November 2026).
 
 ### 8.2 Where images are stored
 
@@ -489,7 +489,7 @@ The backend **re-validates** every upload (type, size, dimensions) and can creat
 
 ### 8.3 Replacing and deleting
 
-- Replacing an image uploads a new compressed file and then removes the old file.
+- Replacing an image uploads a new compressed file and then removes the old file and its record, unless something else still uses it (built 12 November 2026, MGR-06). Every app then shows the new photo, and the customer app’s Photo credits follow.
 - Deleting a menu item asks for confirmation, and its images are cleaned up. Items that appear in past orders are archived rather than erased, so order history stays accurate.
 
 ---
@@ -498,7 +498,7 @@ The backend **re-validates** every upload (type, size, dimensions) and can creat
 
 Entities and key fields, as a starting point for the Drizzle schema. Better Auth's own tables (users, sessions, and accounts) belong to the same schema and are not repeated here.
 
-**Demo data:** every seeded record is flagged as demo so it can be wiped and regenerated (18.3).
+**Demo data:** every seeded record is flagged as demo so it can be wiped and regenerated (18.3). The exception is the starting photos (8.1.1), which ship with the release; the photo seed resets and relinks them itself.
 
 **Order list at any range:** the API returns orders for any date range, filtered and sorted on the server and paged with a cursor, so a long range never loads all at once. Orders are indexed by placed time, channel, status, staff, and customer.
 
@@ -512,7 +512,7 @@ Entities and key fields, as a starting point for the Drizzle schema. Better Auth
 - **Accounts:** Better Auth’s user, session, account, and verification tables, with its username and admin plugin fields, written by hand from Better Auth 1.7’s schema. They are confirmed against Better Auth’s own generator when sign-in is built (16.1, item 1).
 - **Not yet:** the ReportView summaries come with the reports (build step 9).
 
-**API routes so far** (`apps/api/README.md` has the commands): `GET /health`; `GET /bootstrap` (menu, soups, areas, and customer-facing settings, with an ETag and 304s); `POST /soups` and `DELETE /soups/:id` (managers); `PUT /settings/soup-of-the-day` (kitchen staff and managers); `GET /media/:id` (an image from R2, cached for a year because an ID never changes what it points to, 8.3); `GET /media/credits` (the credits of the menu and soup photos in use, so a replaced or removed photo drops out); `PUT /photos/:kind/:id` and `DELETE /photos/:kind/:id` (add, replace, or remove a dish, soup, or staff photo with its credit; the API checks it is WebP within the size and dimension limits, and deletes the old photo); `GET /staff/photos` (staff photos; open until sign-in, then staff only). The demo staff are in the database too (`npm run db:seed-people`), so staff photos and, next, sign-in have records to use. Until sign-in exists, changes are refused unless the laptop-only setting `ALLOW_UNSIGNED_WRITES` is on, so a deployed Worker can’t be changed by anyone. Sign-in replaces this with role checks. The soup rotation is the first feature the apps read from the API; both apps fall back to their demo data when no API address is set.
+**API routes so far** (`apps/api/README.md` has the commands): `GET /health`; `GET /bootstrap` (menu, soups, areas, and customer-facing settings, with an ETag and 304s); `POST /soups` and `DELETE /soups/:id` (managers); `PUT /settings/soup-of-the-day` (kitchen staff and managers); `GET /media/:id` (an image from R2, cached for a year because an ID never changes what it points to, 8.3); `GET /media/credits` (the credits of the menu and soup photos in use, so a replaced or removed photo drops out); `PUT /photos/:kind/:id` and `DELETE /photos/:kind/:id` (add, replace, or remove a dish, soup, or staff photo with its credit; the API checks it is WebP within the size and dimension limits, and deletes the old photo); `GET /staff/photos` (staff photos; open until sign-in, then staff only). **Gap to close with sign-in:** `GET /media/:id` currently serves every photo publicly, staff photos included, while 3.1 and 12 require staff photos to be access-controlled; sign-in puts staff photos behind a staff session and leaves menu photos public. The demo staff are in the database too (`npm run db:seed-people`), so staff photos and, next, sign-in have records to use. Until sign-in exists, changes are refused unless the laptop-only setting `ALLOW_UNSIGNED_WRITES` is on, so a deployed Worker can’t be changed by anyone. Sign-in replaces this with role checks. The soup rotation is the first feature the apps read from the API; both apps fall back to their demo data when no API address is set.
 
 | Entity | Key fields |
 |---|---|
@@ -823,36 +823,6 @@ Neon now also offers Functions (serverless Node.js compute), Object Storage, and
 - Neon's 5 GB transfer allowance is shared across its products, while R2 has no download charges.
 - Because Hono also runs on Node, the API could move to Neon Functions later if Workers limits get in the way.
 
-### 14.4 Fewer calls and fresh data (to go over with the owner before the backend)
-
-**Status:** the four choices below are **Decided** (owner, 12 November 2026). The owner asked that, before the backend is built, we go over ways to reduce the number of calls the API gets, especially for fetching app data and keeping it fresh, given that some data goes stale sooner than other data.
-
-**Decided (12 November 2026)**
-1. **Settings and menu: version plus a live nudge.** One start-up call loads the menu, prices, delivery fee, rider pay, WhatsApp number, and soup of the day with a version number. The app fetches them again only when the live connection or a push says the version changed.
-2. **Past data: kept, only today refreshed.** Past days (reports, statements, order history) are stored on the device and the server and never fetched twice. Only today’s figures are refreshed.
-3. **Reports: chosen per report by size.** Small sets (such as the deliveries behind the rider and area tables) are fetched once for the range and worked out in the app, so switching channel or table needs no new call. Large sets are summed in the database, and only the totals are sent.
-4. **Reconnect: only what changed.** The app remembers the last update it saw and asks for the changes since then, in one small call.
-
-The table and rules below are the detail behind these choices.
-
-Starting ideas, from the most stable data to the most live:
-
-| Data | How often it really changes | Ideas to keep calls low |
-|---|---|---|
-| Past days (reports, statements, closed months, order history) | Never, once the day is over; a closed month is locked (ACC-07) | Cache for good on the device and on the server. Only today’s figures are ever re-fetched. Pre-computed summaries (ReportView) mean one small call per report view. |
-| Menu, prices, delivery fee, rider pay, WhatsApp number, soup of the day | A few times a day at most | One “bootstrap” call when an app opens returns all of it with a version number. After that, the app re-fetches only when the live channel or a push says the version changed. HTTP ETags let an unchanged reply come back as a tiny “not modified”. |
-| Staff list, riders’ profiles, areas | Rarely | Same as settings: a version number, re-fetched only on change. |
-| Today’s orders on the board, the rider queue, tracking | Every few seconds at busy times | The live connection (Durable Objects, 10) pushes each change; the app never polls. On reconnect, one call fetches only what changed since the last version seen. |
-| Rider location | About every 45 seconds while delivering | Already batched and low-frequency (7.1). |
-| Reports for a chosen range | Only today’s part changes | The app can fetch the range’s records once (for example the deliveries behind the rider and area tables, about 2,000 small rows for 60 days) and work out the tables itself, so switching channel or table makes no new call. Or SQL does the sums and returns only the totals. Choose per report at build time, by payload size. |
-
-**General rules to consider**
-- Each data type gets its own freshness time in TanStack Query (`staleTime`), so stable data isn’t re-fetched just because a screen opens again.
-- Re-fetch on reconnect and when the app comes back to the foreground, not on a timer.
-- One call per screen where possible: endpoints return what a screen needs together (for example an order with its customer card and timeline).
-- Writes return the updated record, so the app doesn’t need a follow-up read.
-- Count requests and queries per day in Workers Logs against the budget in 14.2.
-
 ### 14.3 Customer map provider
 
 **Status:** decided on 10 November 2026: MapLibre with OpenFreeMap tiles. The comparison below is kept as a record. OpenFreeMap is a free public service with no uptime guarantee, so its current usage terms should be checked before a public demo.
@@ -876,6 +846,35 @@ Starting ideas, from the most stable data to the most live:
 
 **Address entry without search:** because deliveries stay within Uselu to Oluku Market, the customer picks a neighbourhood from the delivery range, drops a pin, and adds a landmark. This avoids address search and geocoding costs and suits places where street addresses are unreliable. It works with any provider.
 
+### 14.4 Fewer calls and fresh data (decided)
+
+**Status:** the four choices below are **Decided** (owner, 12 November 2026). The owner asked for ways to reduce the number of calls the API gets, especially for fetching app data and keeping it fresh, given that some data goes stale sooner than other data. Choice 1 is built: `GET /bootstrap` returns the catalog version as an ETag and answers 304 when nothing changed.
+
+**Decided (12 November 2026)**
+1. **Settings and menu: version plus a live nudge.** One start-up call loads the menu, prices, delivery fee, rider pay, WhatsApp number, and soup of the day with a version number. The app fetches them again only when the live connection or a push says the version changed.
+2. **Past data: kept, only today refreshed.** Past days (reports, statements, order history) are stored on the device and the server and never fetched twice. Only today’s figures are refreshed.
+3. **Reports: chosen per report by size.** Small sets (such as the deliveries behind the rider and area tables) are fetched once for the range and worked out in the app, so switching channel or table needs no new call. Large sets are summed in the database, and only the totals are sent.
+4. **Reconnect: only what changed.** The app remembers the last update it saw and asks for the changes since then, in one small call.
+
+The table and rules below are the detail behind these choices.
+
+From the most stable data to the most live:
+
+| Data | How often it really changes | Ideas to keep calls low |
+|---|---|---|
+| Past days (reports, statements, closed months, order history) | Never, once the day is over; a closed month is locked (ACC-07) | Cache for good on the device and on the server. Only today’s figures are ever re-fetched. Pre-computed summaries (ReportView) mean one small call per report view. |
+| Menu, prices, delivery fee, rider pay, WhatsApp number, soup of the day | A few times a day at most | One “bootstrap” call when an app opens returns all of it with a version number. After that, the app re-fetches only when the live channel or a push says the version changed. HTTP ETags let an unchanged reply come back as a tiny “not modified”. |
+| Staff list, riders’ profiles, areas | Rarely | Same as settings: a version number, re-fetched only on change. |
+| Today’s orders on the board, the rider queue, tracking | Every few seconds at busy times | The live connection (Durable Objects, 10) pushes each change; the app never polls. On reconnect, one call fetches only what changed since the last version seen. |
+| Rider location | About every 45 seconds while delivering | Already batched and low-frequency (7.1). |
+| Reports for a chosen range | Only today’s part changes | The app can fetch the range’s records once (for example the deliveries behind the rider and area tables, about 2,000 small rows for 60 days) and work out the tables itself, so switching channel or table makes no new call. Or SQL does the sums and returns only the totals. Choose per report at build time, by payload size. |
+
+**General rules**
+- Each data type gets its own freshness time in TanStack Query (`staleTime`), so stable data isn’t re-fetched just because a screen opens again.
+- Re-fetch on reconnect and when the app comes back to the foreground, not on a timer.
+- One call per screen where possible: endpoints return what a screen needs together (for example an order with its customer card and timeline).
+- Writes return the updated record, so the app doesn’t need a follow-up read.
+- Count requests and queries per day in Workers Logs against the budget in 14.2.
 
 ---
 
@@ -932,9 +931,9 @@ All three apps use the same versions.
 | expo-task-manager | ~58.0.12 | Background location (rider app) |
 | expo-battery | ~58.0.3 | Battery-aware tracking (rider app) |
 | expo-keep-awake | ~58.0.3 | Screen awake on pickup and code entry (rider app) and on the kitchen tablet |
-| expo-image-picker | ~58.0.10 | Photos (customer profile, manager menu and staff) |
-| expo-image-manipulator | ~58.0.16 | Crop, resize, and compress before upload |
-| expo-image | ~58.0.18 | Showing menu photos with caching. Not installed yet: it is a native module, so it comes with the next native build of the customer and business apps. Until then the apps show photos with React Native’s own Image, which Android also caches. |
+| expo-image-picker | ~58.0.10 | Photos (customer profile; dishes, soups, and staff in the Business app, installed there 12 November 2026) |
+| expo-image-manipulator | ~58.0.16 | Crop, resize, and compress before upload (installed in the Business app) |
+| expo-image | ~58.0.18 | Showing photos with caching. Installed in the Business app (with its native build of 12 November 2026). The customer app gets it with its next native build; until then it shows photos with React Native’s own Image, which Android also caches. |
 | expo-font | ~58.0.11 | Loading Nunito and Inter |
 | expo-linear-gradient | ~58.0.3 | Required by the charts library (business app) |
 | expo-splash-screen | ~58.0.12 | Launch screen |
@@ -1014,7 +1013,7 @@ The website uses **no packages**. It is plain HTML, CSS, and JavaScript.
 7. Website (static, on GitHub Pages).
 8. Reports, rider payouts, and polish.
 
-**Changed on 12 November 2026 (owner decision): frontend first.** The app screens are built first on demo data held in each app, so the owner can see and review them. The customer app came first, then the rider app, then the Kitchen and Business app (all three built on demo data by 12 November 2026; `progress.md` has the status). The backend foundation (step 1) and the seed script (step 2) follow, and then each app’s demo data is replaced with real API calls. The rest of the order is unchanged.
+**Changed on 12 November 2026 (owner decision): frontend first.** The app screens are built first on demo data held in each app, so the owner can see and review them. The customer app came first, then the rider app, then the Kitchen and Business app (all three built on demo data by 12 November 2026). The backend foundation (step 1) is in progress: the database, catalog, soup rotation, and photos are built, and sign-in and roles come next, then orders and statuses. The seed script (step 2) follows, and then each app’s demo data is replaced with real API calls. The rest of the order is unchanged. `progress.md` section 8 has the step-by-step status.
 
 **Platform:** every step targets Android first. iOS is added later.
 
@@ -1142,7 +1141,7 @@ At build time, a seed script fills the database with up to **two months** of his
 
 **Quality rules**
 - The script is deterministic (a fixed random seed), so the same demo data can be regenerated.
-- Every row is flagged as demo, and the script can wipe and regenerate it (MGR-29).
+- Every row is flagged as demo, and the script can wipe and regenerate it (MGR-29). The starting photos are the exception (8.1.1).
 - The script checks its own output: timestamps are in order, totals add up, refunds match cancellations, no order is in the future, no online order is outside 08:00 to 18:00, no walk-in order is outside 08:00 to 20:30, and every order of both kinds has a staff attribution.
 - Fake customers use emails on a reserved example domain, so nothing is ever sent to a real person.
 - Size: roughly 15 to 25 MB, well inside Neon's free storage. The script writes straight to the database, so it does not use the API's request budget.
@@ -1160,6 +1159,7 @@ At build time, a seed script fills the database with up to **two months** of his
 
 | Version | Change |
 |---|---|
+| 0.32 | End-of-day review on 12 November 2026, with no new decisions: image compression covers dishes, soups, and staff (8.1); starting photos updated for the Gemini menu and staff photos, which aren’t flagged as demo (8.1.1, 9, 18.3); expo-image, the image picker, and the manipulator installed in the Business app (15.2); 14.4 marked decided and placed after 14.3; the build-order status (16); the public-photo gap to close with sign-in recorded (section 9 notes). |
 | 0.31 | Owner decisions on 12 November 2026: photo upload in the Business app with crop, compression, and credit fields, replacing deletes the old photo everywhere (MGR-06, MediaAsset source kind); a refund confirmation tick and the refunder’s name, role, and staff ID recorded (MGR-15); a Refunds report (MGR-37); View profile, staff photos, gender, and home address on People (MGR-38); new photo routes and the demo staff in the database (section 9 notes). |
 | 0.30 | 12 November 2026: menu photos sourced, processed, and recorded (8.1.1, `docs/photo-credits.md`), stored in R2 and served by `GET /media/:id`; MediaAsset gains credit fields; soups gain their own photo; soup dishes carry the soup’s name and photo (KIT-17); a Photo credits page (CUS-26); expo-image noted for the next native build (15.2). |
 | 0.29 | Owner decision on 12 November 2026: managers add and remove soups in the soup of the day rotation on the Menu screen, saved in the database and shown in the customer app (KIT-17). The first API routes (section 9 notes), with a temporary write guard until sign-in. |

@@ -2,9 +2,9 @@
 
 **Last updated:** 12 November 2026
 
-The menu photos used in the apps (and later the website), with where each came from, as the brand document asks (`Casual-Kitchen-Express.md`, Food Imagery). The customer app shows the same list under More, Photo credits. The files are in `apps/api/seed-media/menu/`, and `credits.json` there holds the same details for the seed script.
+The 23 starting menu photos used in the apps (and later the website), with where each came from, as the brand document asks (`Casual-Kitchen-Express.md`, Food Imagery). The customer app shows the same list under More, Photo credits. The files are in `apps/api/seed-media/menu/`, and `credits.json` there holds the same details for the seed script.
 
-**How they were chosen (12 November 2026):** searched Wikimedia Commons and Openverse (which includes Flickr) for each dish, kept only licences that allow commercial use and changes, rejected photos that didn’t match the dish or showed brand logos, and checked each one by eye. Each photo was cropped to 4:3, resized to at most 1200 px on the longest edge, and saved as WebP at quality 78 (all under 250 KB, most under 130 KB), with location and camera data removed (`architecture.md` 8.1). CC BY-SA photos stay under CC BY-SA after these changes.
+**How the 19 internet photos were chosen (12 November 2026):** searched Wikimedia Commons and Openverse (which includes Flickr) for each dish, kept only licences that allow commercial use and changes, rejected photos that didn’t match the dish or showed brand logos, and checked each one by eye. Each photo was cropped to 4:3, resized to at most 1200 px on the longest edge, and saved as WebP at quality 78 (all under 250 KB, most under 130 KB), with location and camera data removed (`architecture.md` 8.1). CC BY-SA photos stay under CC BY-SA after these changes.
 
 **Made with Gemini (12 November 2026):** no good free photo was found for the Office Lunch Combo, and the Yoghurt drink, Moi moi, and Home Plate photos were weak, so the owner made these four with Google Gemini, following the brand document’s photography direction and AI fallback rules (natural light, real portions, no text or logos). They are CKE’s own photos, credited “Photo by Casual Kitchen Express (made with Gemini)”, and ship with the app’s starting data (not marked as demo).
 
@@ -24,9 +24,9 @@ The menu photos used in the apps (and later the website), with where each came f
 | Fried rice | `fried.webp` | Bukky658 | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:Fried_rice_and_chicken_garnished_with_sweet_corn,_carrot_and_green_peas.jpg |
 | Home Plate | `home-plate.webp` | Casual Kitchen Express (made with Gemini) | CKE’s own | — |
 | Jollof rice | `jollof.webp` | Halima Waziri | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:Nigerian_jollof_rice.jpg |
-| Office Lunch Combo | `office-lunch-combo.webp` | Casual Kitchen Express (made with Gemini) | CKE’s own | — |
 | Meat pie | `meat-pie.webp` | Hajjare | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:A_Northern_Nigeria_snacks_called_meat_pie_21.jpg |
 | Moi moi | `moi-moi.webp` | Casual Kitchen Express (made with Gemini) | CKE’s own | — |
+| Office Lunch Combo | `office-lunch-combo.webp` | Casual Kitchen Express (made with Gemini) | CKE’s own | — |
 | Ogbono | `ogbono.webp` | Bukky658 | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:Ogbono_soup_with_assorted_meats.jpg |
 | Pounded yam (extra) | `pounded-yam.webp` | Ayoife Oni | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:POUNDED_YAM_%26_VEGETABLE_SOUP._A_native_delicacy_of_the_Yoruba_tribe_in_Nigeria,_West_Africa..jpg |
 | Rice combo | `ricecombo.webp` | Tosinwrites | CC BY 4.0 | https://commons.wikimedia.org/wiki/File:Fried_rice,_jollof_rice_and_beef.jpg |

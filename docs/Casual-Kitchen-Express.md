@@ -1,6 +1,6 @@
 # CASUAL KITCHEN EXPRESS (CKE)
 ## Brand Strategy & Business Foundation
-**Document Status:** Working Brand Strategy — Version 1.9  
+**Document Status:** Working Brand Strategy — Version 1.10  
 **Scope:** Surface-level brand and business decisions. Depth on the apps and website is in `architecture.md` (functions, features, data, technical decisions) and `design.md` (UI/UX decisions and page flows).
 
 ---
@@ -335,7 +335,7 @@ CKE runs on three apps and a website. This section gives the high-level picture.
 
 The apps are Android apps (Android 10 and above). For now they are installed directly from the website rather than through an app store.
 
-All four are in development. The screens of all three apps are built and being reviewed, and clickable prototypes of every screen serve as the visual reference.
+All four are in development. The screens of all three apps are built and being reviewed, the menu and its photos already come from the shared system, and clickable prototypes of every screen serve as the visual reference.
 
 ### Design Approach
 
@@ -367,12 +367,13 @@ Across all of them, every task takes as few taps as possible.
 
 - Kitchen staff acknowledge each order, prepare it, and mark it ready, following the packaging rules.
 - Kitchen staff also enter walk-in orders at the counter, taking payment in cash or online. Managers can view and filter online and walk-in orders separately, and see sales by channel and payment method.
-- Managers create rider and staff accounts, manage menu items, prices, and images, set opening hours, and can pause new orders.
+- Managers create rider and staff accounts, manage menu items, prices, photos, and the soups in rotation, set opening hours, and can pause new orders.
 - Managers can deactivate staff and manager accounts (except the owner’s), and rank customers by spend and number of orders.
 - A dispatch officer coordinates the kitchen, riders, and customers: they can contact customers, see where riders are, hand an order to a rider, and settle cancellation requests.
 - An account officer keeps the money records: reports, rider pay, a monthly statement, the daily cash-up, an audit trail, and closing each month.
 - Every staff member and every customer has a unique ID. Staff IDs let each order be traced to who acknowledged it, who prepared it, and which rider collected and delivered it.
-- Images are compressed on the device before upload, to keep storage small.
+- Images are compressed on the device before upload, to keep storage small. Menu photos carry their credit.
+- Every refund needs a deliberate confirmation and is recorded with who made it.
 - Managers can see current and historic data: the full order list for any date range, order volumes, sales amounts, the time each order was placed, and preparation and delivery times, by day, week, month, rider, and area.
 
 ---
@@ -401,11 +402,11 @@ Across all of them, every task takes as few taps as possible.
 
 ### Food Imagery
 
-Food images are sourced from the internet for the design and build.
+Food images are sourced from the internet for the design and build. All the menu photos are in: most come from free-to-use libraries, and four were made with an AI image tool under the fallback rules below.
 
 - **Source:** the best-quality photo available for each dish. Free-to-use libraries (such as Unsplash, Pexels, Pixabay, and Wikimedia Commons) are preferred, and the source of each image is recorded, with credit where the licence asks for it.
 - **Subject:** Nigerian dishes that match the menu, accurate in colour, texture, and portion.
-- **Credits:** the apps list each photo’s author and licence on a Photo credits page, and the full record is kept with the technical documents.
+- **Credits:** the apps list each photo’s author and licence on a Photo credits page (CKE’s own photos are credited to Casual Kitchen Express), and the full record is kept with the technical documents.
 - **AI fallback:** when no suitable photo is found, AI-generated images may be used. They must be based on real-world reference photos and look as human-made as possible, with natural light, believable portions and plating, natural imperfections, and no distorted food, hands, or garbled text.
 
 ### Visual Rules
@@ -476,6 +477,7 @@ The following principles should guide future business and brand decisions:
 | Delivery model | All deliveries by CKE's own riders, from Uselu to Oluku Market |
 | Platform plan (apps and website) | Documented in `architecture.md` and `design.md` |
 | Clickable prototypes | Complete for all three apps and the website |
+| Menu photography | Sourced for every dish, with credits |
 | App and website development | In progress (from November 2026) |
 | Social media visual direction | Defined |
 
@@ -485,8 +487,8 @@ The following principles should guide future business and brand decisions:
 
 The brand foundation and the design are complete, and the apps and website are being built. Remaining brand work:
 
-1. Source food imagery for the menu, the apps, and the website (free-to-use libraries first, with sources recorded).
-2. Test the logo files inside the real apps and website.
+1. Choose the food imagery for the website (the menu and app photos are done).
+2. Test the logo files on the website (they are already in use in the apps).
 3. Confirm the delivery areas in `list-of-areas.md` on a map.
 4. Measure and verify the items listed in `architecture.md`, section 16.1, during the build.
 

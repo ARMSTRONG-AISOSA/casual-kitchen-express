@@ -1,9 +1,9 @@
 # CKE Progress
 
-The working memory for Casual Kitchen Express (CKE). Read this first, then the documents it points to. The top half is the current state; the **Log** at the bottom is append-only history.
+The working memory for Casual Kitchen Express (CKE). Read this first, then the documents it points to. The top half (sections 1 to 8) is the current state; the **Log** at the bottom is append-only history.
 
-**Last updated:** 12 November 2026
-**Stage:** repository setup and machine setup are done. The arm64 debug build of the customer app runs on the owner’s tablet through the development server. **The customer app’s screens are built on demo data and committed** (frontend first, owner decision on 12 November 2026). **The rider app’s screens are built on demo data and committed.** The owner’s additions for the Business and Kitchen app (dispatch officer and account officer roles, a Finance menu, the restaurant WhatsApp setting, the soup of the day, no report comparison) are in the docs, and **the Business and Kitchen app’s screens are built on demo data and committed**, for the owner’s review.
+**Last updated:** 12 November 2026 (end of day, before the owner’s break)
+**Stage:** all three apps’ screens are built on demo data and committed. The **backend foundation is in progress**: the local database, the full schema, the menu, soups, areas, staff, and photos are in Postgres and R2, and the apps already read the menu, soups, and photos from the API. Photo upload (with compression and credits), the soup rotation, refund confirmations, and the Refunds report are built and tested on the tablet. **Next: sign-in with Better Auth and role checks** (section 8, step 4b). Eight local commits, latest `9a916f6`; nothing pushed.
 
 ---
 
@@ -27,11 +27,12 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and two
 | File | What it is | Authority |
 |---|---|---|
 | `progress.md` | This file: status, rules, next steps, log | Start here |
-| `docs/architecture.md` (v0.31) | Functions, 126 feature IDs (CUS, RID, KIT, MGR, DSP, ACC, WEB), order lifecycle, data model, decisions, free-tier limits, **locked versions (section 15)**, build order (16), **16.1 to verify at build**, seed data | Wins on anything technical |
-| `docs/design.md` (v0.25) | UI rules per app, screens, page flows, colours, components | Wins on anything visual or UX |
-| `docs/Casual-Kitchen-Express.md` (v1.9) | Brand and business, surface level only | Wins on brand (name, colours, logo, tone, menu, packaging) |
+| `docs/architecture.md` (v0.32) | Functions, 128 feature IDs (CUS, RID, KIT, MGR, DSP, ACC, WEB), order lifecycle, data model, the API routes built so far, decisions, free-tier limits, **locked versions (section 15)**, build order (16), **16.1 to verify at build**, seed data | Wins on anything technical |
+| `docs/design.md` (v0.26) | UI rules per app, screens, page flows, colours, components | Wins on anything visual or UX |
+| `docs/Casual-Kitchen-Express.md` (v1.10) | Brand and business, surface level only | Wins on brand (name, colours, logo, tone, menu, packaging) |
 | `docs/list-of-areas.md` | Delivery areas, boundary, landmarks, neighbourhood list | Areas still to confirm on a map |
-| `docs/photo-credits.md` | Every menu photo’s author, licence, and source, and the photos still to find | The record the brand document asks for |
+| `docs/photo-credits.md` | Every starting menu photo’s author, licence, and source, and the staff photos | The record the brand document asks for |
+| `apps/api/README.md` | Database, seed, test, and run commands, with what each should print, and the routes so far | How to run the backend |
 | `design/prototypes/*.html` | Clickable prototypes of every screen (open in a browser) | Illustrations only. If they disagree with the docs, **the docs win.** |
 | `brand/cke-logo-package/` | Logo SVG and PNG files, app icons, favicons, brand tokens (CSS and JSON), web snippet, build script | Use these files, never redraw the logo |
 
@@ -58,7 +59,7 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and two
 10. **Ask before adding scope.** Record proposals as "Proposal" until the owner confirms.
 11. **Use only the locked versions** in `docs/architecture.md`, section 15. Install Expo packages with `npx expo install`, commit the lockfile, and ask the owner before upgrading anything.
 12. **Android builds are arm64-v8a only.** Release builds add armeabi-v7a. Never build x86 or x86_64 (`architecture.md` 17.2).
-13. **Git:** ask the owner before each commit, and don’t push until the owner says so.
+13. **Git:** the owner tests each piece first; ask before each commit, and don’t push until the owner says so. Commit messages carry no Co-Authored-By line.
 14. **Owner-side instructions are fully detailed:** exact keys, commands, expected output, and how to check the result.
 
 ---
@@ -98,6 +99,8 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and two
 - **Staff roles:** kitchen staff (Board, Walk-in, Sold out, Alerts), dispatch officers (Alerts, Orders, Riders, Settings without Pricing and pay and Restaurant contact), account officers (Reports, Rider pay, Finance), and managers (everything). The backend checks the role on every action (`architecture.md` 3.0).
 - **Soup of the day:** kitchen staff pick it each morning on Sold out (managers on Sold out or Menu), and the customer app shows it; only today’s soup can be ordered.
 - **Finance:** the person on the counter counts the cash at close, and an account officer or any manager (including the owner) signs it off; whoever signs off or closes a month is recorded by name, staff ID, and time. A closed month is locked, and later corrections are adjustments.
+- **Refunds:** every refund (a manager’s refund, an approved cancellation request, a walk-in cancelled on its ticket) needs an “I’m sure I want to refund ₦… for …” tick and records the name, role, staff ID, and time of whoever made it (MGR-15).
+- **Photos:** compressed on the device before upload (dishes and soups 4:3, at most 1200 px and 250 KB; staff square, 512 px and 80 KB). Dish and soup photos carry a credit; staff photos carry none. Replacing a photo deletes the old one everywhere (MGR-06).
 - **Order numbers:** online numbers run continuously from O-0001 on the first seeded day, and walk-in numbers restart at W-001 each day.
 - **Manager order list:** today, yesterday, or any date range back to the first order, with search by order number or customer ID and paging for long ranges.
 - **Seed data:** 60 days of history at about 40 online and 13 walk-in orders on a weekday and 25 and 8 at weekends, respecting the hours (`architecture.md`, 18.3).
@@ -116,58 +119,77 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and two
 | Design plan | Philosophy per app (customer expressive, kitchen practical, rider functional and black-and-white), screens, and flows |
 | Areas | Scouted area list, with the boundary at Oluku Market (the road there is reported clear) |
 | Prototypes | 22 customer screens, 16 rider screens, 19 kitchen and manager screens, and 5 website pages, all automatically click-tested |
-| Repository | npm workspaces and Turborepo monorepo with the three apps, the API Worker, shared packages, and the website. Typecheck, lint, and the first API test pass. Five commits, not pushed. |
-| Android | JDK 17 and the Android SDK installed. arm64-v8a debug builds of all three apps installed on the owner’s tablet. |
-| Customer app | Every screen built on demo data and committed. Claude tapped through it on the tablet and fixed what it found. |
-| Rider app | Every screen built on demo data and committed, with its own arm64 debug build on the tablet. |
-| Business and Kitchen app | Every screen for kitchen staff, dispatch officers, account officers, and managers built on demo data and committed. |
+| Repository | npm workspaces and Turborepo monorepo with the three apps, the API Worker, shared packages, and a placeholder website. Typecheck and lint pass (11 of 11 tasks), Prettier is clean, and 5 of 5 API tests pass. Eight local commits (`26cb742` to `9a916f6`), not pushed. |
+| Android | JDK 17 and the Android SDK installed. arm64-v8a debug builds of all three apps on the owner’s tablet. The Business app’s build (12 November, evening) includes the photo libraries; the customer app’s build is older, so it shows photos with React Native’s Image until its next native build. |
+| Customer app | Every screen built on demo data. Reads the menu, soups, today’s soup, and photos from the API (with a 304 when nothing changed), and shows Photo credits. Ordering, sign-in, and the map are still demo stand-ins. |
+| Rider app | Every screen built on demo data. Not connected to the API yet (no images by design). |
+| Business and Kitchen app | Every screen for all four staff roles built on demo data. Connected to the API for: the soup of the day and the soup rotation, photo upload for dishes, soups, and staff (crop, compression, credits; replacing deletes the old photo), and staff photos. Refund confirmation ticks with the refunder recorded, the Refunds report, View profile, and Back to Orders work on demo data. |
+| API and database | Postgres 17.10 in Docker (local). 30-table schema and four migrations (`0000` to `0003`). Seeds: the menu (22 items, options), 3 soups, 10 areas, settings, 10 staff, and 33 photos (23 menu, 10 staff) in local R2. Routes: health, bootstrap (ETag and 304), soups, soup of the day, photos (upload, replace, remove), media (image and credits), and staff photos. A temporary write guard stands in for sign-in. |
+| Photos | All 23 starting menu photos are in: 19 freely licensed from Wikimedia Commons and Flickr, and 4 made by the owner with Google Gemini (credited “Casual Kitchen Express (made with Gemini)”). 10 staff headshots made with Gemini, with no credit. None are flagged as demo (`docs/photo-credits.md`). |
 
 ---
 
 ## 7. Open items
 
-**Owner to provide or confirm**
-1. **Food and staff photos: done (12 November 2026).** All 23 menu photos are in (`docs/photo-credits.md`). Pexels had paused new API keys, so the owner made the Office Lunch Combo, yoghurt drink, moi moi, and Home Plate photos and the 10 staff headshots with Google Gemini. Menu ones are credited “Casual Kitchen Express (made with Gemini)”; staff photos carry no credit. None are marked as demo: they ship with the starting data.
-2. **Delivery areas.** Which areas are in range is decided (both sides of Oluku, Isihor, Iguosa, and the Oluku villages, all up to Oluku Market). Still to do: draw the boundary polygon from map pins (Uselu to Oluku Market) and confirm spellings. Extra landmarks between Uselu and Oluku may be researched, but each needs the owner’s approval before it is added.
-3. **GitHub repository (decided):** https://github.com/ARMSTRONG-AISOSA/casual-kitchen-express. The website's download button should point to its `releases/latest` once it exists.
-4. **Versions:** all locked in `architecture.md`, section 15. Re-check them for security advisories just before installing.
-5. **Machine setup (done):** JDK 17.0.21 is installed through apt. The Android SDK is in `~/Android/Sdk` (command-line tools 23.0, platform-tools 37.0.1, Platforms 36 and 37, build-tools 36.0.0, NDK 27.1.12297006). `JAVA_HOME`, `ANDROID_HOME`, and the SDK `PATH` are set in `~/.bashrc` (verified: adb 37.0.1 from the SDK). Note: the home router’s DNS (192.168.0.1) times out on some names, which broke apt; using 1.1.1.1 and 8.8.8.8 fixed it.
-6. **GitHub remote:** `origin` is https://github.com/ARMSTRONG-AISOSA/casual-kitchen-express.git. The repository exists and is empty. Nothing is pushed until the owner says so.
-7. **App screens on demo data:** the customer and rider screens are committed; the Business and Kitchen app is committed too. The customer map and Google sign-in are stand-ins until their libraries and the backend are added. Rider alert sounds come with push notifications (decided), so alerts only vibrate for now.
-8. **Decided (12 November 2026):** the rider can’t go offline while carrying an order (`architecture.md` RID-02, `design.md` 5.5).
-9. **Prototypes lag the docs** on the 11 November decisions (cart, cash amounts, load display, kitchen theme, website cancel line) and on everything decided on 12 November (new roles, Finance, soup of the day). The docs win, and the prototypes are not being updated.
-10. **Decided (12 November 2026):** walk-in cash is an Exact button and an Other amount box; the ₦500 to ₦5,000 buttons are gone (`design.md` 6.5).
-11. **Decided (12 November 2026):** account officers see the customer leaderboard (`architecture.md` MGR-34).
-12. **Decided (12 November 2026):** fewer API calls and fresh data: settings with a version number and a live nudge, past data kept and only today refreshed, reports worked out in the app or database by size, and reconnecting fetches only what changed (`architecture.md` 14.4).
+**Owner actions, in the order they will be needed**
+1. **Cloudflare account** (next, during sign-in): Claude will give exact steps. It is needed to deploy a test Worker and run the early 16.1 checks (PBKDF2 timing, Durable Object alarms).
+2. **Google Cloud project for Google sign-in** (with sign-in): Claude will give exact steps (package names, debug and release SHA-1 fingerprints, consent screen, privacy link). Until then, sign-in can be built and tested with the username and password accounts.
+3. **Delivery boundary:** draw the polygon from map pins (Uselu to Oluku Market) and confirm the spellings of area names (`list-of-areas.md` section 9). Needed when addresses are connected (step 6).
+4. **Firebase project for push notifications** (step 6): steps to follow.
+5. **Neon account** at deploy time (decided): steps to follow.
+6. **Pushing to GitHub:** `origin` is https://github.com/ARMSTRONG-AISOSA/casual-kitchen-express.git (empty). Nothing is pushed until the owner says so.
+
+**Known gaps and notes (no decision needed unless the owner wants one)**
+- **Photos are public until sign-in:** `GET /media/:id` serves every photo, including staff photos, and `GET /staff/photos` is open. The docs require staff photos to be access-controlled (`architecture.md` 3.1, 12), so sign-in must put staff photos behind a staff session.
+- **“Other area in range”** is a choice in the customer app’s area picker, but not a seeded area in the database. Settle how it is stored when addresses are connected (step 6).
+- **Tests and `dev:lan` share local state:** stop the API’s `dev:lan` before `npm run test --workspace @cke/api` (`apps/api/README.md`).
+- **Prototypes lag the docs** on the 11 and 12 November decisions. The docs win, and the prototypes are not being updated.
+- **Customer app native build:** expo-image comes with its next native build; until then React Native’s Image shows the photos (fine for now).
+- **Rider alert sounds** come with push notifications (decided); alerts only vibrate for now.
+- **Versions:** all locked in `architecture.md` 15. Re-check them for security advisories just before installing anything new.
 
 **To verify at build** (the full list is in `architecture.md`, 16.1)
-- Better Auth's username plugin, admin create-user, and custom password-hash setting.
+- Better Auth's username plugin, admin create-user, and custom password-hash setting (during sign-in).
 - PBKDF2 timing on a deployed Worker (it must fit 10 ms of CPU).
 - Durable Object alarms and hibernation on the free plan.
 - Background location and the rider battery target (about 10% an hour or less).
 - Google sign-in console setup (package name, release-key SHA-1, consent screen, privacy link).
 - Hyperdrive caching (off for live order data) and Neon's free storage.
 - OpenFreeMap usage terms and the map credit.
-- Re-check every free allowance just before building.
+- Re-check every free allowance just before deploying.
 
 ---
 
-## 8. What comes next: the build
+## 8. Where we are and what is left
 
-Follow `architecture.md`, section 16 (build order). On 12 November 2026 the owner chose to build the app screens first on demo data, so the order is now:
+**Rough progress:** planning, brand, design, and prototypes are complete. The app screens are built on demo data (about 90% of the screens; the map, real sign-in, and push are stand-ins). The backend is about 15% done: the foundation, catalog, and photos work, but sign-in, orders, real-time, and the seed history don’t exist yet. Counting everything to a released APK, the project is roughly **35 to 40% done**. The largest remaining parts are the orders backend (4c) and connecting every screen to it (6).
 
-1. **Done (11 November 2026).** **Set up the repository** (`ARMSTRONG-AISOSA/casual-kitchen-express`) with npm workspaces and Turborepo, using only the locked versions: apps (customer, rider, business), the API Worker, shared packages (types, Zod validation, API client, brand tokens), the website, `docs/`, `design/`, and `brand/`. Add the MIT `LICENSE` and a README with the single Claude Code credit line.
-2. **Done (12 November 2026, `0c4bcee`).** **Customer app screens on demo data:** browse, item, your order, checkout, address, pay, paid, track, rate, orders, profile, more, deactivate, and delete.
-3. **Done (12 November 2026, `cd8284c`).** **Rider app screens on demo data.**
-3b. **Done (12 November 2026).** **Business and Kitchen app screens on demo data,** for all four staff roles.
-4. **In progress (12 November 2026).** **Backend foundation:** following the data freshness choices in `architecture.md` 14.4. Done: local Postgres 17.10 in Docker, the full schema and first migration, the base seed (menu, soups, areas, settings), and `GET /bootstrap` with a version and 304s. Next: Better Auth (sign-in and roles), then orders and statuses. The Hono Worker, Drizzle schema from `architecture.md` section 9, Neon through Hyperdrive, Better Auth, roles, menu, orders, and order statuses. Run the verification checks in 16.1 early.
-5. **Seed script:** two months of demo data per `architecture.md`, 18.3, as soon as the schema exists.
-6. **Connect the screens to the API:** replace the demo data in each app with real calls, add the real map (MapLibre) and Google sign-in.
-7. **Capacity rules, batching, and the demo simulator.**
-8. **Website:** turn `design/prototypes/cke-website.html` into the static GitHub Pages site.
-9. **Reports, rider payouts, Finance, and polish,** then release APKs on GitHub.
+The order below follows `architecture.md` 16, adjusted by the owner’s frontend-first decision (12 November 2026).
+
+| Step | What | Status |
+|---|---|---|
+| 1 | Repository setup (monorepo, three apps, API Worker, shared packages, website placeholder, licence, README) | **Done** (11 November) |
+| 2 | Customer app screens on demo data | **Done** (`0c4bcee`) |
+| 3 | Rider app screens on demo data | **Done** (`cd8284c`) |
+| 3b | Business and Kitchen app screens on demo data, all four staff roles | **Done** (`e2fe3c5`, `d4d2032`) |
+| 4a | Backend foundation: local database, schema, migrations, base, staff, and photo seeds, bootstrap with versions, soup rotation, photo upload and credits | **Done** (`5c088de`, `9a916f6`) |
+| 4b | **Sign-in and roles (next):** Better Auth in the Worker (Google for customers and managers, username and password for the other staff roles), sessions in the apps, a role check on every route (3.0), first-sign-in password change, manager password reset, deactivation signs a person out, the tablet’s 8:30 pm sign-out. Replaces the temporary write guard and puts staff photos behind a staff session. Confirms 16.1 item 1. Then the owner’s **Cloudflare account** (exact steps) for the early 16.1 checks (PBKDF2 timing, Durable Object alarms). | Next |
+| 4c | **Orders backend:** menu management (items, prices, sold out, options), orders and status events (online and walk-in), simulated payments, refunds with the tick and refunder, cancellation requests, alerts, deliveries, the rider queue (first to accept wins), delivery codes, Durable Objects for live updates, and “only what changed” on reconnect (14.4) | To do |
+| 5 | **Seed script:** two months of demo history (18.3), with its own checks | To do |
+| 6 | **Connect the screens to the API** in all three apps, replacing the demo data; the real map (MapLibre) with the delivery boundary, Google sign-in, push notifications (Expo and Firebase), and background location for riders | To do |
+| 7 | Capacity rules, batching, and the demo simulator (18.4) | To do |
+| 8 | Website: turn `design/prototypes/cke-website.html` into the static GitHub Pages site | To do |
+| 9 | Reports on real data (pre-computed summaries), rider payouts, Finance, polish, the remaining 16.1 checks (battery, performance, contrast), Neon at deploy, signed release APKs (arm64-v8a and armeabi-v7a) on GitHub Releases | To do |
 
 The prototypes are the visual reference for every screen. Reuse their copy, layout, and flows, but write production code fresh rather than copying prototype code.
+
+### 8.1 Resuming after a break
+
+1. Start Docker, then the database: `npm run db:up --workspace @cke/api` (expect `Container cke-db-1 Healthy`). The data and photos are kept between runs.
+2. Start the API for the tablet: `npm run dev:lan --workspace @cke/api` (expect `Ready on http://0.0.0.0:8787`). The temporary write guard needs `apps/api/.dev.vars` (copied from `.dev.vars.example`, not committed).
+3. Start the app development servers, each in its app folder: `npx expo start --dev-client --lan --port 8081` (customer), `8082` (rider), `8083` (business). Each app reads the API address from its own `.env` (`EXPO_PUBLIC_API_URL=http://192.168.0.154:8787`; `.env.example` is committed).
+4. Tablet testing (ASTRO 10R, Android 12): turn on Wireless debugging and read out the IP address and port. Pairing is already done; `adb connect <ip>:<port>` reconnects.
+5. If something looks wrong in the database, steps 2 to 3c in `apps/api/README.md` rebuild it from scratch.
 
 ---
 
@@ -674,15 +696,57 @@ Append a new dated entry after each work session. Never edit or delete earlier e
 
 ---
 
-### 12 November 2026: Gemini photos for the menu and staff
+## [2026-11-12] Gemini photos for the menu and staff
 
-- Pexels had paused new API keys, so Claude wrote an image prompt (brand photography direction, no text or logos, invented faces) and the owner made the images with Google Gemini.
-- Menu: Office Lunch Combo (new), Yoghurt drink, Moi moi, and Home Plate (replacing the weak ones). Cropped to 4:3 (1195 x 896) and saved as WebP at quality 78 (42 to 84 KB). Credited as CKE’s own photos, “made with Gemini”.
+**What was done:**
+- Committed the photo upload, refunds, Refunds report, and View profile work (`5c088de`, not pushed).
+- Pexels had paused new API keys, so Claude wrote an image prompt (the brand’s photography direction, no text or logos, invented faces) and the owner made the images with Google Gemini.
+- Menu: the Office Lunch Combo (new), and the Yoghurt drink, Moi moi, and Home Plate (replacing the weak ones). Cropped to 4:3 (1195 x 896) and saved as WebP at quality 78 (42 to 84 KB). Credited as CKE’s own photos, “made with Gemini”.
 - Staff: one grid image cut into 10 square headshots (about 276 px, about 5 KB each), saved as `apps/api/seed-media/staff/<staff ID>.webp`.
-- Owner decisions: staff photos carry no credit anywhere; no starting photo (menu or staff) is marked as demo, so they carry on to the release's starting data. This replaces the earlier plan of credited internet headshots marked as demo.
-- `scripts/seed-media.ts` now seeds staff photos too, stores the Gemini menu photos as business-own, flags nothing as demo, and cleans up earlier seeded photos by their folder (`menu/`, `seed-staff/`), leaving photos uploaded in the app alone.
+- Staff photos show no credit anywhere: the “Photo: …” line is gone from View profile, and the photo dialog skips the “Where’s the photo from?” questions for staff (saved as CKE’s own).
+- `scripts/seed-media.ts` now seeds staff photos too, stores the Gemini menu photos as CKE’s own, flags nothing as demo, resets only the links it puts back (a soup added in the app keeps its photo), and removes any photo nothing uses (record and file). It removed two leftovers from testing.
 - The originals stay in `apps/api/seed-media/incoming/` (gitignored).
-- Staff photos show no credit anywhere: the "Photo: …" line is gone from View profile, and the photo dialog skips the "Where’s the photo from?" questions for staff (saved as CKE’s own). Checked on the tablet: Efosa’s photo in the top bar, the photos on People and View profile, the new dish photos in the customer app, and the four “made with Gemini” lines on Photo credits.
-- The seed now resets only the links it puts back (a soup added in the app keeps its photo) and removes any photo nothing uses (record and file). It removed two leftovers from testing.
-- Files: `apps/api/seed-media/menu/` (4 WebP files, `credits.json`), `apps/api/seed-media/staff/` (new), `apps/api/scripts/seed-media.ts`, `apps/business/app/(app)/people.tsx`, `apps/business/src/ui/photo-editor.tsx`, `docs/photo-credits.md`, `docs/architecture.md`, `docs/design.md`, `.gitignore`, `progress.md`.
-- Next: the owner checks the photos, then commit; then sign-in with Better Auth.
+- Checked on the tablet: Efosa’s photo in the top bar, the photos on People and View profile, the new dish photos in the customer app, and the four “made with Gemini” lines on Photo credits.
+- Committed (`9a916f6`, not pushed) after the owner’s approval.
+
+**Files created/updated:**
+- `apps/api/seed-media/menu/` (4 WebP files, `credits.json`), `apps/api/seed-media/staff/` (new), `apps/api/scripts/seed-media.ts`
+- `apps/business/app/(app)/people.tsx`, `apps/business/src/ui/photo-editor.tsx`
+- `docs/photo-credits.md`, `docs/architecture.md`, `docs/design.md`, `.gitignore`, `progress.md`
+
+**Decisions locked in:**
+- Staff photos carry no credit anywhere (owner, 12 November 2026).
+- No starting photo (menu or staff) is marked as demo; they carry on to the release’s starting data (owner, 12 November 2026). This replaces the earlier plan of credited internet headshots marked as demo.
+- The four Gemini menu photos are credited “Casual Kitchen Express (made with Gemini)”.
+
+**Open questions / not yet decided:**
+- None.
+
+**Next step:**
+- A full documentation review before the owner’s break, then sign-in with Better Auth.
+
+---
+
+## [2026-11-12] Documentation review before a break
+
+**What was done:**
+- Read every Markdown file end to end (`progress.md`, `CLAUDE.md`, `README.md`, `apps/api/README.md`, `docs/architecture.md`, `docs/design.md`, `docs/Casual-Kitchen-Express.md`, `docs/list-of-areas.md`, `docs/photo-credits.md`, `brand/cke-logo-package/README.md`) and checked them against each other and against the code.
+- `progress.md`: rewrote the current state (sections 1 to 8): the stage, the document versions and the 128 feature IDs, what is built in each app and the API, open items split into owner actions (in the order needed) and known gaps, a step table of what is done and what is left with a rough percentage, and how to resume after a break. Added two business rules (refunds, photos) and the no Co-Authored-By rule.
+- `architecture.md` (v0.32): image compression covers dishes, soups, and staff (8.1); 8.1.1 updated for the 23 menu and 10 staff photos; seeded photos aren’t flagged as demo (9, 18.3); expo-image is installed in the Business app (15.2); 14.4’s heading no longer says “to go over”, and 14.3 now comes before 14.4; the build-order note matches the current step; a gap recorded: photos are public until sign-in, against 3.1 and 12; MGR-15 punctuation.
+- `design.md` (v0.26): the Refunds tab in the reports flow; the refund tick in the walk-in cancel and cancellation-request flows; a missing full stop on More.
+- `Casual-Kitchen-Express.md` (v1.10): menu photos are in (some made with an AI tool under the fallback rules); refunds are confirmed and recorded; the next phase and roadmap updated.
+- `photo-credits.md`: table order fixed, and the 19 internet photos and 4 Gemini photos described separately.
+- `apps/api/README.md`: the photo seed’s expected output and the staff photos route.
+- `README.md`: points to `apps/api/README.md` and `docs/photo-credits.md`.
+
+**Files created/updated:**
+- `progress.md`, `README.md`, `apps/api/README.md`, `docs/architecture.md`, `docs/design.md`, `docs/Casual-Kitchen-Express.md`, `docs/photo-credits.md`
+
+**Decisions locked in:**
+- None new.
+
+**Open questions / not yet decided:**
+- None new. Known gaps are listed in section 7.
+
+**Next step:**
+- Sign-in with Better Auth and role checks (section 8, step 4b), then the owner’s Cloudflare account steps.

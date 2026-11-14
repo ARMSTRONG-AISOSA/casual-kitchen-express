@@ -12,7 +12,7 @@ This repository holds the whole platform:
 | `apps/api` | The API: Hono on Cloudflare Workers, with Neon Postgres through Hyperdrive |
 | `apps/website` | The promotional website: plain HTML, CSS, and JavaScript on GitHub Pages |
 | `packages/*` | Shared code: types, validation, API client, and brand tokens |
-| `docs/` | Architecture, design, brand, and delivery area documents |
+| `docs/` | Architecture, design, brand, delivery area, and photo credit documents |
 | `design/prototypes/` | Clickable prototypes of every screen |
 | `brand/` | Logo files, app icons, and brand tokens |
 
@@ -27,7 +27,7 @@ npm install
 npm run typecheck
 ```
 
-Each app has its own scripts. For example, `npm run dev --workspace @cke/api` starts the API locally.
+Each app has its own scripts. For example, `npm run dev --workspace @cke/api` starts the API locally. The API’s database, seed, and test commands are in [`apps/api/README.md`](apps/api/README.md), and the project status is in [`progress.md`](progress.md).
 
 ## Download
 
