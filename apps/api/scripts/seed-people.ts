@@ -1,10 +1,21 @@
-// Adds the demo staff (the same people as the Business app's demo data) to the database, so their
-// photos and, next, their sign-in have somewhere to live. Safe to run again. Emails use the reserved
-// example.com domain, so nothing can reach a real person (architecture.md 12).
+// Adds the demo staff (the same people as the Business app's demo data) to the database, with their
+// sign-in. Safe to run again. Emails use the reserved example.com domain, so nothing can reach a real
+// person (architecture.md 12).
 // Run with `npm run db:seed-people --workspace @cke/api`.
+//
+// Staff with a username get the demo password below. Managers sign in with Google (12.1), so they
+// get no password, except on the development laptop while Google sign-in isn't set up: run with
+// SEED_MANAGER_PASSWORDS=1 to give the managers usernames (efosa.m, ivie.m) and the same demo
+// password. Never use that flag for the deployed database.
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Client } from "pg";
+import { and, eq } from "drizzle-orm";
+import { hashPassword } from "../src/auth/password";
 import * as t from "../src/db/schema";
+
+export const DEMO_PASSWORD = "cke-demo-2026";
+const managerPasswords = process.env.SEED_MANAGER_PASSWORDS === "1";
+const MANAGER_USERNAMES: Record<string, string> = { "M-001": "efosa.m", "M-002": "ivie.m" };
 
 type Gender = "female" | "male";
 type R = "rider" | "kitchen" | "dispatch" | "accounts" | "manager";
@@ -26,7 +37,8 @@ const client = new Client({ connectionString: url });
 await client.connect();
 const db = drizzle(client, { schema: t, casing: "snake_case" });
 
-for (const [code, name, role, job, phone, gender, username] of PEOPLE) {
+for (const [code, name, role, job, phone, gender, staffUsername] of PEOPLE) {
+  const username = staffUsername ?? (managerPasswords ? MANAGER_USERNAMES[code] : undefined);
   const userId = `staff-${code}`;
   await db
     .insert(t.user)
@@ -35,10 +47,14 @@ for (const [code, name, role, job, phone, gender, username] of PEOPLE) {
       name,
       email: `${code.toLowerCase()}@staff.example.com`,
       username: username ?? null,
+      displayUsername: username ?? null,
       role,
       isDemo: true,
     })
-    .onConflictDoUpdate({ target: t.user.id, set: { name, username: username ?? null, role } });
+    .onConflictDoUpdate({
+      target: t.user.id,
+      set: { name, username: username ?? null, displayUsername: username ?? null, role },
+    });
   await db
     .insert(t.staffProfile)
     .values({
@@ -57,6 +73,21 @@ for (const [code, name, role, job, phone, gender, username] of PEOPLE) {
       target: t.staffProfile.userId,
       set: { fullName: name, role, jobTitle: job, phone, gender },
     });
+  // The demo password, as a Better Auth "credential" account (PBKDF2, src/auth/password.ts).
+  await db
+    .delete(t.account)
+    .where(and(eq(t.account.userId, userId), eq(t.account.providerId, "credential")));
+  if (username)
+    await db.insert(t.account).values({
+      id: `credential-${code}`,
+      accountId: userId,
+      providerId: "credential",
+      userId,
+      password: await hashPassword(DEMO_PASSWORD),
+    });
 }
-console.log(`${PEOPLE.length} staff ready.`);
+console.log(
+  `${PEOPLE.length} staff ready. Demo password for usernames: ${DEMO_PASSWORD}` +
+    (managerPasswords ? " (managers included: efosa.m, ivie.m)." : " (managers use Google)."),
+);
 await client.end();

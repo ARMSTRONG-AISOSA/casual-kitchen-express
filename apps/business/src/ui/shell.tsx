@@ -1,5 +1,6 @@
 import { fontFamily, logos } from "@cke/brand-tokens";
 import { router, usePathname } from "expo-router";
+import { signOut as endSession } from "../state/session";
 import {
   Bell,
   Bike,
@@ -214,8 +215,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const isKitchenScreen = KITCHEN_SCREENS.includes(screen);
 
   const signOut = () => {
-    set({ userId: null });
-    router.replace("/sign-in");
+    void endSession(set);
   };
   const askSignOut = () => {
     // The person on the counter cashes up before leaving (ACC-04).

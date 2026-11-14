@@ -1,13 +1,23 @@
 import { exports } from "cloudflare:workers";
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
+import { signIn } from "./session";
 
 // Tests that touch the catalog live in this one file, because a file's tests run in order: a soup
 // change in a parallel file would move the version under the 304 check. Needs the local database
-// with the base seed, and ALLOW_UNSIGNED_WRITES="true" in .dev.vars. Leaves the rotation as found.
+// with the base seed and the demo staff (test/session.ts). Changes are made as the owner (a
+// manager). Leaves the rotation as found.
+let cookie = "";
+beforeAll(async () => {
+  cookie = await signIn("efosa.m");
+});
 const api = (path: string, method = "GET", body?: unknown) =>
   exports.default.fetch(`http://example.com${path}`, {
     method,
-    headers: body ? { "Content-Type": "application/json" } : undefined,
+    headers: {
+      Cookie: cookie,
+      Origin: "cke-business://",
+      ...(body ? { "Content-Type": "application/json" } : {}),
+    },
     body: body ? JSON.stringify(body) : undefined,
   });
 

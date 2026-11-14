@@ -1,7 +1,7 @@
 import { eq, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
-import type { Actor } from "../auth/actor";
+import { requireRole, type Actor } from "../auth/actor";
 import type { Db } from "../db/client";
 import * as t from "../db/schema";
 import { webpSize } from "../media/webp";
@@ -113,7 +113,7 @@ const bumpCatalog = (tx: Tx) =>
  * DELETE /photos/:kind/:id removes it. Kinds: menu-item (id), soup (id), staff (staff code).
  */
 export const photos = new Hono<Ctx>()
-  .put("/:kind/:id", async (c) => {
+  .put("/:kind/:id", requireRole("manager"), async (c) => {
     const kind = c.req.param("kind") as Kind;
     const rules = KINDS[kind];
     if (!rules) return c.json({ error: "Unknown photo kind" }, 404);
@@ -193,7 +193,7 @@ export const photos = new Hono<Ctx>()
     if (result.oldPath) await c.env.MEDIA.delete(result.oldPath); // a few milliseconds
     return c.json({ photoId: result.id });
   })
-  .delete("/:kind/:id", async (c) => {
+  .delete("/:kind/:id", requireRole("manager"), async (c) => {
     const kind = c.req.param("kind") as Kind;
     const rules = KINDS[kind];
     if (!rules) return c.json({ error: "Unknown photo kind" }, 404);

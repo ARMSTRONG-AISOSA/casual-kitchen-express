@@ -1,16 +1,16 @@
 import { asc, eq } from "drizzle-orm";
 import { Hono } from "hono";
+import { requireRole, STAFF_ROLES, type Actor } from "../auth/actor";
 import type { Db } from "../db/client";
 import * as t from "../db/schema";
 
-type Ctx = { Bindings: Env; Variables: { db: Db } };
+type Ctx = { Bindings: Env; Variables: { db: Db; actor: Actor } };
 
 /**
- * GET /staff/photos: each staff member's photo and its credit, by staff code. Staff photos are for
- * staff only (architecture.md 3.1). Until sign-in exists this is open, like the rest of the
- * development API; sign-in limits it to signed-in staff.
+ * GET /staff/photos: each staff member's photo, by staff code. Staff photos are for signed-in staff
+ * only (architecture.md 3.1); they carry no credit.
  */
-export const staff = new Hono<Ctx>().get("/photos", async (c) => {
+export const staff = new Hono<Ctx>().get("/photos", requireRole(...STAFF_ROLES), async (c) => {
   const rows = await c
     .get("db")
     .select({

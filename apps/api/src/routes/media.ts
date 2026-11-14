@@ -2,10 +2,11 @@ import { asc, eq, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { zValidator } from "@hono/zod-validator";
+import { readActor, type Actor } from "../auth/actor";
 import type { Db } from "../db/client";
 import * as t from "../db/schema";
 
-type Ctx = { Bindings: Env; Variables: { db: Db } };
+type Ctx = { Bindings: Env; Variables: { db: Db; actor: Actor } };
 
 /**
  * Image files live in R2 and only their links are in the database (architecture.md 8.2). A media ID
@@ -47,12 +48,20 @@ export const media = new Hono<Ctx>()
       .from(t.mediaAsset)
       .where(eq(t.mediaAsset.id, c.req.valid("param").id));
     if (!asset) return c.json({ error: "That image doesn’t exist" }, 404);
+    // Staff photos are for signed-in staff only (3.1); menu and soup photos are public.
+    const isStaffPhoto = asset.path.startsWith("staff/") || asset.path.startsWith("seed-staff/");
+    if (isStaffPhoto) {
+      const actor = await readActor(c);
+      if (!actor || actor.role === "customer")
+        return c.json({ error: "Sign in as staff to see this photo" }, 401);
+    }
     const file = await c.env.MEDIA.get(asset.path);
     if (!file) return c.json({ error: "That image’s file is missing" }, 404);
     return new Response(file.body, {
       headers: {
         "Content-Type": `image/${asset.format}`,
-        "Cache-Control": "public, max-age=31536000, immutable",
+        // A staff photo may be kept by the phone, but never by shared caches.
+        "Cache-Control": `${isStaffPhoto ? "private" : "public"}, max-age=31536000, immutable`,
         ETag: file.httpEtag,
       },
     });

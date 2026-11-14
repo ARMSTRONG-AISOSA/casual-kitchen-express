@@ -3,27 +3,76 @@ import { router } from "expo-router";
 import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SvgXml } from "react-native-svg";
+import { api } from "../src/api";
+import { authClient, refreshCookie, signInError } from "../src/auth";
 import { ROLE_LABEL, type Role } from "../src/data/seed";
+import { enterAs, rememberTyped } from "../src/state/session";
 import { useStore } from "../src/state/store";
 import { useTheme } from "../src/state/theme";
 import { Button, Field, T } from "../src/ui/kit";
 import { homeFor } from "../src/ui/shell";
 
+// The demo staff in the API's local database (apps/api/scripts/seed-people.ts). Shown only in
+// development builds, to fill in a username. Managers get usernames only on the laptop, until
+// Google sign-in is set up.
+const DEMO_PASSWORD = "cke-demo-2026";
+const LIVE_DEMO: { username: string; name: string; role: Role }[] = [
+  { username: "efosa.m", name: "Efosa Igbinedion", role: "manager" },
+  { username: "ivie.m", name: "Ivie Osagie", role: "manager" },
+  { username: "blessing.k", name: "Blessing Okafor", role: "kitchen" },
+  { username: "samuel.k", name: "Samuel Eze", role: "kitchen" },
+  { username: "osas.d", name: "Osas Edo", role: "dispatch" },
+  { username: "ngozi.a", name: "Ngozi Bello", role: "accounts" },
+];
+
 // Sign in (design.md 6.4). Managers continue with Google. Every other staff role uses the
-// username and password a manager set up. There is no forgot-password screen.
+// username and password a manager set up. There is no forgot-password screen. With the API
+// connected, this signs in through Better Auth (architecture.md 12); without it, demo sign-in.
 export default function SignIn() {
   const { s, set } = useStore();
   const t = useTheme();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const staff = s.people.filter((p) => p.username && p.role !== "rider" && p.active);
+  const [busy, setBusy] = useState(false);
+  const live = !!api && !!authClient;
+  const staff = live
+    ? LIVE_DEMO.map((p) => ({ id: p.username, ...p }))
+    : s.people.filter((p) => p.username && p.role !== "rider" && p.active);
 
   const enter = (id: string, role: Role) => {
     set({ userId: id });
     router.replace(homeFor(role));
   };
+  const signInLive = async () => {
+    if (busy) return;
+    if (!username.trim() || !password) return setError("Enter your username and password.");
+    setBusy(true);
+    setError("");
+    try {
+      const res = await authClient!.signIn.username({
+        username: username.trim().toLowerCase(),
+        password,
+      });
+      if (res.error) return setError(signInError(res.error));
+      await refreshCookie();
+      const me = await api!.me();
+      // Riders have their own app (design.md 5).
+      if (me.role === "rider" || me.role === "customer") {
+        await authClient!.signOut();
+        await refreshCookie();
+        return setError("Riders sign in on the CKE Rider app.");
+      }
+      if (me.mustChangePassword) rememberTyped(password);
+      enterAs(me, set);
+    } catch {
+      setError(signInError(null));
+    } finally {
+      setBusy(false);
+    }
+  };
   const signIn = () => {
+    if (live) return void signInLive();
     const p = staff.find((x) => x.username === username.trim().toLowerCase());
     if (!p || !password)
       return setError("That username and password don’t match. Ask your manager if you’re stuck.");
@@ -64,7 +113,12 @@ export default function SignIn() {
             {error}
           </T>
         ) : null}
-        <Button label="Sign in" onPress={signIn} style={{ marginTop: 16 }} />
+        <Button
+          label={busy ? "Signing in…" : "Sign in"}
+          disabled={busy}
+          onPress={signIn}
+          style={{ marginTop: 16 }}
+        />
         <T v="small" muted style={{ marginTop: 8 }}>
           Forgot your password? Ask your manager.
         </T>
@@ -74,40 +128,51 @@ export default function SignIn() {
             label="Continue with Google"
             variant="ghost"
             style={{ marginTop: 8 }}
+            disabled={live}
             onPress={() => enter("M-001", "manager")}
           />
+          {live ? (
+            <T v="small" muted style={{ marginTop: 6 }}>
+              Google sign-in is being set up. For now, managers sign in with their username on this
+              test tablet.
+            </T>
+          ) : null}
         </View>
-        <View style={[styles.or, { borderTopColor: t.line }]}>
-          <T v="label">Demo accounts</T>
-          <T v="small" muted>
-            Tap one to fill in the username. Any password works in the demo.
-          </T>
-          <View style={styles.demo}>
-            {staff.map((p) => (
-              <Pressable
-                key={p.id}
-                onPress={() => {
-                  setUsername(p.username ?? "");
-                  setPassword("demo");
-                  setError("");
-                }}
-                accessibilityRole="button"
-                style={[
-                  styles.demoBtn,
-                  {
-                    borderColor: t.line,
-                    backgroundColor: username === p.username ? t.chip : t.surface,
-                  },
-                ]}
-              >
-                <Text style={[styles.demoName, { color: t.text }]}>{p.name}</Text>
-                <Text style={[styles.demoRole, { color: t.muted }]}>
-                  {ROLE_LABEL[p.role as Role]}, {p.username}
-                </Text>
-              </Pressable>
-            ))}
+        {live && !__DEV__ ? null : (
+          <View style={[styles.or, { borderTopColor: t.line }]}>
+            <T v="label">Demo accounts</T>
+            <T v="small" muted>
+              {live
+                ? `Tap one to fill it in. The demo password is ${DEMO_PASSWORD}.`
+                : "Tap one to fill in the username. Any password works in the demo."}
+            </T>
+            <View style={styles.demo}>
+              {staff.map((p) => (
+                <Pressable
+                  key={p.id}
+                  onPress={() => {
+                    setUsername(p.username ?? "");
+                    setPassword(live ? DEMO_PASSWORD : "demo");
+                    setError("");
+                  }}
+                  accessibilityRole="button"
+                  style={[
+                    styles.demoBtn,
+                    {
+                      borderColor: t.line,
+                      backgroundColor: username === p.username ? t.chip : t.surface,
+                    },
+                  ]}
+                >
+                  <Text style={[styles.demoName, { color: t.text }]}>{p.name}</Text>
+                  <Text style={[styles.demoRole, { color: t.muted }]}>
+                    {ROLE_LABEL[p.role as Role]}, {p.username}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
           </View>
-        </View>
+        )}
       </View>
     </ScrollView>
   );

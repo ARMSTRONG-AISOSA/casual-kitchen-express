@@ -15,9 +15,14 @@
       "localConnectionString": "postgres://cke:cke-local-only@127.0.0.1:5432/cke",
     },
   ],
-  // "true" only in .dev.vars on the development laptop, until sign-in exists (src/auth/actor.ts).
-  "vars": { "ALLOW_UNSIGNED_WRITES": "false" },
   // Image files (architecture.md 8.2). Locally, wrangler keeps the bucket in .wrangler/state.
   "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "cke-media" }],
-  // Durable Objects and Cron Triggers are added as their features are built.
+  // Sign-in rate limiting (architecture.md 12.2). More Durable Objects (live orders) and Cron
+  // Triggers are added as their features are built. The free plan only has SQLite-backed classes.
+  "durable_objects": {
+    "bindings": [{ "name": "AUTH_RATE_LIMITER", "class_name": "AuthRateLimiter" }],
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["AuthRateLimiter"] }],
+  // BETTER_AUTH_SECRET is a secret: in .dev.vars on the laptop, and set with
+  // `wrangler secret put BETTER_AUTH_SECRET` on the deployed Worker. Never in this file.
 }

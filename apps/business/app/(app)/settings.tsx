@@ -185,6 +185,24 @@ export default function Settings() {
               />
             </Card>
           </Section>
+          <Section title="Tablet sign-out">
+            <Card style={{ marginTop: 0 }}>
+              <SwitchRow
+                label="Sign out the tablet automatically at 8:30 pm"
+                hint="It waits until every order placed before 8:30 pm is collected, delivered, or cancelled."
+                value={st.autoSignOut}
+                onChange={(autoSignOut) => (
+                  change(
+                    { autoSignOut },
+                    autoSignOut
+                      ? "Turned on the tablet’s automatic sign-out at 8:30 pm"
+                      : "Turned off the tablet’s automatic sign-out at 8:30 pm",
+                  ),
+                  toast(autoSignOut ? "Automatic sign-out on" : "Automatic sign-out off")
+                )}
+              />
+            </Card>
+          </Section>
         </>
       ) : null}
     </Page>

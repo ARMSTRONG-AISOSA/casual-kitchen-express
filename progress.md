@@ -142,10 +142,12 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and two
 **Temporary things to remove later (don’t forget)**
 - ~~**Throwaway Cloudflare test Worker `cke-check-temp`**~~ **Deleted 14 November 2026** (confirmed: Cloudflare reports “This Worker does not exist on your account”, and its address returns 404; the local test files are deleted too). It was a tiny separate program put online only to measure two free-plan limits (16.1 items 2 and 3: PBKDF2 password-hash timing at about 50,000 iterations, and Durable Object alarms and hibernation). Its code stays in Claude’s scratchpad, never in the repository. When the measurements are recorded in `architecture.md` 16.1, delete it with `npx wrangler delete --name cke-check-temp` (from `apps/api`), check that it is gone from the Cloudflare dashboard (**Workers & Pages**), and mark this item done in the log. Deleting the Worker also deletes its Durable Object storage. Keep: the Wrangler login and the workers.dev subdomain (the real API uses them).
 - ~~**workers.dev subdomain named `cke-check-temp`**~~ **Renamed 14 November 2026 to `casualkitchenexpress`** (owner’s choice; deleted and re-registered through the Cloudflare API while no Worker was deployed, and confirmed). It was: the first deploy registered the account’s workers.dev subdomain automatically, named after the test Worker, so every Worker on the account would live at `<name>.cke-check-temp.workers.dev`. Rename it to a lasting name before the real API is deployed (owner to choose; Cloudflare dashboard, **Workers & Pages**, the subdomain setting, or Claude through the API).
-- **Temporary write guard `ALLOW_UNSIGNED_WRITES`** (in `apps/api/.dev.vars` only): removed when sign-in is built (step 4b), together with the open `GET /staff/photos`.
+- ~~**Temporary write guard `ALLOW_UNSIGNED_WRITES`**~~ **Removed 14 November 2026** with sign-in, together with the open `GET /staff/photos`; every change now needs a signed-in person with the right role.
+- **Manager usernames on the laptop only** (`efosa.m`, `ivie.m`, from `SEED_MANAGER_PASSWORDS=1`): so managers can be tested before Google sign-in exists. Remove once Google sign-in works (re-run `npm run db:seed-people` without the flag), and never seed them into the deployed database.
+- **Demo sign-in hints in development builds:** the Business app’s sign-in screen lists the demo accounts and the demo password only in development builds (`__DEV__`); release builds don’t show them. Decide before release whether the public demo keeps shared demo staff accounts at all.
 
 **Known gaps and notes (no decision needed unless the owner wants one)**
-- **Photos are public until sign-in:** `GET /media/:id` serves every photo, including staff photos, and `GET /staff/photos` is open. The docs require staff photos to be access-controlled (`architecture.md` 3.1, 12), so sign-in must put staff photos behind a staff session.
+- **Hono security advisories (Proposal, needs the owner):** Hono 4.13.14 has advisories fixed in 4.13.16 (published 1 November 2026; two weeks old on 15 November). The one that matters here is wildcard middleware being skipped by its router; the API now attaches every permission check to its route, so it isn’t exposed, but upgrading to 4.13.16 is recommended once it passes the two-week rule.
 - **“Other area in range”** is a choice in the customer app’s area picker, but not a seeded area in the database. Settle how it is stored when addresses are connected (step 6).
 - **This laptop’s connection and Node.js:** Node gives each IPv4 or IPv6 connection attempt only 250 ms. The laptop has no IPv6 and Cloudflare takes longer than that over IPv4 here, so Node tools (Wrangler login and deploy) time out with `ETIMEDOUT` while curl works. Fix: run them with `NODE_OPTIONS="--network-family-autoselection-attempt-timeout=2000"` (tested 14 November 2026), or add that export to `~/.bashrc` to make it permanent. The laptop also uses the router’s DNS (192.168.0.1), which timed out on some names during setup.
 - **Tests and `dev:lan` share local state:** stop the API’s `dev:lan` before `npm run test --workspace @cke/api` (`apps/api/README.md`).
@@ -179,7 +181,7 @@ The order below follows `architecture.md` 16, adjusted by the owner’s frontend
 | 3 | Rider app screens on demo data | **Done** (`cd8284c`) |
 | 3b | Business and Kitchen app screens on demo data, all four staff roles | **Done** (`e2fe3c5`, `d4d2032`) |
 | 4a | Backend foundation: local database, schema, migrations, base, staff, and photo seeds, bootstrap with versions, soup rotation, photo upload and credits | **Done** (`5c088de`, `9a916f6`) |
-| 4b | **Sign-in and roles (next):** Better Auth in the Worker (Google for customers and managers, username and password for the other staff roles), sessions in the apps, a role check on every route (3.0), first-sign-in password change, manager password reset, deactivation signs a person out, the tablet’s 8:30 pm sign-out. Replaces the temporary write guard and puts staff photos behind a staff session. Confirms 16.1 item 1. Then the owner’s **Cloudflare account** (exact steps) for the early 16.1 checks (PBKDF2 timing, Durable Object alarms). | Next |
+| 4b | **Sign-in and roles (in progress, 14 November 2026: API done and tested, Business app connected, rider app next):** Better Auth in the Worker (Google for customers and managers, username and password for the other staff roles), sessions in the apps, a role check on every route (3.0), first-sign-in password change, manager password reset, deactivation signs a person out, the tablet’s 8:30 pm sign-out. Replaces the temporary write guard and puts staff photos behind a staff session. Confirms 16.1 item 1. Then the owner’s **Cloudflare account** (exact steps) for the early 16.1 checks (PBKDF2 timing, Durable Object alarms). | Next |
 | 4c | **Orders backend:** menu management (items, prices, sold out, options), orders and status events (online and walk-in), simulated payments, refunds with the tick and refunder, cancellation requests, alerts, deliveries, the rider queue (first to accept wins), delivery codes, Durable Objects for live updates, and “only what changed” on reconnect (14.4) | To do |
 | 5 | **Seed script:** two months of demo history (18.3), with its own checks | To do |
 | 6 | **Connect the screens to the API** in all three apps, replacing the demo data; the real map (MapLibre) with the delivery boundary, Google sign-in, push notifications (Expo and Firebase), and background location for riders | To do |
@@ -192,7 +194,7 @@ The prototypes are the visual reference for every screen. Reuse their copy, layo
 ### 8.1 Resuming after a break
 
 1. Start Docker, then the database: `npm run db:up --workspace @cke/api` (expect `Container cke-db-1 Healthy`). The data and photos are kept between runs.
-2. Start the API for the tablet: `npm run dev:lan --workspace @cke/api` (expect `Ready on http://0.0.0.0:8787`). The temporary write guard needs `apps/api/.dev.vars` (copied from `.dev.vars.example`, not committed).
+2. Start the API for the tablet: `npm run dev:lan --workspace @cke/api` (expect `Ready on http://0.0.0.0:8787`). Sign-in needs `BETTER_AUTH_SECRET` in `apps/api/.dev.vars` (copied from `.dev.vars.example`, not committed). Demo staff sign in with the password `cke-demo-2026` (managers `efosa.m` and `ivie.m` on the laptop only).
 3. Start the app development servers, each in its app folder: `npx expo start --dev-client --lan --port 8081` (customer), `8082` (rider), `8083` (business). Each app reads the API address from its own `.env` (`EXPO_PUBLIC_API_URL=http://192.168.0.154:8787`; `.env.example` is committed).
 4. Tablet testing (ASTRO 10R, Android 12): turn on Wireless debugging and read out the IP address and port. Pairing is already done; `adb connect <ip>:<port>` reconnects. If the laptop gets “No route to host” (14 November 2026), turn Developer options off and on, allow Wireless debugging again, forget the old computer under Wireless debugging, and pair again with a new code (`adb pair <ip>:<pairing port> <code>`, then `adb connect <ip>:<port>`).
 5. If something looks wrong in the database, steps 2 to 3c in `apps/api/README.md` rebuild it from scratch.
@@ -806,3 +808,33 @@ Append a new dated entry after each work session. Never edit or delete earlier e
 
 **Next step:**
 - Sign-in with Better Auth and role checks (step 4b).
+
+---
+
+## [2026-11-14] Sign-in and roles: the API and the Business app
+
+**What was done:**
+- API (Better Auth 1.7.14): staff sign in with a username and password (PBKDF2-SHA-256 at 30,000 iterations, `src/auth/password.ts`); 30-day sessions; no sign-up and no forgot-password. `GET /me`, `POST /me/password`, and the managers’ People routes (`/people`: list, add with a temporary password shown once, edit, reset password, deactivate, reactivate; the owner can’t be deactivated, managers have no password to reset). Every change route checks the role on the route itself (3.0), not through wildcard middleware, because of a Hono advisory. Staff with a temporary password can only change it. Deactivated staff are refused at sign-in (“This account is deactivated. Ask a manager.”) and signed out straight away. Staff photo files need a staff session; menu photos stay public. Sign-in is limited to 5 tries a minute per address through a Durable Object (`AuthRateLimiter`). The temporary `ALLOW_UNSIGNED_WRITES` guard is gone; `.dev.vars` now holds `BETTER_AUTH_SECRET`.
+- Seed: demo staff get the password `cke-demo-2026`; managers get usernames (`efosa.m`, `ivie.m`) only with `SEED_MANAGER_PASSWORDS=1` on the laptop.
+- Tests: 11 of 11 pass (a new `test/auth.test.ts`; the catalog and photo tests now sign in as the owner; test sign-ins use addresses from the documentation range so the rate limit doesn’t trip).
+- Installed the locked `@better-auth/expo` 1.7.14, `expo-secure-store` 58.0.2, `expo-network` 58.0.4, and `expo-web-browser` 58.0.7 (Business and rider apps; `@better-auth/expo` in the API too). `npm audit`: the same 15 moderate findings as before (one, Hono, is newly reported upstream; see section 7).
+- Business app (rebuilt arm64 APK, 40 minutes): real sign-in with plain messages, a Set a new password screen (reuses the temporary password just typed), the session kept on the device, Switch person and Sign out also sign out of the API, riders sent to the rider app, and the People screen changing real accounts. `@cke/api-client` sends the session cookie and reports an ended session.
+- Owner decisions: the tablet’s 8:30 pm sign-out waits until every order placed before 8:30 pm is collected, delivered, or cancelled, and a manager-only **Tablet sign-out** switch in Settings turns it on or off (on by default). Someone who signs in after 8:30 pm isn’t signed out that evening. The switch is saved on the tablet for now, like the other demo settings; it moves to the database with them (step 6).
+- Tested on the tablet: Blessing signed in (kitchen menus, her photo loaded with the session); she stayed signed in after the app was closed and reopened; Switch person signed her out of the API; Efosa signed in with the manager menus; People loaded from the database; adding a rider gave R-005 and a real temporary password; the first sign-in showed Set a new password and then the board; deactivating signed the person out at the next request and sign-in showed the deactivated message; the Tablet sign-out switch turned off and on. The test person was removed afterwards.
+- Fixed while testing: the app used a stale role from its list after a manager changed it (a crash); the role and name now always come from the API at sign-in, and a saved rider session is signed out.
+
+**Files created/updated:**
+- `apps/api/src/auth/` (`auth.ts`, `password.ts`, `rate-limit.ts`, `actor.ts`), `src/routes/me.ts`, `src/routes/people.ts`, `src/routes/{soups,photos,staff,media}.ts`, `src/index.ts`, `wrangler.jsonc`, `worker-configuration.d.ts`, `.dev.vars.example`, `scripts/seed-people.ts`, `test/` (`auth.test.ts`, `session.ts`, catalog and photo tests), `vitest.config.ts`, `package.json`, `README.md`
+- `packages/api-client/src/index.ts`, `packages/validation/src/index.ts`
+- `apps/business/src/auth.ts`, `src/api.ts`, `src/state/session.tsx`, `src/state/catalog.tsx`, `src/state/store.tsx`, `src/ui/{avatar,photo-editor,shell}.tsx`, `app/_layout.tsx`, `app/index.tsx`, `app/sign-in.tsx`, `app/new-password.tsx` (new), `app/(app)/people.tsx`, `app/(app)/person/[id].tsx`, `app/(app)/settings.tsx`, `package.json`
+- `apps/rider/package.json`, `package-lock.json`
+- `docs/architecture.md` (v0.35), `docs/design.md` (v0.27), `progress.md`
+
+**Decisions locked in:**
+- The tablet’s automatic sign-out waits for open orders and can be turned off by managers (owner, 14 November 2026).
+
+**Open questions / not yet decided:**
+- Upgrading Hono to 4.13.16 (Proposal, from 15 November).
+
+**Next step:**
+- The owner tests the Business app, then commit (not pushed). Then sign-in in the rider app (native rebuild), then Google sign-in for managers and customers (the owner’s Google Cloud consent screen and OAuth clients, with exact steps).

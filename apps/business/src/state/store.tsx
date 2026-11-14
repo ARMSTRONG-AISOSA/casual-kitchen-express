@@ -42,6 +42,11 @@ export type Settings = {
   riderPay: number;
   /** The WhatsApp number behind "Contact the restaurant" in the customer app (MGR-36). */
   whatsapp: string;
+  /**
+   * The counter tablet signs the person out at 8:30 pm, once every order placed before then is
+   * finished (KIT-12). Managers can turn it off in Settings. On by default.
+   */
+  autoSignOut: boolean;
 };
 
 export type StaffPhoto = {
@@ -120,6 +125,7 @@ export const initial = (): State => ({
     fee: DEFAULTS.deliveryFee,
     riderPay: DEFAULTS.riderPay,
     whatsapp: "2349095466063",
+    autoSignOut: true,
   },
   cashUps: seedCashUps(),
   today: { counted: null },

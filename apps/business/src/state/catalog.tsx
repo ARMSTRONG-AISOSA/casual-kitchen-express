@@ -2,7 +2,8 @@ import { QueryClient, QueryClientProvider, focusManager, useQuery } from "@tanst
 import { useEffect, type ReactNode } from "react";
 import { AppState } from "react-native";
 import { api } from "../api";
-import { useStore } from "./store";
+import type { Person } from "../data/seed";
+import { myRole, useStore } from "./store";
 
 // Server data goes through TanStack Query (architecture.md 14). The catalog is fetched when the app
 // opens and again when it comes back to the foreground; an unchanged catalog costs a tiny 304
@@ -29,7 +30,7 @@ export const catalogKey = ["bootstrap"] as const;
 
 /** Copies the soups from the API into the app's state, so every screen reads one place. */
 function CatalogSync() {
-  const { set } = useStore();
+  const { s, set } = useStore();
   useQuery({
     queryKey: catalogKey,
     enabled: !!api,
@@ -49,10 +50,11 @@ function CatalogSync() {
       return b;
     },
   });
-  // Staff photos, for People, the profile view, and the top bar (3.1).
+  // Staff photos, for People, the profile view, and the top bar (3.1). Staff only, so it waits
+  // for someone to sign in and fetches again when the person changes.
   useQuery({
-    queryKey: staffKey,
-    enabled: !!api,
+    queryKey: [...staffKey, s.userId],
+    enabled: !!api && !!s.userId,
     queryFn: async () => {
       const { staff } = await api!.staffPhotos();
       set({
@@ -78,8 +80,35 @@ function CatalogSync() {
       return staff;
     },
   });
+  // The staff list, from the database, for managers (MGR-03, MGR-04). Other roles keep the demo
+  // list for now; it moves to the API with the rest of their screens (build step 6).
+  useQuery({
+    queryKey: [...peopleKey, s.userId],
+    enabled: !!api && !!s.userId && myRole(s) === "manager",
+    queryFn: async () => {
+      const { people } = await api!.people();
+      set({
+        people: people.map((p): Person => ({
+          id: p.code,
+          name: p.fullName,
+          role: p.role,
+          job: p.jobTitle ?? "",
+          phone: p.phone ?? "",
+          active: p.status === "active",
+          owner: p.isOwner,
+          gender: p.gender ?? undefined,
+          homeAddress: p.homeAddress ?? undefined,
+          ...(p.role === "manager" ? { email: p.email } : { username: p.username ?? undefined }),
+        })),
+      });
+      return people;
+    },
+  });
   return null;
 }
+
+export const peopleKey = ["people"] as const;
+export const refreshPeople = () => client.invalidateQueries({ queryKey: peopleKey });
 
 export const staffKey = ["staff-photos"] as const;
 export const refreshStaff = () => client.invalidateQueries({ queryKey: staffKey });

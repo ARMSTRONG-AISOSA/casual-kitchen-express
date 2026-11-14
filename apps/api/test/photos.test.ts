@@ -1,13 +1,25 @@
 import { exports } from "cloudflare:workers";
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
+import { signIn } from "./session";
 
 // Uses its own test soup, so the real menu photos are never touched. Needs the local database and
-// ALLOW_UNSIGNED_WRITES="true" in .dev.vars.
+// the demo staff (test/session.ts); changes are made as the owner (a manager).
 const SMALL_WEBP =
   "UklGRkgAAABXRUJQVlA4IDwAAABwAwCdASooAB4APtFmrFEoJaQipWgBABoJZwDQRoAAK/fMIAAA/t+AP13i0o1//BBXMy9nNV3KN2wAAAA=";
 const bytes = () => Uint8Array.from(atob(SMALL_WEBP), (ch) => ch.charCodeAt(0));
+let cookie = "";
+beforeAll(async () => {
+  cookie = await signIn("efosa.m");
+});
 const call = (path: string, init?: RequestInit) =>
-  exports.default.fetch(`http://example.com${path}`, init);
+  exports.default.fetch(`http://example.com${path}`, {
+    ...init,
+    headers: {
+      ...(init?.headers as Record<string, string>),
+      Cookie: cookie,
+      Origin: "cke-business://",
+    },
+  });
 const json = async <T>(res: Response) => (await res.json()) as T;
 
 const upload = (path: string, file: Uint8Array, fields: Record<string, string>) => {

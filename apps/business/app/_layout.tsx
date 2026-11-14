@@ -10,6 +10,7 @@ import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { CatalogProvider } from "../src/state/catalog";
+import { SessionProvider } from "../src/state/session";
 import { StoreProvider } from "../src/state/store";
 import { useTheme } from "../src/state/theme";
 import { ToastProvider } from "../src/ui/toast";
@@ -45,9 +46,11 @@ export default function RootLayout() {
   return (
     <StoreProvider>
       <CatalogProvider>
-        <ToastProvider>
-          <Root />
-        </ToastProvider>
+        <SessionProvider>
+          <ToastProvider>
+            <Root />
+          </ToastProvider>
+        </SessionProvider>
       </CatalogProvider>
     </StoreProvider>
   );

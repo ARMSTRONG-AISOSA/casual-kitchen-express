@@ -1,2 +1,4 @@
-# Copy to .dev.vars for local development only. Never set this on a deployed Worker.
-ALLOW_UNSIGNED_WRITES="true"
+# Copy to .dev.vars for local development (gitignored). Make your own secret with:
+#   openssl rand -base64 32
+# The deployed Worker gets its own with `wrangler secret put BETTER_AUTH_SECRET`.
+BETTER_AUTH_SECRET="replace-with-a-random-secret"

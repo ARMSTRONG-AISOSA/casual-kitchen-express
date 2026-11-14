@@ -9,5 +9,5 @@ export default defineConfig({
   // the same time stalled requests, so they run one after another.
   // Each request opens its own database connection through the local proxy, which is slow in
   // tests, so a test making a dozen requests gets a minute.
-  test: { testTimeout: 60_000, fileParallelism: false },
+  test: { testTimeout: 60_000, hookTimeout: 60_000, fileParallelism: false },
 });

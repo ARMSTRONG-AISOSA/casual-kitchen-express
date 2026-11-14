@@ -1,4 +1,6 @@
 import { router } from "expo-router";
+import { api } from "../../src/api";
+import { refreshPeople } from "../../src/state/catalog";
 import { useState } from "react";
 import { View } from "react-native";
 import { ROLE_LABEL, type Person, type Role } from "../../src/data/seed";
@@ -30,14 +32,32 @@ export default function People() {
   const photo = viewing ? s.staffPhotos[viewing.id] : undefined;
   const list = s.people.filter((p) => p.role === tab);
 
-  const toggle = (p: Person) => {
-    set((st) => ({
-      people: st.people.map((x) => (x.id === p.id ? { ...x, active: !x.active } : x)),
-      ...log(st, "account", `${p.active ? "Deactivated" : "Reactivated"} ${p.id}`),
-    }));
+  // With the API connected these change the real accounts (signing the person out straight away);
+  // without it, the demo data.
+  const toggle = async (p: Person) => {
+    if (api) {
+      try {
+        await (p.active ? api.deactivate(p.id) : api.reactivate(p.id));
+        await refreshPeople();
+      } catch (e) {
+        return toast(e instanceof Error ? e.message : "Couldn’t change that. Try again.");
+      }
+    } else
+      set((st) => ({
+        people: st.people.map((x) => (x.id === p.id ? { ...x, active: !x.active } : x)),
+        ...log(st, "account", `${p.active ? "Deactivated" : "Reactivated"} ${p.id}`),
+      }));
     toast(`${p.name} ${p.active ? "deactivated" : "reactivated"}`);
   };
-  const reset = (p: Person) => {
+  const reset = async (p: Person) => {
+    if (api) {
+      try {
+        const { temporaryPassword } = await api.resetPassword(p.id);
+        return setTemp({ name: p.name, pass: temporaryPassword });
+      } catch (e) {
+        return toast(e instanceof Error ? e.message : "Couldn’t reset the password. Try again.");
+      }
+    }
     const pass = tempPassword();
     set((st) => log(st, "account", `Reset the password for ${p.id}`));
     setTemp({ name: p.name, pass });
@@ -78,7 +98,7 @@ export default function People() {
               onPress={() => router.push(`/person/${p.id}`)}
             />
             {p.username ? (
-              <Button label="Reset password" variant="ghost" small onPress={() => reset(p)} />
+              <Button label="Reset password" variant="ghost" small onPress={() => void reset(p)} />
             ) : null}
             {p.owner ? (
               <T v="small" muted style={{ alignSelf: "center" }}>
@@ -89,7 +109,7 @@ export default function People() {
                 label={p.active ? "Deactivate" : "Reactivate"}
                 variant={p.active ? "ghost" : "primary"}
                 small
-                onPress={() => toggle(p)}
+                onPress={() => void toggle(p)}
               />
             )}
           </View>

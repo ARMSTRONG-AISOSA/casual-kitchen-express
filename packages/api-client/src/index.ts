@@ -2,8 +2,41 @@
 
 export type ApiClientOptions = {
   baseUrl: string;
-  /** Returns the current session token, if signed in. */
-  getToken?: () => Promise<string | null> | string | null;
+  /**
+   * Extra headers for every request, such as the session cookie from Better Auth's Expo client
+   * (architecture.md 12). Called each time, so a new sign-in is picked up straight away.
+   */
+  getHeaders?: () => Record<string, string>;
+  /** Called when the API says the session has ended (signed out, reset, or deactivated). */
+  onUnauthorized?: () => void;
+};
+
+/** GET /me: the signed-in person (architecture.md 4.5). */
+export type Me = {
+  id: string;
+  name: string;
+  role: "customer" | "rider" | "kitchen" | "dispatch" | "accounts" | "manager";
+  staffCode: string | null;
+  isOwner: boolean;
+  mustChangePassword: boolean;
+  photoId: string | null;
+};
+
+/** A person on the People screen (MGR-03, MGR-04). */
+export type StaffMember = {
+  code: string;
+  fullName: string;
+  role: "rider" | "kitchen" | "dispatch" | "accounts" | "manager";
+  jobTitle: string | null;
+  phone: string | null;
+  gender: "female" | "male" | "prefer_not_to_say" | null;
+  homeAddress: string | null;
+  photoId: string | null;
+  status: "active" | "deactivated" | "deleted";
+  isOwner: boolean;
+  mustChangePassword: boolean;
+  username: string | null;
+  email: string;
 };
 
 export class ApiError extends Error {
@@ -51,15 +84,18 @@ export type Bootstrap = {
   }[];
 };
 
-export function createApiClient({ baseUrl, getToken }: ApiClientOptions) {
+export function createApiClient({ baseUrl, getHeaders, onUnauthorized }: ApiClientOptions) {
+  /** Headers for an image request, so staff photos (staff only) load too. */
+  const imageHeaders = () => getHeaders?.() ?? {};
+
   async function send(path: string, init: RequestInit = {}): Promise<Response> {
-    const token = getToken ? await getToken() : null;
     const headers = new Headers(init.headers);
+    for (const [k, v] of Object.entries(imageHeaders())) if (v) headers.set(k, v);
     headers.set("Accept", "application/json");
     // JSON bodies are strings; a FormData upload sets its own multipart Content-Type.
     if (typeof init.body === "string") headers.set("Content-Type", "application/json");
-    if (token) headers.set("Authorization", `Bearer ${token}`);
     const res = await fetch(new URL(path, baseUrl), { ...init, headers });
+    if (res.status === 401) onUnauthorized?.();
     if (!res.ok && res.status !== 304) {
       // The API answers errors as { error: "A plain sentence" }, ready to show to the person.
       const body = (await res.json().catch(() => null)) as { error?: string } | null;
@@ -76,8 +112,45 @@ export function createApiClient({ baseUrl, getToken }: ApiClientOptions) {
   // comes back as a tiny 304, so the app keeps what it has.
   let cached: { etag: string; data: Bootstrap } | null = null;
 
+  const post = <T>(path: string, body?: unknown) =>
+    request<T>(path, {
+      method: "POST",
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+
   return {
     request,
+    imageHeaders,
+    /** The signed-in person (GET /me). */
+    me: () => request<Me>("/me"),
+    /** Change your own password: at the first sign-in, after a reset, or any time (12.1). */
+    changePassword: (currentPassword: string, newPassword: string) =>
+      post<{ ok: true }>("/me/password", { currentPassword, newPassword }),
+
+    /** People (managers): list, add, edit, reset password, deactivate, reactivate. */
+    people: () => request<{ people: StaffMember[] }>("/people"),
+    addPerson: (person: {
+      role: StaffMember["role"];
+      fullName: string;
+      username?: string;
+      email?: string;
+      jobTitle?: string;
+      phone?: string;
+      gender?: StaffMember["gender"];
+      homeAddress?: string;
+    }) => post<{ code: string; temporaryPassword: string | null }>("/people", person),
+    editPerson: (
+      code: string,
+      changes: Partial<
+        Pick<StaffMember, "fullName" | "role" | "jobTitle" | "phone" | "gender" | "homeAddress">
+      >,
+    ) =>
+      request<{ ok: true }>(`/people/${code}`, { method: "PATCH", body: JSON.stringify(changes) }),
+    resetPassword: (code: string) =>
+      post<{ temporaryPassword: string }>(`/people/${code}/reset-password`),
+    deactivate: (code: string) => post<{ ok: true }>(`/people/${code}/deactivate`),
+    reactivate: (code: string) => post<{ ok: true }>(`/people/${code}/reactivate`),
+
     /** The address of an image, for <Image source={{ uri }}>. Cached on the phone for good. */
     mediaUrl: (id: string) => new URL(`/media/${id}`, baseUrl).toString(),
     /** Sourced photos with their author and licence (GET /media/credits). */

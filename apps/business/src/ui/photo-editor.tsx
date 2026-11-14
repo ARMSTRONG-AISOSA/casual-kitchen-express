@@ -168,7 +168,11 @@ export function PhotoEditor({
       <View style={{ alignItems: "center" }}>
         {previewUri ? (
           <Image
-            source={{ uri: previewUri }}
+            source={{
+              uri: previewUri,
+              // A saved staff photo needs the session; a just-picked file is on the device.
+              headers: previewUri.startsWith("http") ? api?.imageHeaders() : undefined,
+            }}
             contentFit="cover"
             style={[shape, { borderRadius: purpose === "profile" ? 80 : 14 }]}
           />

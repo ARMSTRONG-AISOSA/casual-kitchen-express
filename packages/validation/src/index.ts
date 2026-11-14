@@ -56,3 +56,16 @@ export const soupName = z
   .trim()
   .min(2, "Enter the soup’s name")
   .max(40, "Keep the name under 40 characters");
+
+/** 3.1: staff usernames, lower case, as Better Auth's username plugin stores them. */
+export const staffUsername = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .regex(/^[a-z0-9._]{3,30}$/, "Use 3 to 30 letters, numbers, dots, or underscores");
+
+/** 12.1: a password a staff member sets for themself (at least 8 characters). */
+export const newPassword = z
+  .string()
+  .min(8, "Use at least 8 characters")
+  .max(128, "Keep it under 128 characters");

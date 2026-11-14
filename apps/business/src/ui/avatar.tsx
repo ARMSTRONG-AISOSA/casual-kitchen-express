@@ -1,6 +1,7 @@
 import { fontFamily } from "@cke/brand-tokens";
 import { Image } from "expo-image";
 import { Text, View } from "react-native";
+import { api } from "../api";
 import { useStore } from "../state/store";
 import { useTheme } from "../state/theme";
 
@@ -16,7 +17,8 @@ export function Avatar({ code, name, size = 40 }: { code?: string; name?: string
   if (photo)
     return (
       <Image
-        source={{ uri: photo.uri }}
+        // Staff photos are for signed-in staff only (3.1), so the request carries the session.
+        source={{ uri: photo.uri, headers: api?.imageHeaders() }}
         contentFit="cover"
         style={box}
         accessibilityLabel={`${name ?? code} photo`}

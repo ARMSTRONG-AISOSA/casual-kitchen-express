@@ -20,6 +20,7 @@
     "db:seed-people": "tsx scripts/seed-people.ts"
   },
   "dependencies": {
+    "@better-auth/expo": "1.7.14",
     "@cke/types": "*",
     "@cke/validation": "*",
     "@hono/zod-validator": "0.9.1",

@@ -2,8 +2,10 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { ROLE_LABEL, type Person, type Role } from "../../../src/data/seed";
 import { log, useStore } from "../../../src/state/store";
-import { Button, Card, Chip, Chips, Field, Page, T } from "../../../src/ui/kit";
-import { refreshStaff } from "../../../src/state/catalog";
+import { useTheme } from "../../../src/state/theme";
+import { Button, Card, Chip, Chips, Field, Page, Sheet, T } from "../../../src/ui/kit";
+import { api } from "../../../src/api";
+import { refreshPeople, refreshStaff } from "../../../src/state/catalog";
 import { Avatar } from "../../../src/ui/avatar";
 import { PhotoEditor } from "../../../src/ui/photo-editor";
 import { useToast } from "../../../src/ui/toast";
@@ -25,6 +27,7 @@ export default function PersonEditor() {
   const { id, role: roleParam } = useLocalSearchParams<{ id: string; role?: Person["role"] }>();
   const { s, set } = useStore();
   const toast = useToast();
+  const t = useTheme();
   const existing = s.people.find((p) => p.id === id);
   const [role, setRole] = useState<Person["role"]>(existing?.role ?? roleParam ?? "rider");
   const [name, setName] = useState(existing?.name ?? "");
@@ -34,12 +37,51 @@ export default function PersonEditor() {
   const [gender, setGender] = useState<Person["gender"]>(existing?.gender);
   const [homeAddress, setHomeAddress] = useState(existing?.homeAddress ?? "");
   const [photoOpen, setPhotoOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  // A new person's temporary password, shown once before going back (MGR-25).
+  const [created, setCreated] = useState<{ code: string; pass: string | null } | null>(null);
   // Staff photos are stored with the staff record, which exists for the starting staff now and for
   // everyone once sign-in is built.
-  const inSystem = !!existing && PEOPLE.some((p) => p.id === existing.id);
+  const inSystem = !!existing && (!!api || PEOPLE.some((p) => p.id === existing.id));
   const isManager = role === "manager";
 
+  // With the API connected, saves to the database (the username can't change once set).
+  const saveLive = async () => {
+    if (busy || !api) return;
+    setBusy(true);
+    setError("");
+    const profile = {
+      fullName: name.trim(),
+      jobTitle: job.trim(),
+      phone: phone.trim(),
+      gender: gender ?? null,
+      homeAddress: homeAddress.trim(),
+    };
+    try {
+      if (existing) {
+        await api.editPerson(existing.id, { ...profile, role });
+        await refreshPeople();
+        toast("Saved");
+        router.back();
+      } else {
+        const res = await api.addPerson({
+          ...profile,
+          role,
+          ...(isManager ? { email: login.trim() } : { username: login.trim().toLowerCase() }),
+        });
+        await refreshPeople();
+        setCreated({ code: res.code, pass: res.temporaryPassword });
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Couldn’t save. Try again.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const save = () => {
+    if (api) return void saveLive();
     if (existing) {
       set((st) => ({
         people: st.people.map((p) =>
@@ -112,6 +154,7 @@ export default function PersonEditor() {
           value={login}
           onChangeText={setLogin}
           autoCapitalize="none"
+          editable={!(api && existing)}
           hint={
             isManager
               ? "They continue with Google, so there’s no password."
@@ -176,12 +219,41 @@ export default function PersonEditor() {
         photoKey={existing?.id}
         onSaved={refreshStaff}
       />
+      {error ? (
+        <T v="small" color={t.danger} style={{ marginTop: 12 }}>
+          {error}
+        </T>
+      ) : null}
       <Button
-        label="Save"
+        label={busy ? "Saving…" : "Save"}
         style={{ marginTop: 16 }}
-        disabled={!name.trim() || !login.trim()}
+        disabled={busy || !name.trim() || !login.trim()}
         onPress={save}
       />
+      <Sheet
+        visible={!!created}
+        onClose={() => (setCreated(null), router.back())}
+        title={`${created?.code ?? ""} added`}
+      >
+        {created?.pass ? (
+          <>
+            <T muted>
+              Give this temporary password to {name.trim()}. It’s shown once. They choose their own
+              at the first sign-in.
+            </T>
+            <T v="title" style={{ marginTop: 12 }}>
+              {created.pass}
+            </T>
+          </>
+        ) : (
+          <T muted>They continue with Google, so there’s no password.</T>
+        )}
+        <Button
+          label="Done"
+          style={{ marginTop: 16 }}
+          onPress={() => (setCreated(null), router.back())}
+        />
+      </Sheet>
     </Page>
   );
 }
