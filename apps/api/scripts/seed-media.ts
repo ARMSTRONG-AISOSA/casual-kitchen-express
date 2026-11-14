@@ -11,6 +11,7 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { Client } from "pg";
 import * as t from "../src/db/schema";
 import { webpSize } from "../src/media/webp";
+import { OWNER } from "./owner";
 
 type Credit = {
   file: string;
@@ -57,7 +58,10 @@ const put = (path: string, file: string) =>
 // Start clean: unlink what this script links (and anything still pointing to an earlier seeded
 // photo), then remove the earlier seeded photos, whose files live under menu/ and seed-staff/.
 // Photos added in the app for anything else (a new soup, a staff member without a seed photo) stay.
-const staffFiles = readdirSync(staffDir).filter((f) => f.endsWith(".webp"));
+// A configured owner (scripts/owner.ts) keeps their own photo, so the demo owner's isn't used.
+const staffFiles = readdirSync(staffDir).filter(
+  (f) => f.endsWith(".webp") && !(OWNER && f === `${OWNER.code}.webp`),
+);
 const seeded = sql`(select id from media_asset where path like 'menu/%' or path like 'seed-staff/%')`;
 await db
   .update(t.menuItem)

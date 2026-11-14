@@ -8,3 +8,9 @@ BETTER_AUTH_SECRET="replace-with-a-random-secret"
 # The deployed Worker gets them with `wrangler secret put GOOGLE_CLIENT_ID` and `... GOOGLE_CLIENT_SECRET`.
 GOOGLE_CLIENT_ID=""
 GOOGLE_CLIENT_SECRET=""
+
+# The owner (architecture.md 3): staff ID M-001, the first manager, linked to this Google email at
+# their first Google sign-in. Read by the seed scripts (scripts/owner.ts), not by the Worker. Empty:
+# M-001 stays the demo owner. For the deployed database, pass both when seeding.
+OWNER_GOOGLE_EMAIL=""
+OWNER_NAME=""

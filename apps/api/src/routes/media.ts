@@ -44,7 +44,11 @@ export const media = new Hono<Ctx>()
   .get("/:id", zValidator("param", z.object({ id: z.uuid() })), async (c) => {
     const [asset] = await c
       .get("db")
-      .select({ path: t.mediaAsset.path, format: t.mediaAsset.format })
+      .select({
+        path: t.mediaAsset.path,
+        format: t.mediaAsset.format,
+        ownerId: t.mediaAsset.ownerId,
+      })
       .from(t.mediaAsset)
       .where(eq(t.mediaAsset.id, c.req.valid("param").id));
     if (!asset) return c.json({ error: "That image doesn’t exist" }, 404);
@@ -55,13 +59,21 @@ export const media = new Hono<Ctx>()
       if (!actor || actor.role === "customer")
         return c.json({ error: "Sign in as staff to see this photo" }, 401);
     }
+    // A customer's profile photo is for that customer, and for the managers and dispatch officers
+    // who see customer details on orders (3.1).
+    const isCustomerPhoto = asset.path.startsWith("customer/");
+    if (isCustomerPhoto) {
+      const actor = await readActor(c);
+      if (!actor || !(actor.id === asset.ownerId || ["manager", "dispatch"].includes(actor.role)))
+        return c.json({ error: "This photo is private" }, 401);
+    }
     const file = await c.env.MEDIA.get(asset.path);
     if (!file) return c.json({ error: "That image’s file is missing" }, 404);
     return new Response(file.body, {
       headers: {
         "Content-Type": `image/${asset.format}`,
         // A staff photo may be kept by the phone, but never by shared caches.
-        "Cache-Control": `${isStaffPhoto ? "private" : "public"}, max-age=31536000, immutable`,
+        "Cache-Control": `${isStaffPhoto || isCustomerPhoto ? "private" : "public"}, max-age=31536000, immutable`,
         ETag: file.httpEtag,
       },
     });

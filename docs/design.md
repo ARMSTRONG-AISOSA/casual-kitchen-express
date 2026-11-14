@@ -1,6 +1,6 @@
 # CKE DESIGN
 
-**Document Status:** Draft v0.30. Records UI and UX decisions, design choices, page flows, and design libraries. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day).  
+**Document Status:** Draft v0.31. Records UI and UX decisions, design choices, page flows, and design libraries. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day).  
 **Related documents:** `Casual-Kitchen-Express.md` (business and brand, surface level), `architecture.md` (functions, features, data, technical decisions), and `list-of-areas.md` (delivery areas).
 
 ---
@@ -180,7 +180,7 @@ Expressive and appetising: large food photography, warm cream backgrounds, frien
 | Demo payment | Card or bank transfer screens with a simulated confirmation, clearly labelled as a demo |
 | Order tracking | Status timeline, delivery code, live map, rider info |
 | Orders | Two tabs: In progress (live orders) and Order history (past and cancelled orders, each with Reorder) |
-| Profile | Photo, name, email, customer ID, gender, addresses, theme, help, Deactivate my account, and the Danger zone |
+| Profile | Photo (with a small camera badge), name, email, customer ID, a Profile photo section, name and gender, addresses, theme, Sign out, help, Deactivate my account, and the Danger zone, in that order |
 | Address editor | Add, edit, delete, set default |
 | Deactivate account | One confirmation tick, then the customer is signed out. Signing in again offers to reactivate. |
 | Delete account | A red Danger zone: a checkbox and typing DELETE ACCOUNT exactly, with Deactivate offered as the gentler choice |
@@ -241,9 +241,13 @@ Expressive and appetising: large food photography, warm cream backgrounds, frien
 2. Tap a page to read it, and Back to return to the list.
 
 **Profile photo**
-1. Tap the photo to open a menu: Take photo, Choose from gallery, and Remove photo (only if a photo exists).
-2. A new photo goes through a square crop, then is compressed automatically before upload.
+1. Two ways in: tap the photo (it carries a small camera badge), or use the **Profile photo** section below it, with **Add photo** (or **Change photo** and **Remove** once there is one). Either opens: Take photo, Choose from gallery, and Remove photo (only if a photo exists).
+2. A new photo goes through the phone’s square crop, then is compressed on the phone (512 px, 80 KB or less, WebP). **Your new photo** shows it with the saving, for example “3.8 MB shrunk to 46 KB (99% smaller)”, then Save photo or Choose another.
 3. Removing asks for one confirmation, then shows the default avatar (a Tomato Red circle with initials).
+4. The photo is private: only the customer and the restaurant’s managers and dispatch officers see it.
+
+**Sign out**
+- Once signed in, a **Sign out** section sits between Theme and Help: “Signed in as …. Your orders and addresses stay saved for next time.” and a Sign out button. No confirmation: signing in again is one tap.
 
 **Addresses**
 1. Checkout shows the saved address first, with "Add address" on the same screen.
@@ -736,6 +740,7 @@ Every design question is now decided. Anything that needs checking is listed in 
 
 | Version | Change |
 |---|---|
+| 0.31 | Owner requests on 14 November 2026: the customer app’s Profile gets a Profile photo section (with real compression and a size note) and a camera badge on the photo, and a Sign out section between Theme and Help (4.2, 4.3). |
 | 0.30 | Owner request on 14 November 2026: tapping your photo in the Business app’s top bar opens Your profile, with Sign out (6.3, 7). |
 | 0.29 | Owner request on 14 November 2026: an eye button on every password field to show or hide the password (3.6). |
 | 0.28 | 14 November 2026, sign-in built in the rider and customer apps and Google in the Business app: the messages for the wrong app or an unknown Google account (5, 7), and a Sign out button on the rider’s new-password screen. A staff Google account can’t order in the customer app (“Use another Google account to order”). |

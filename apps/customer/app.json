@@ -27,6 +27,13 @@
       ],
       "expo-status-bar",
       "expo-splash-screen",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "CKE uses your photos to add a profile picture.",
+          "cameraPermission": "CKE uses the camera to take a profile picture."
+        }
+      ],
       "../../tools/expo-plugins/with-android-architectures.js"
     ]
   }

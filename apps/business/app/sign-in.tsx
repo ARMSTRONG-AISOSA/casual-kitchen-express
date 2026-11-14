@@ -17,7 +17,7 @@ import { homeFor } from "../src/ui/shell";
 // Google sign-in is set up.
 const DEMO_PASSWORD = "cke-demo-2026";
 const LIVE_DEMO: { username: string; name: string; role: Role }[] = [
-  { username: "efosa.m", name: "Efosa Igbinedion", role: "manager" },
+  { username: "owner.m", name: "The owner", role: "manager" },
   { username: "ivie.m", name: "Ivie Osagie", role: "manager" },
   { username: "blessing.k", name: "Blessing Okafor", role: "kitchen" },
   { username: "samuel.k", name: "Samuel Eze", role: "kitchen" },

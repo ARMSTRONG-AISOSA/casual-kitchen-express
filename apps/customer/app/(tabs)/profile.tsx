@@ -1,13 +1,15 @@
 import { fontFamily } from "@cke/brand-tokens";
+import { Image } from "expo-image";
 import * as Linking from "expo-linking";
 import { router } from "expo-router";
-import { MessageCircle } from "lucide-react-native";
+import { Camera, LogOut, MessageCircle } from "lucide-react-native";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { WHATSAPP_URL } from "../../src/data/order";
 import { useStore } from "../../src/state/store";
 import { api } from "../../src/api";
-import { signInWithGoogle } from "../../src/state/session";
+import { pickProfilePhoto, sizeNote, type Compressed } from "../../src/media/compress";
+import { photoUrl, saveProfile, signInWithGoogle, signOutCustomer } from "../../src/state/session";
 import { useTheme } from "../../src/state/theme";
 import { Button, Card, Chip, Field, Notice, Screen, Segmented, T } from "../../src/ui/kit";
 import { Sheet } from "../../src/ui/sheet";
@@ -19,6 +21,56 @@ export default function ProfileScreen() {
   const t = useTheme();
   const toast = useToast();
   const [sheet, setSheet] = useState<null | "photo" | "crop" | "remove" | "reactivate">(null);
+  // The photo just taken or chosen, already cropped and compressed, waiting for Save photo.
+  const [picked, setPicked] = useState<Compressed | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const choose = async (from: "camera" | "library") => {
+    setSheet(null);
+    try {
+      const c = await pickProfilePhoto(from);
+      if (!c) return;
+      setPicked(c);
+      setSheet("crop");
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Couldn’t open the photo. Try again.");
+    }
+  };
+
+  const savePhoto = async () => {
+    if (!picked || busy) return;
+    setBusy(true);
+    try {
+      if (api) {
+        // Expo's fetch sends files as Blobs, so read the compressed file into one first.
+        const blob = await (await fetch(picked.uri)).blob();
+        const { photoId } = await api.uploadMyPhoto(blob);
+        set({ photo: true, photoUri: photoUrl(photoId) });
+      } else set({ photo: true, photoUri: picked.uri });
+      setSheet(null);
+      setPicked(null);
+      toast("Photo saved");
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Couldn’t save the photo. Try again.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const removePhoto = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      if (api) await api.removeMyPhoto();
+      set({ photo: false, photoUri: "" });
+      setSheet(null);
+      toast("Photo removed");
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Couldn’t remove the photo. Try again.");
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const header = (
     <View style={{ paddingHorizontal: 18, paddingTop: 10 }}>
@@ -95,15 +147,22 @@ export default function ProfileScreen() {
           accessibilityLabel="Change profile photo"
           style={[styles.avatar, { backgroundColor: s.photo ? "#9C6B47" : t.primary }]}
         >
-          <Text
-            style={{
-              fontFamily: fontFamily.heading,
-              fontSize: s.photo ? 13 : 26,
-              color: s.photo ? "#fff" : t.onPrimary,
-            }}
-          >
-            {s.photo ? "Photo" : initials}
-          </Text>
+          {s.photoUri ? (
+            <ProfilePhoto uri={s.photoUri} size={72} />
+          ) : (
+            <Text
+              style={{
+                fontFamily: fontFamily.heading,
+                fontSize: s.photo ? 13 : 26,
+                color: s.photo ? "#fff" : t.onPrimary,
+              }}
+            >
+              {s.photo ? "Photo" : initials}
+            </Text>
+          )}
+          <View style={[styles.camera, { backgroundColor: t.surface, borderColor: t.line }]}>
+            <Camera size={14} color={t.text} />
+          </View>
         </Pressable>
         <View style={{ flex: 1 }}>
           <T v="h2">{s.name}</T>
@@ -117,7 +176,37 @@ export default function ProfileScreen() {
       </View>
 
       <Card>
-        <Field label="Name" value={s.name} onChangeText={(name) => set({ name })} />
+        <T v="h2">Profile photo</T>
+        <T v="small" muted style={{ marginTop: 4, marginBottom: 12 }}>
+          {s.photo
+            ? "Change or remove your photo. Only you and the restaurant staff who handle orders see it."
+            : "Add a photo so your profile feels like yours. It’s cropped square and shrunk on your phone before upload, so it uses very little data."}
+        </T>
+        <View style={{ flexDirection: "row", gap: 10 }}>
+          <Button
+            label={s.photo ? "Change photo" : "Add photo"}
+            variant="ghost"
+            small
+            icon={<Camera size={18} color={t.text} />}
+            onPress={() => setSheet("photo")}
+          />
+          {s.photo ? (
+            <Button label="Remove" variant="ghost" small onPress={() => setSheet("remove")} />
+          ) : null}
+        </View>
+      </Card>
+
+      <Card>
+        <Field
+          label="Name"
+          value={s.name}
+          onChangeText={(name) => set({ name })}
+          onEndEditing={async () => {
+            if (s.name.trim().length < 2) return toast("Enter your name");
+            const error = await saveProfile({ name: s.name });
+            if (error) toast(error);
+          }}
+        />
         <T v="label" style={{ marginTop: 14 }}>
           Gender{" "}
           <T v="small" muted>
@@ -130,7 +219,12 @@ export default function ProfileScreen() {
               key={g}
               label={g}
               selected={s.gender === g}
-              onPress={() => set({ gender: s.gender === g ? "" : g })}
+              onPress={async () => {
+                const gender = s.gender === g ? "" : g;
+                set({ gender });
+                const error = await saveProfile({ gender });
+                if (error) toast(error);
+              }}
             />
           ))}
         </View>
@@ -168,6 +262,25 @@ export default function ProfileScreen() {
       </Card>
 
       <ThemeCard />
+
+      <Card>
+        <T v="h2">Sign out</T>
+        <T v="small" muted style={{ marginTop: 4, marginBottom: 12 }}>
+          {s.email ? `Signed in as ${s.email}. ` : ""}Your orders and addresses stay saved for next
+          time.
+        </T>
+        <Button
+          label="Sign out"
+          variant="ghost"
+          small
+          icon={<LogOut size={18} color={t.text} />}
+          onPress={async () => {
+            await signOutCustomer(set);
+            toast("Signed out");
+          }}
+        />
+      </Card>
+
       <HelpCard />
 
       <Card>
@@ -202,13 +315,13 @@ export default function ProfileScreen() {
         <Button
           label="Take photo"
           variant="ghost"
-          onPress={() => setSheet("crop")}
+          onPress={() => void choose("camera")}
           style={{ marginTop: 8 }}
         />
         <Button
           label="Choose from gallery"
           variant="ghost"
-          onPress={() => setSheet("crop")}
+          onPress={() => void choose("library")}
           style={{ marginTop: 8 }}
         />
         {s.photo ? (
@@ -220,33 +333,37 @@ export default function ProfileScreen() {
           />
         ) : null}
       </Sheet>
-      <Sheet visible={sheet === "crop"} onClose={() => setSheet(null)} title="Crop your photo">
+      <Sheet
+        visible={sheet === "crop"}
+        onClose={() => (setSheet(null), setPicked(null))}
+        title="Your new photo"
+      >
         <View style={{ alignItems: "center", marginVertical: 10 }}>
-          <View style={[styles.cropPreview]}>
-            <Text style={{ color: "#fff", fontFamily: fontFamily.bodySemiBold }}>Your photo</Text>
-          </View>
+          {picked ? <ProfilePhoto uri={picked.uri} size={150} /> : null}
         </View>
-        <Notice kind="ok">Compressed on your phone before upload: 3.8 MB to 74 KB.</Notice>
+        {picked ? (
+          <Notice kind="ok">{`Compressed on your phone: ${sizeNote(picked)}.`}</Notice>
+        ) : null}
         <Button
-          label="Save photo"
+          label={busy ? "Saving…" : "Save photo"}
           style={{ marginTop: 14 }}
-          onPress={() => {
-            set({ photo: true });
-            setSheet(null);
-            toast("Photo saved");
-          }}
+          disabled={busy}
+          onPress={() => void savePhoto()}
+        />
+        <Button
+          label="Choose another"
+          variant="ghost"
+          style={{ marginTop: 8 }}
+          onPress={() => (setPicked(null), setSheet("photo"))}
         />
       </Sheet>
       <Sheet visible={sheet === "remove"} onClose={() => setSheet(null)} title="Remove your photo?">
         <T muted>Your initials show instead.</T>
         <Button
-          label="Remove photo"
+          label={busy ? "Removing…" : "Remove photo"}
           style={{ marginTop: 16 }}
-          onPress={() => {
-            set({ photo: false });
-            setSheet(null);
-            toast("Photo removed");
-          }}
+          disabled={busy}
+          onPress={() => void removePhoto()}
         />
         <Button
           label="Keep it"
@@ -256,6 +373,20 @@ export default function ProfileScreen() {
         />
       </Sheet>
     </Screen>
+  );
+}
+
+/** A round profile photo. A saved one needs the session to load; a just-picked file is local. */
+function ProfilePhoto({ uri, size }: { uri: string; size: number }) {
+  return (
+    <Image
+      source={{ uri, headers: uri.startsWith("http") ? api?.imageHeaders() : undefined }}
+      contentFit="cover"
+      cachePolicy="memory-disk"
+      transition={150}
+      accessibilityLabel="Your profile photo"
+      style={{ width: size, height: size, borderRadius: size / 2 }}
+    />
   );
 }
 
@@ -310,11 +441,14 @@ const styles = StyleSheet.create({
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8 },
   addr: { flexDirection: "row", alignItems: "center", gap: 12, marginTop: 8 },
   danger: { marginTop: 20, borderWidth: 2, borderRadius: 16, padding: 16, marginBottom: 12 },
-  cropPreview: {
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: "#9C6B47",
+  camera: {
+    position: "absolute",
+    right: -2,
+    bottom: -2,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
   },

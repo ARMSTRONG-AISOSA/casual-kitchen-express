@@ -86,7 +86,7 @@ async function link(tx: Tx, kind: Kind, id: string, photoId: string | null) {
  * Removes a photo nothing points to any more: its database row now, and its file once the change is
  * saved. Returns the file path to delete, or null if something else still uses it.
  */
-async function dropIfUnused(tx: Tx, photoId: string | null): Promise<string | null> {
+export async function dropIfUnused(tx: Tx, photoId: string | null): Promise<string | null> {
   if (!photoId) return null;
   const { rows } = await tx.execute<{ n: number }>(sql`
     select (select count(*) from menu_item where image_id = ${photoId})

@@ -37,7 +37,7 @@ let manager = "";
 let kitchen = "";
 beforeAll(async () => {
   await removeTestRiders();
-  manager = await signIn("efosa.m");
+  manager = await signIn("owner.m");
   kitchen = await signIn("blessing.k");
 });
 afterAll(removeTestRiders);

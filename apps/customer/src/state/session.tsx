@@ -6,15 +6,61 @@ import { useStore } from "./store";
 
 type Set = ReturnType<typeof useStore>["set"];
 
-/** The customer's name and email from Google, into the app's state. */
+const GENDER_LABEL = { female: "Female", male: "Male", prefer_not_to_say: "Prefer not to say" };
+const GENDER_VALUE: Record<string, Me["gender"]> = {
+  Female: "female",
+  Male: "male",
+  "Prefer not to say": "prefer_not_to_say",
+};
+
+/** The address of a saved photo; it needs the session to load (architecture.md 3.1). */
+export const photoUrl = (photoId: string | null) =>
+  photoId ? `${process.env.EXPO_PUBLIC_API_URL}/media/${photoId}` : "";
+
+/** The customer's profile from the API (CustomerProfile, architecture.md 9) into the app's state. */
 function enterAs(me: Me, set: Set) {
   set((st) => ({
     signedIn: true,
     name: me.name,
     email: me.email ?? "",
-    // The customer number and the rest of the account come from the API in build step 6.
-    customerId: st.customerId || "C-01093",
+    gender: me.gender ? GENDER_LABEL[me.gender] : "",
+    customerId: me.customerCode ?? st.customerId,
+    photo: !!me.photoId,
+    photoUri: photoUrl(me.photoId),
   }));
+}
+
+/** Saves a change to the name or gender (CUS-15). Returns an error sentence, or null. */
+export async function saveProfile(changes: { name?: string; gender?: string }) {
+  if (!api) return null;
+  try {
+    await api.updateMe({
+      ...(changes.name !== undefined ? { name: changes.name.trim() } : {}),
+      ...(changes.gender !== undefined ? { gender: GENDER_VALUE[changes.gender] ?? null } : {}),
+    });
+    return null;
+  } catch (e) {
+    return e instanceof Error ? e.message : "Couldn’t save that. Try again.";
+  }
+}
+
+/** Signs out on this phone and on the API. The account, orders, and addresses stay saved. */
+export async function signOutCustomer(set: Set) {
+  try {
+    await authClient?.signOut();
+  } catch {
+    // Offline: the session is forgotten on this phone either way.
+  }
+  await refreshCookie();
+  set({
+    signedIn: false,
+    name: "",
+    email: "",
+    gender: "",
+    customerId: "",
+    photo: false,
+    photoUri: "",
+  });
 }
 
 /**

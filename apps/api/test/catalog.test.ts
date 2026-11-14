@@ -8,7 +8,7 @@ import { signIn } from "./session";
 // manager). Leaves the rotation as found.
 let cookie = "";
 beforeAll(async () => {
-  cookie = await signIn("efosa.m");
+  cookie = await signIn("owner.m");
 });
 const api = (path: string, method = "GET", body?: unknown) =>
   exports.default.fetch(`http://example.com${path}`, {

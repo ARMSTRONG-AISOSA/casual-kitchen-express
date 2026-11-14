@@ -26,6 +26,8 @@ export type Me = {
   gender: "female" | "male" | "prefer_not_to_say" | null;
   /** The Google email (customers and managers); null for staff without one. */
   email: string | null;
+  /** The customer ID (C-00001, CUS-27); null for staff. */
+  customerCode: string | null;
 };
 
 /** A person on the People screen (MGR-03, MGR-04). */
@@ -216,6 +218,17 @@ export function createApiClient({ baseUrl, getHeaders, onUnauthorized }: ApiClie
       request<{ photoId: null }>(`/photos/${kind}/${encodeURIComponent(id)}`, {
         method: "DELETE",
       }),
+    /** A customer changes their name or gender on Profile (CUS-15). */
+    updateMe: (changes: { name?: string; gender?: Me["gender"] }) =>
+      request<{ ok: true }>("/me", { method: "PATCH", body: JSON.stringify(changes) }),
+    /** A customer adds or replaces their profile photo, compressed first (CUS-16, 8.1). */
+    uploadMyPhoto: (file: PhotoFile) => {
+      const form = new FormData();
+      if (file instanceof Blob) form.append("file", file, "photo.webp");
+      else form.append("file", file as unknown as Blob);
+      return request<{ photoId: string }>("/me/photo", { method: "PUT", body: form });
+    },
+    removeMyPhoto: () => request<{ photoId: null }>("/me/photo", { method: "DELETE" }),
     /** Each staff member's photo and its credit, by staff code. */
     staffPhotos: () =>
       request<{

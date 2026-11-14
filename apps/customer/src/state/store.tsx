@@ -62,6 +62,8 @@ export type State = {
   gender: string;
   customerId: string;
   photo: boolean;
+  /** The profile photo to show: the API’s address, or the picked file in the demo. Empty: initials. */
+  photoUri: string;
   hasAddress: boolean;
   address: Address;
   savedCard: boolean;
@@ -98,6 +100,7 @@ export const initialState: State = {
   themePref: "light",
   deactivated: false,
   photo: false,
+  photoUri: "",
   address: {
     label: "Home",
     area: "Ekosodin",

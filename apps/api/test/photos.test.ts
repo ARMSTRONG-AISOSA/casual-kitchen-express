@@ -9,7 +9,7 @@ const SMALL_WEBP =
 const bytes = () => Uint8Array.from(atob(SMALL_WEBP), (ch) => ch.charCodeAt(0));
 let cookie = "";
 beforeAll(async () => {
-  cookie = await signIn("efosa.m");
+  cookie = await signIn("owner.m");
 });
 const call = (path: string, init?: RequestInit) =>
   exports.default.fetch(`http://example.com${path}`, {

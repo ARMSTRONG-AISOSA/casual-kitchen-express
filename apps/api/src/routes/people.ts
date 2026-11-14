@@ -7,10 +7,8 @@ import { z } from "zod";
 import { requireRole, type Actor } from "../auth/actor";
 import { hashPassword } from "../auth/password";
 import type { Db } from "../db/client";
+import { STAFF_EMAIL_DOMAIN } from "../auth/staff-email";
 import * as t from "../db/schema";
-
-/** Staff who sign in with a username get a placeholder email on this domain; it is never shown. */
-export const STAFF_EMAIL_DOMAIN = "@staff.example.com";
 
 type Ctx = { Bindings: Env; Variables: { db: Db; actor: Actor } };
 type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];

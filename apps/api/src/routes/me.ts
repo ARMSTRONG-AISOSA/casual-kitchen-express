@@ -4,10 +4,13 @@ import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { readActor, type Actor } from "../auth/actor";
+import { ensureCustomer } from "../auth/customer";
 import { createAuth } from "../auth/auth";
+import { STAFF_EMAIL_DOMAIN } from "../auth/staff-email";
 import type { Db } from "../db/client";
 import * as t from "../db/schema";
-import { STAFF_EMAIL_DOMAIN } from "./people";
+import { webpSize } from "../media/webp";
+import { dropIfUnused } from "./photos";
 
 type Ctx = { Bindings: Env; Variables: { db: Db; actor: Actor } };
 
@@ -45,6 +48,14 @@ export const me = new Hono<Ctx>()
         .where(eq(t.staffProfile.userId, actor.id));
       if (row) profile = row;
     }
+    // A customer's profile row is made at their first visit, with their customer ID (CUS-27).
+    let customerCode: string | null = null;
+    if (actor.role === "customer") {
+      const cp = await ensureCustomer(c.get("db"), actor);
+      customerCode = cp.code;
+      profile = { ...profile, photoId: cp.photoId, gender: cp.gender };
+      actor.name = cp.name;
+    }
     // The email from Google, shown on the customer's profile (CUS-21). Staff emails are internal.
     const [u] = await c
       .get("db")
@@ -53,7 +64,92 @@ export const me = new Hono<Ctx>()
       .where(eq(t.user.id, actor.id));
     const email = u && !u.email.endsWith(STAFF_EMAIL_DOMAIN) ? u.email : null;
     c.header("Cache-Control", "no-store");
-    return c.json({ ...actor, ...profile, email });
+    return c.json({ ...actor, ...profile, customerCode, email });
+  })
+  /** PATCH /me: a customer changes their name or gender on Profile (CUS-15). */
+  .patch(
+    "/",
+    zValidator(
+      "json",
+      z.object({
+        name: z.string().trim().min(2, "Enter your name").max(80).optional(),
+        gender: z.enum(["female", "male", "prefer_not_to_say"]).nullable().optional(),
+      }),
+    ),
+    async (c) => {
+      const actor = await readActor(c);
+      if (actor?.role !== "customer") return c.json({ error: "Sign in to continue" }, 401);
+      await ensureCustomer(c.get("db"), actor);
+      const body = c.req.valid("json");
+      await c
+        .get("db")
+        .update(t.customerProfile)
+        .set(body)
+        .where(eq(t.customerProfile.userId, actor.id));
+      return c.json({ ok: true });
+    },
+  )
+  /**
+   * PUT /me/photo: a customer adds or replaces their profile photo (CUS-15, CUS-16), compressed on
+   * the phone first (8.1: square, up to 512 px and 80 KB, WebP). The old photo is deleted (8.3).
+   * DELETE /me/photo removes it. The photo is private to the customer (and managers and dispatch).
+   */
+  .put("/photo", async (c) => {
+    const actor = await readActor(c);
+    if (actor?.role !== "customer") return c.json({ error: "Sign in to continue" }, 401);
+    const file = (await c.req.parseBody()).file;
+    if (!(file instanceof File)) return c.json({ error: "Choose a photo first" }, 400);
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const size = webpSize(bytes);
+    if (!size) return c.json({ error: "Photos must be compressed to WebP by the app first" }, 400);
+    if (bytes.length > 80_000 || Math.max(size.width, size.height) > 512)
+      return c.json({ error: "The photo is too big. Up to 512 px and 80 KB." }, 413);
+    const db = c.get("db");
+    const profile = await ensureCustomer(db, actor);
+    const path = `customer/${crypto.randomUUID()}.webp`;
+    await c.env.MEDIA.put(path, bytes, { httpMetadata: { contentType: "image/webp" } });
+    let result: { id: string; oldPath: string | null };
+    try {
+      result = await db.transaction(async (tx) => {
+        const [asset] = await tx
+          .insert(t.mediaAsset)
+          .values({
+            ownerId: actor.id,
+            path,
+            bytes: bytes.length,
+            width: size.width,
+            height: size.height,
+            format: "webp",
+            title: profile.code,
+          })
+          .returning({ id: t.mediaAsset.id });
+        await tx
+          .update(t.customerProfile)
+          .set({ photoId: asset!.id })
+          .where(eq(t.customerProfile.userId, actor.id));
+        return { id: asset!.id, oldPath: await dropIfUnused(tx, profile.photoId) };
+      });
+    } catch (e) {
+      await c.env.MEDIA.delete(path); // nothing points to it
+      throw e;
+    }
+    if (result.oldPath) await c.env.MEDIA.delete(result.oldPath);
+    return c.json({ photoId: result.id });
+  })
+  .delete("/photo", async (c) => {
+    const actor = await readActor(c);
+    if (actor?.role !== "customer") return c.json({ error: "Sign in to continue" }, 401);
+    const db = c.get("db");
+    const profile = await ensureCustomer(db, actor);
+    const oldPath = await db.transaction(async (tx) => {
+      await tx
+        .update(t.customerProfile)
+        .set({ photoId: null })
+        .where(eq(t.customerProfile.userId, actor.id));
+      return dropIfUnused(tx, profile.photoId);
+    });
+    if (oldPath) await c.env.MEDIA.delete(oldPath);
+    return c.json({ photoId: null });
   })
   /**
    * POST /me/password: change your own password. Needed at the first sign-in and after a manager
