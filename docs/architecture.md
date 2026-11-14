@@ -1,6 +1,6 @@
 # CKE ARCHITECTURE
 
-**Document Status:** Draft v0.32. Records the functions, features, and decisions for the apps and the website. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day with the backend foundation in progress).  
+**Document Status:** Draft v0.34. Records the functions, features, and decisions for the apps and the website. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day with the backend foundation in progress).  
 **Related documents:** `Casual-Kitchen-Express.md` (business and brand, surface level), `design.md` (UI/UX decisions and page flows), and `list-of-areas.md` (delivery areas).
 
 ---
@@ -636,10 +636,10 @@ Entities and key fields, as a starting point for the Drizzle schema. Better Auth
 | Google sign-in from the app | Route A (simplest): Better Auth's built-in browser-based Google flow, with no extra native library. Route B: sign in natively and send the Google ID token to the API, which Better Auth accepts. Route B needs a native Google sign-in library, such as the free "original" version of the widely used React Native Google Sign-In library (it uses an older Android stack) or the paid Universal version. Both routes need a development build, not Expo Go. |
 | Outside the Play Store | The Android sign-in client needs the package name and the SHA-1 fingerprint of our own release signing key. It works without the Play Store. Debug and release builds have separate fingerprints. |
 | Consent screen | With only the basic scopes, any Google account can sign in, and publishing needs no Google verification review |
-| Password sign-in (riders and staff) | **The risk.** Workers Free allows about 10 ms of CPU per request. Common password hashes (bcrypt, scrypt) take about 70 ms or more and fail. The workable option is PBKDF2 through the native Web Crypto API. The Workers runtime refuses more than 100,000 iterations, whatever the plan. Measurements from open-source projects: about 13 ms at 100,000 iterations and about 6 ms at 50,000. The usual OWASP recommendation of 600,000 cannot run on Workers. |
+| Password sign-in (riders and staff) | **The risk.** Workers Free allows about 10 ms of CPU per request. Common password hashes (bcrypt, scrypt) take about 70 ms or more and fail. The workable option is PBKDF2 through the native Web Crypto API. The Workers runtime refuses more than 100,000 iterations, whatever the plan. Measurements from open-source projects: about 13 ms at 100,000 iterations and about 6 ms at 50,000. **Measured on CKE’s own Cloudflare account (14 November 2026, PBKDF2-SHA-256, 8 requests each, CPU time from Workers tail):** 20,000 iterations median 4 ms (worst 7), 30,000 median 5 ms (worst 14), 40,000 median 7.5 ms (worst 15), 50,000 median 9.5 ms (worst 14). 100,000 reached 34 ms. No request failed, even over 10 ms, so the free plan tolerates short bursts, but 50,000 sits at the limit before the rest of the sign-in request is counted. The usual OWASP recommendation of 600,000 cannot run on Workers. |
 | Not verified | Better Auth's username plugin, its admin features for creating users, and its custom password-hash setting. To confirm when building. |
 
-**Decided: riders and kitchen staff keep username and password** (and so do dispatch officers and account officers, decided 12 November 2026). Hash with native PBKDF2 at about 50,000 iterations, measured on a real deployment, and rate-limit logins with a Durable Object. This is weaker than the usual recommendation, which is acceptable because these accounts guard only simulated data, and the trade-off is stated here. The alternative is Google sign-in for staff as well, which removes passwords completely.
+**Decided: riders and kitchen staff keep username and password** (and so do dispatch officers and account officers, decided 12 November 2026). Hash with native PBKDF2 (SHA-256) at **30,000 iterations** (owner decision, 14 November 2026, after the measurements above: about 5 ms, leaving room under the 10 ms limit for the rest of the sign-in request; the plan had been about 50,000, which measured 9.5 ms), and rate-limit logins with a Durable Object. This is weaker than the usual recommendation, which is acceptable because these accounts guard only simulated data, and the trade-off is stated here. The alternative is Google sign-in for staff as well, which removes passwords completely.
 
 ---
 
@@ -668,7 +668,7 @@ Entities and key fields, as a starting point for the Drizzle schema. Better Auth
 | Database access | Drizzle | Type-safe queries and migrations, with Neon through Hyperdrive | **Decided** |
 | Database connection from Workers | Hyperdrive with node-postgres (`pg`); Hyperdrive with postgres.js; Neon serverless driver over HTTP | Hyperdrive with `pg`, which Neon and Cloudflare both recommend and which is included in the free plan | **Decided** |
 | Authentication | Better Auth run inside the Worker | With its Expo plugin and Drizzle adapter. Neon's managed version is not used, so there is one API (12.2). | **Decided** |
-| Staff password hashing | PBKDF2 at about 50,000 iterations with rate limiting; Google sign-in for staff too | PBKDF2 with rate limiting, with the iteration count measured at build | **Decided** |
+| Staff password hashing | PBKDF2 at about 50,000 iterations with rate limiting; Google sign-in for staff too | PBKDF2 with rate limiting, at 30,000 iterations, measured on CKE’s account (12.2) | **Decided** (30,000 iterations, owner, 14 November 2026, after measuring) |
 | Real-time | Durable Objects (WebSockets with hibernation) | Verified available on the free plan, SQLite-backed (14.2) | **Decided** |
 | Background jobs | Cron Triggers for scheduled work; Durable Object alarms for per-order timers; Queues only if needed | Cron Triggers are free (5 per account). Alarms on the free plan are to be verified. | **Decided** (direction) |
 | Image file storage provider | Cloudflare R2 | Free tier covers 10 GB, with no charge for downloads | **Decided** |
@@ -762,7 +762,7 @@ Ideas kept for later. They are not built and not planned for the first release.
 
 ### 14.2 Hosting decision and consequences
 
-**Decided:** the API is written in TypeScript with Hono and runs on **Cloudflare Workers** (free plan). This was reconfirmed on 10 November 2026 after Neon's own Functions were considered. Real-time runs on Durable Objects. Neon holds the data and Cloudflare R2 holds the images. Nothing needs a separate host.
+**Decided:** the API is written in TypeScript with Hono and runs on **Cloudflare Workers** (free plan). The account’s workers.dev subdomain is **`casualkitchenexpress`** (owner, 14 November 2026), so a Worker named `cke-api` is served at `https://cke-api.casualkitchenexpress.workers.dev`. This was reconfirmed on 10 November 2026 after Neon's own Functions were considered. Real-time runs on Durable Objects. Neon holds the data and Cloudflare R2 holds the images. Nothing needs a separate host.
 
 #### Where everything lives, and what is free
 
@@ -1026,8 +1026,8 @@ The website uses **no packages**. It is plain HTML, CSS, and JavaScript.
 These checks were either not possible during planning or depend on the live setup.
 
 1. Better Auth's username plugin, its admin features for creating users, and its custom password-hash setting.
-2. The real PBKDF2 timing at about 50,000 iterations on a deployed Worker, to confirm it fits the 10 ms CPU limit.
-3. Durable Object alarms and WebSocket hibernation on the free plan, and the daily request counts they use.
+2. The real PBKDF2 timing at about 50,000 iterations on a deployed Worker, to confirm it fits the 10 ms CPU limit. **Done 14 November 2026:** a median of 9.5 ms at 50,000, right at the limit (figures in 12.2). The owner chose 30,000 iterations (12.2).
+3. Durable Object alarms and WebSocket hibernation on the free plan, and the daily request counts they use. **Done 14 November 2026:** on the free plan, a SQLite-backed Durable Object’s alarm set for 5 seconds ahead fired 1 ms after its time, and a WebSocket accepted with the hibernation API answered after 12 seconds idle. The daily request counts are checked once the real traffic exists (Workers Logs).
 4. Background location, the Android foreground-service notification, and the battery and heat target (7.5) on a mid-range phone.
 5. The Google sign-in console setup: package name, release-key fingerprint, consent screen, and the privacy policy link.
 6. The Hyperdrive caching settings (off for live order data), and Neon's current free-plan storage allowance.
@@ -1159,6 +1159,8 @@ At build time, a seed script fills the database with up to **two months** of his
 
 | Version | Change |
 |---|---|
+| 0.34 | Owner decisions on 14 November 2026: staff passwords use PBKDF2 at 30,000 iterations instead of about 50,000, after the measurements (12.2, 14); the account’s workers.dev subdomain is `casualkitchenexpress`, so the API will be served at `<worker name>.casualkitchenexpress.workers.dev` until a custom domain exists (14.2). |
+| 0.33 | 14 November 2026: free-plan checks run on a throwaway Worker (since deleted): PBKDF2 timing at 20,000 to 100,000 iterations (12.2, 16.1 item 2) and Durable Object alarms and WebSocket hibernation (16.1 item 3). |
 | 0.32 | End-of-day review on 12 November 2026, with no new decisions: image compression covers dishes, soups, and staff (8.1); starting photos updated for the Gemini menu and staff photos, which aren’t flagged as demo (8.1.1, 9, 18.3); expo-image, the image picker, and the manipulator installed in the Business app (15.2); 14.4 marked decided and placed after 14.3; the build-order status (16); the public-photo gap to close with sign-in recorded (section 9 notes). |
 | 0.31 | Owner decisions on 12 November 2026: photo upload in the Business app with crop, compression, and credit fields, replacing deletes the old photo everywhere (MGR-06, MediaAsset source kind); a refund confirmation tick and the refunder’s name, role, and staff ID recorded (MGR-15); a Refunds report (MGR-37); View profile, staff photos, gender, and home address on People (MGR-38); new photo routes and the demo staff in the database (section 9 notes). |
 | 0.30 | 12 November 2026: menu photos sourced, processed, and recorded (8.1.1, `docs/photo-credits.md`), stored in R2 and served by `GET /media/:id`; MediaAsset gains credit fields; soups gain their own photo; soup dishes carry the soup’s name and photo (KIT-17); a Photo credits page (CUS-26); expo-image noted for the next native build (15.2). |

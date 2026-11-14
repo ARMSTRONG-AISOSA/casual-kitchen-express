@@ -27,7 +27,7 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and two
 | File | What it is | Authority |
 |---|---|---|
 | `progress.md` | This file: status, rules, next steps, log | Start here |
-| `docs/architecture.md` (v0.32) | Functions, 128 feature IDs (CUS, RID, KIT, MGR, DSP, ACC, WEB), order lifecycle, data model, the API routes built so far, decisions, free-tier limits, **locked versions (section 15)**, build order (16), **16.1 to verify at build**, seed data | Wins on anything technical |
+| `docs/architecture.md` (v0.34) | Functions, 128 feature IDs (CUS, RID, KIT, MGR, DSP, ACC, WEB), order lifecycle, data model, the API routes built so far, decisions, free-tier limits, **locked versions (section 15)**, build order (16), **16.1 to verify at build**, seed data | Wins on anything technical |
 | `docs/design.md` (v0.26) | UI rules per app, screens, page flows, colours, components | Wins on anything visual or UX |
 | `docs/Casual-Kitchen-Express.md` (v1.10) | Brand and business, surface level only | Wins on brand (name, colours, logo, tone, menu, packaging) |
 | `docs/list-of-areas.md` | Delivery areas, boundary, landmarks, neighbourhood list | Areas still to confirm on a map |
@@ -76,7 +76,7 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and two
 | Real-time | Cloudflare Durable Objects (WebSockets with hibernation) |
 | Background jobs | Cron Triggers and Durable Object alarms |
 | Images | Cloudflare R2. Files in object storage, links in the database. Compressed on the device before upload. |
-| Auth | Better Auth 1.7.14 in the Worker, with its Expo plugin. Customers and managers use Google sign-in. Riders, kitchen staff, dispatch officers, and account officers use a username and password set by a manager (PBKDF2, about 50,000 iterations, rate-limited). No forgot-password anywhere. |
+| Auth | Better Auth 1.7.14 in the Worker, with its Expo plugin. Customers and managers use Google sign-in. Riders, kitchen staff, dispatch officers, and account officers use a username and password set by a manager (PBKDF2 at 30,000 iterations, rate-limited). No forgot-password anywhere. |
 | Maps | Customer app only: MapLibre with OpenFreeMap tiles. The rider app has no map and hands off to the phone's navigation app. |
 | Push | Expo push service with Firebase for Android. No email or SMS. |
 | Website | Plain HTML, CSS, and JavaScript on GitHub Pages, with no packages |
@@ -132,16 +132,22 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and two
 ## 7. Open items
 
 **Owner actions, in the order they will be needed**
-1. **Cloudflare account** (next, during sign-in): Claude will give exact steps. It is needed to deploy a test Worker and run the early 16.1 checks (PBKDF2 timing, Durable Object alarms).
-2. **Google Cloud project for Google sign-in** (with sign-in): Claude will give exact steps (package names, debug and release SHA-1 fingerprints, consent screen, privacy link). Until then, sign-in can be built and tested with the username and password accounts.
+1. **Cloudflare account: done (14 November 2026).** Wrangler is logged in on the laptop (`npx wrangler whoami` shows the account). The early 16.1 checks are done (items 2 and 3). The workers.dev subdomain is `casualkitchenexpress`, and staff passwords use 30,000 iterations (owner, 14 November 2026).
+2. **Google Cloud project for Google sign-in:** the project exists (created 14 November 2026 without a card, by skipping the free-trial offer; project ID `cke-project-514706`). Still to do with sign-in: the consent screen and the OAuth clients (package names, debug and release SHA-1 fingerprints, privacy link). Claude gives exact steps then.
 3. **Delivery boundary:** draw the polygon from map pins (Uselu to Oluku Market) and confirm the spellings of area names (`list-of-areas.md` section 9). Needed when addresses are connected (step 6).
 4. **Firebase project for push notifications** (step 6): steps to follow.
 5. **Neon account** at deploy time (decided): steps to follow.
 6. **Pushing to GitHub:** `origin` is https://github.com/ARMSTRONG-AISOSA/casual-kitchen-express.git (empty). Nothing is pushed until the owner says so.
 
+**Temporary things to remove later (don’t forget)**
+- ~~**Throwaway Cloudflare test Worker `cke-check-temp`**~~ **Deleted 14 November 2026** (confirmed: Cloudflare reports “This Worker does not exist on your account”, and its address returns 404; the local test files are deleted too). It was a tiny separate program put online only to measure two free-plan limits (16.1 items 2 and 3: PBKDF2 password-hash timing at about 50,000 iterations, and Durable Object alarms and hibernation). Its code stays in Claude’s scratchpad, never in the repository. When the measurements are recorded in `architecture.md` 16.1, delete it with `npx wrangler delete --name cke-check-temp` (from `apps/api`), check that it is gone from the Cloudflare dashboard (**Workers & Pages**), and mark this item done in the log. Deleting the Worker also deletes its Durable Object storage. Keep: the Wrangler login and the workers.dev subdomain (the real API uses them).
+- ~~**workers.dev subdomain named `cke-check-temp`**~~ **Renamed 14 November 2026 to `casualkitchenexpress`** (owner’s choice; deleted and re-registered through the Cloudflare API while no Worker was deployed, and confirmed). It was: the first deploy registered the account’s workers.dev subdomain automatically, named after the test Worker, so every Worker on the account would live at `<name>.cke-check-temp.workers.dev`. Rename it to a lasting name before the real API is deployed (owner to choose; Cloudflare dashboard, **Workers & Pages**, the subdomain setting, or Claude through the API).
+- **Temporary write guard `ALLOW_UNSIGNED_WRITES`** (in `apps/api/.dev.vars` only): removed when sign-in is built (step 4b), together with the open `GET /staff/photos`.
+
 **Known gaps and notes (no decision needed unless the owner wants one)**
 - **Photos are public until sign-in:** `GET /media/:id` serves every photo, including staff photos, and `GET /staff/photos` is open. The docs require staff photos to be access-controlled (`architecture.md` 3.1, 12), so sign-in must put staff photos behind a staff session.
 - **“Other area in range”** is a choice in the customer app’s area picker, but not a seeded area in the database. Settle how it is stored when addresses are connected (step 6).
+- **This laptop’s connection and Node.js:** Node gives each IPv4 or IPv6 connection attempt only 250 ms. The laptop has no IPv6 and Cloudflare takes longer than that over IPv4 here, so Node tools (Wrangler login and deploy) time out with `ETIMEDOUT` while curl works. Fix: run them with `NODE_OPTIONS="--network-family-autoselection-attempt-timeout=2000"` (tested 14 November 2026), or add that export to `~/.bashrc` to make it permanent. The laptop also uses the router’s DNS (192.168.0.1), which timed out on some names during setup.
 - **Tests and `dev:lan` share local state:** stop the API’s `dev:lan` before `npm run test --workspace @cke/api` (`apps/api/README.md`).
 - **Prototypes lag the docs** on the 11 and 12 November decisions. The docs win, and the prototypes are not being updated.
 - **Customer app native build:** expo-image comes with its next native build; until then React Native’s Image shows the photos (fine for now).
@@ -188,7 +194,7 @@ The prototypes are the visual reference for every screen. Reuse their copy, layo
 1. Start Docker, then the database: `npm run db:up --workspace @cke/api` (expect `Container cke-db-1 Healthy`). The data and photos are kept between runs.
 2. Start the API for the tablet: `npm run dev:lan --workspace @cke/api` (expect `Ready on http://0.0.0.0:8787`). The temporary write guard needs `apps/api/.dev.vars` (copied from `.dev.vars.example`, not committed).
 3. Start the app development servers, each in its app folder: `npx expo start --dev-client --lan --port 8081` (customer), `8082` (rider), `8083` (business). Each app reads the API address from its own `.env` (`EXPO_PUBLIC_API_URL=http://192.168.0.154:8787`; `.env.example` is committed).
-4. Tablet testing (ASTRO 10R, Android 12): turn on Wireless debugging and read out the IP address and port. Pairing is already done; `adb connect <ip>:<port>` reconnects.
+4. Tablet testing (ASTRO 10R, Android 12): turn on Wireless debugging and read out the IP address and port. Pairing is already done; `adb connect <ip>:<port>` reconnects. If the laptop gets “No route to host” (14 November 2026), turn Developer options off and on, allow Wireless debugging again, forget the old computer under Wireless debugging, and pair again with a new code (`adb pair <ip>:<pairing port> <code>`, then `adb connect <ip>:<port>`).
 5. If something looks wrong in the database, steps 2 to 3c in `apps/api/README.md` rebuild it from scratch.
 
 ---
@@ -750,3 +756,53 @@ Append a new dated entry after each work session. Never edit or delete earlier e
 
 **Next step:**
 - Sign-in with Better Auth and role checks (section 8, step 4b), then the owner’s Cloudflare account steps.
+
+---
+
+## [2026-11-14] Back from the break: reconnections, Cloudflare login, and the free-plan checks
+
+**What was done:**
+- Restarted the database (data intact), the API on the network, and the three app development servers. Prettier, typecheck, and lint pass.
+- Committed the documentation review (`8905aad`, not pushed).
+- Tablet: “No route to host” until the owner turned Developer options off and on and paired again; reconnected, and the Business app loads from the laptop and reads the API. Recreated Claude’s tablet helper script (the scratchpad was cleared by the restart).
+- Cloudflare login failed with `ETIMEDOUT`: Node gives each connection attempt 250 ms, and this laptop has no IPv6 and a slower IPv4 path to Cloudflare. Fixed with `NODE_OPTIONS="--network-family-autoselection-attempt-timeout=2000"` (section 7). Wrangler is logged in.
+- Did not run Cloudflare’s general “agent setup” page (it would install extra plugins, a global CLI outside the locked versions, and edit global settings); Wrangler is all the project needs.
+- Google Cloud: the project was created without a card by going straight to the project page and skipping the free-trial offer (project ID `cke-project-514706`).
+- Free-plan checks on a throwaway Worker `cke-check-temp`, then deleted it and its local files, confirmed gone:
+  - PBKDF2-SHA-256 CPU time (median of 8): 20,000 iterations 4 ms, 30,000 5 ms, 40,000 7.5 ms, 50,000 9.5 ms; 100,000 reached 34 ms. None failed. 50,000 sits at the 10 ms limit.
+  - A Durable Object alarm fired 1 ms after its time, and a hibernating WebSocket answered after 12 seconds idle.
+- Side effect: the first deploy registered the account’s workers.dev subdomain as `cke-check-temp` (recorded in section 7 to rename).
+
+**Files created/updated:**
+- `docs/architecture.md` (v0.33: 12.2 and 16.1 items 2 and 3), `progress.md`
+
+**Decisions locked in:**
+- None new.
+
+**Open questions / not yet decided:**
+- The staff password iteration count, given the measurements (planned about 50,000).
+- The lasting workers.dev subdomain name.
+
+**Next step:**
+- The owner answers the two questions, then sign-in with Better Auth (step 4b).
+
+---
+
+## [2026-11-14] Password strength and the workers.dev name decided
+
+**What was done:**
+- Owner decisions: staff passwords use PBKDF2 at **30,000 iterations** (about 5 ms measured, instead of about 50,000 at 9.5 ms), and the account’s workers.dev subdomain is **`casualkitchenexpress`**.
+- Renamed the subdomain through the Cloudflare API (an existing name can’t be overwritten, so the old one was deleted first while no Worker was deployed) and confirmed it reads `casualkitchenexpress`. Crossed off in section 7.
+- Recorded in `architecture.md` v0.34 (12.2, 14, 14.2, 16.1) and here.
+
+**Files created/updated:**
+- `docs/architecture.md`, `progress.md`
+
+**Decisions locked in:**
+- PBKDF2 at 30,000 iterations for staff passwords; workers.dev subdomain `casualkitchenexpress` (owner, 14 November 2026).
+
+**Open questions / not yet decided:**
+- None.
+
+**Next step:**
+- Sign-in with Better Auth and role checks (step 4b).
