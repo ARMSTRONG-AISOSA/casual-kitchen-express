@@ -210,6 +210,16 @@ export type Person = {
   homeAddress?: string;
 };
 
+/**
+ * How a person signs in, for showing on screen: managers by Google email, everyone else by
+ * username. A manager without a Google email yet (the laptop's demo managers) shows the username.
+ */
+export function signInOf(p: Person): { label: string; value: string } {
+  if (p.role === "manager" && p.email) return { label: "Google email", value: p.email };
+  if (p.username) return { label: "Username", value: p.username };
+  return { label: p.role === "manager" ? "Google email" : "Username", value: "" };
+}
+
 export const PEOPLE: Person[] = [
   {
     id: "M-001",

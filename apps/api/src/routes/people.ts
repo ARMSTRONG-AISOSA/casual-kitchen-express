@@ -9,6 +9,9 @@ import { hashPassword } from "../auth/password";
 import type { Db } from "../db/client";
 import * as t from "../db/schema";
 
+/** Staff who sign in with a username get a placeholder email on this domain; it is never shown. */
+export const STAFF_EMAIL_DOMAIN = "@staff.example.com";
+
 type Ctx = { Bindings: Env; Variables: { db: Db; actor: Actor } };
 type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
 
@@ -107,7 +110,13 @@ export const people = new Hono<Ctx>()
       .innerJoin(t.user, eq(t.user.id, t.staffProfile.userId))
       .orderBy(asc(t.staffProfile.code));
     c.header("Cache-Control", "no-store");
-    return c.json({ people: rows });
+    // Staff without a Google email have a placeholder address on their account; it isn't shown.
+    return c.json({
+      people: rows.map((r) => ({
+        ...r,
+        email: r.email.endsWith(STAFF_EMAIL_DOMAIN) ? null : r.email,
+      })),
+    });
   })
   /**
    * POST /people: add a person. Returns the new staff ID and, for username accounts, a temporary
@@ -128,7 +137,7 @@ export const people = new Hono<Ctx>()
       }
       const code = await nextCode(tx, p.role);
       const userId = crypto.randomUUID();
-      const email = p.email?.toLowerCase() ?? `${code.toLowerCase()}@staff.example.com`;
+      const email = p.email?.toLowerCase() ?? `${code.toLowerCase()}${STAFF_EMAIL_DOMAIN}`;
       const [clash] = await tx
         .select({ id: t.user.id })
         .from(t.user)
@@ -141,6 +150,9 @@ export const people = new Hono<Ctx>()
         username: p.username ?? null,
         displayUsername: p.username ?? null,
         role: p.role,
+        // A manager's Google email: Google proves it at their first sign-in, which then joins
+        // this account (Better Auth links only to a verified email).
+        emailVerified: !!p.email,
       });
       if (hash)
         await tx.insert(t.account).values({

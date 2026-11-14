@@ -1,15 +1,11 @@
-import { router } from "expo-router";
+import { signOut as endSession } from "../src/state/session";
 import { useStore } from "../src/state/store";
 import { Button, Screen, Segmented, SwitchRow, T, TopBar } from "../src/ui/kit";
 
 // Settings (RID-22): theme, and sound and vibration for alerts.
 export default function Settings() {
   const { s, set } = useStore();
-  const signOut = () => {
-    set({ signedIn: false, online: false });
-    router.dismissAll();
-    router.replace("/sign-in");
-  };
+  const signOut = () => void endSession(set);
   return (
     <Screen
       header={<TopBar title="Settings" back />}

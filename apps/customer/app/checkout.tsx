@@ -4,6 +4,8 @@ import { MapPin } from "lucide-react-native";
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { cartCount, cartFood, placeOrder, showPaid, useStore } from "../src/state/store";
+import { api } from "../src/api";
+import { signInWithGoogle } from "../src/state/session";
 import { useTheme } from "../src/state/theme";
 import {
   Button,
@@ -34,8 +36,13 @@ export default function CheckoutScreen() {
   const open = s.open === "open";
   const ready = s.signedIn && (s.mode === "pickup" || s.hasAddress) && open && s.cart.length > 0;
 
-  const google = () => {
+  const google = async () => {
     if (s.deactivated) return setReactivate(true);
+    if (api) {
+      const error = await signInWithGoogle(set, "/checkout");
+      toast(error ?? "Signed in with Google");
+      return;
+    }
     set((st) => ({
       signedIn: true,
       name: st.name || "Ada Okoro",
@@ -95,7 +102,7 @@ export default function CheckoutScreen() {
           <T v="small" muted style={{ marginTop: 4, marginBottom: 12 }}>
             One tap, no password. Your email comes from Google.
           </T>
-          <Button label="Continue with Google" variant="ghost" onPress={google} />
+          <Button label="Continue with Google" variant="ghost" onPress={() => void google()} />
         </Card>
       ) : (
         <Card>

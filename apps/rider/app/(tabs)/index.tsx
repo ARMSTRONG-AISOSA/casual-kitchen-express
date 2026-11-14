@@ -1,6 +1,6 @@
 import { naira } from "@cke/brand-tokens";
 import { router } from "expo-router";
-import { RIDER } from "../../src/data/orders";
+import { useRider } from "../../src/state/session";
 import { MAX_ORDERS, alertRider, useStore } from "../../src/state/store";
 import { Button, Card, KV, Screen, StateBanner, T, TopBar } from "../../src/ui/kit";
 import { useToast } from "../../src/ui/toast";
@@ -8,6 +8,7 @@ import { useToast } from "../../src/ui/toast";
 // Home: one big switch to go online, and today's summary (RID-02, RID-13).
 export default function Home() {
   const { s, set } = useStore();
+  const rider = useRider();
   const toast = useToast();
   const today = s.delivered.length;
   const toggle = () => {
@@ -19,7 +20,7 @@ export default function Home() {
   return (
     <Screen
       tabs
-      header={<TopBar title={`Hello, ${RIDER.first}`} />}
+      header={<TopBar title={`Hello, ${rider.first}`} />}
       footer={
         s.online ? (
           <Button

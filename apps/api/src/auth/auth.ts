@@ -15,9 +15,10 @@ const APP_ORIGINS = ["cke-business://", "cke-rider://", "cke-customer://"];
 /**
  * Better Auth, created for each request because the database connection is per request
  * (architecture.md 12.2). Riders, kitchen staff, dispatch officers, and account officers sign in
- * with a username and a password a manager set; customers and managers use Google (added with the
- * Google Cloud setup). There is no sign-up and no forgot-password: a manager creates every staff
- * account and resets passwords (12.1).
+ * with a username and a password a manager set; customers and managers use Google, through Better
+ * Auth's browser-based flow (12.2, no native library). There is no password sign-up and no
+ * forgot-password: a manager creates every staff account and resets passwords (12.1). A manager is
+ * added by their Google email, and their first Google sign-in links to that account.
  */
 export function createAuth(env: Env, db: Db, origin: string) {
   return betterAuth({
@@ -46,6 +47,22 @@ export function createAuth(env: Env, db: Db, origin: string) {
     },
     // Riders and customers rarely sign in again (12.1): 30 days, renewed once a day while used.
     session: { expiresIn: 60 * 60 * 24 * 30, updateAge: 60 * 60 * 24 },
+    // Google is on once the client from the owner's Google Cloud project is in the environment
+    // (.dev.vars locally, `wrangler secret put` when deployed). Its redirect address is
+    // <API address>/api/auth/callback/google.
+    socialProviders:
+      env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET
+        ? {
+            google: {
+              clientId: env.GOOGLE_CLIENT_ID,
+              clientSecret: env.GOOGLE_CLIENT_SECRET,
+              // Shared phones often have more than one Google account.
+              prompt: "select_account",
+            },
+          }
+        : {},
+    // Google confirms the email, so a Google sign-in joins the manager account added by that email.
+    account: { accountLinking: { enabled: true, trustedProviders: ["google"] } },
     plugins: [username({ minUsernameLength: 3, maxUsernameLength: 30 }), expo()],
     trustedOrigins: [...APP_ORIGINS, "exp://"],
     rateLimit: {
@@ -55,6 +72,7 @@ export function createAuth(env: Env, db: Db, origin: string) {
       customRules: {
         "/sign-in/username": { window: 60, max: 5 },
         "/sign-in/email": { window: 60, max: 5 },
+        "/sign-in/social": { window: 60, max: 10 },
         "/change-password": { window: 60, max: 5 },
       },
       customStorage: rateLimitStorage(env),

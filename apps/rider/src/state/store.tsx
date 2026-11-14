@@ -1,3 +1,4 @@
+import type { Me } from "@cke/api-client";
 import { DEFAULTS } from "@cke/validation";
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 import { Vibration } from "react-native";
@@ -10,6 +11,8 @@ export type Done = { no: string; area: string; time: string; pay: number };
 
 export type State = {
   signedIn: boolean;
+  /** The signed-in rider from the API (GET /me); null in the demo. */
+  me: Me | null;
   /** True at the first sign-in and after a manager resets the password (RID-20). */
   mustSetPassword: boolean;
   online: boolean;
@@ -34,6 +37,7 @@ export const MAX_ORDERS = 3;
 
 export const initial = (): State => ({
   signedIn: false,
+  me: null,
   mustSetPassword: true,
   online: false,
   themePref: "light",

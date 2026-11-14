@@ -2,3 +2,9 @@
 #   openssl rand -base64 32
 # The deployed Worker gets its own with `wrangler secret put BETTER_AUTH_SECRET`.
 BETTER_AUTH_SECRET="replace-with-a-random-secret"
+
+# Google sign-in for managers and customers (architecture.md 12.1): the "Web application" client
+# from the Google Cloud project (Google Auth Platform, Clients). Leave both empty to turn Google off.
+# The deployed Worker gets them with `wrangler secret put GOOGLE_CLIENT_ID` and `... GOOGLE_CLIENT_SECRET`.
+GOOGLE_CLIENT_ID=""
+GOOGLE_CLIENT_SECRET=""

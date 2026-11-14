@@ -20,6 +20,12 @@ export type Me = {
   isOwner: boolean;
   mustChangePassword: boolean;
   photoId: string | null;
+  jobTitle: string | null;
+  phone: string | null;
+  homeAddress: string | null;
+  gender: "female" | "male" | "prefer_not_to_say" | null;
+  /** The Google email (customers and managers); null for staff without one. */
+  email: string | null;
 };
 
 /** A person on the People screen (MGR-03, MGR-04). */
@@ -36,7 +42,8 @@ export type StaffMember = {
   isOwner: boolean;
   mustChangePassword: boolean;
   username: string | null;
-  email: string;
+  /** The Google email (managers); null for staff who sign in with a username. */
+  email: string | null;
 };
 
 export class ApiError extends Error {

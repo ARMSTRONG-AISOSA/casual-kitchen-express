@@ -68,7 +68,13 @@ export function PreviewTools() {
           label="Reset the preview"
           variant="alt"
           onPress={() => {
-            set({ ...initial(), signedIn: true, mustSetPassword: false, themePref: s.themePref });
+            set({
+              ...initial(),
+              me: s.me,
+              signedIn: true,
+              mustSetPassword: false,
+              themePref: s.themePref,
+            });
             router.navigate("/(tabs)");
           }}
         />

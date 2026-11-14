@@ -33,7 +33,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SvgXml } from "react-native-svg";
-import { ROLE_LABEL, type Role } from "../data/seed";
+import { ROLE_LABEL, signInOf, type Role } from "../data/seed";
 import { clock, log, me, myRole, useStore } from "../state/store";
 import { useTheme } from "../state/theme";
 import { Button, Sheet, T } from "./kit";
@@ -186,6 +186,8 @@ export function Shell({ children }: { children: ReactNode }) {
   const role = myRole(s);
   const user = me(s);
   const [leaving, setLeaving] = useState(false);
+  // Tapping your photo in the top bar opens your profile, with Sign out.
+  const [profile, setProfile] = useState(false);
   const active = SCREEN_OWNER[screen];
   const isManagerScreen = MANAGER.includes(active ?? "board") || screen === "assign";
   const showPause = screen === "board" && (role === "manager" || role === "kitchen");
@@ -350,7 +352,12 @@ export function Shell({ children }: { children: ReactNode }) {
             ) : null}
             <View style={{ flex: 1 }} />
             {showPause && roomy ? pauseControl : null}
-            <View style={styles.who}>
+            <Pressable
+              onPress={() => setProfile(true)}
+              accessibilityRole="button"
+              accessibilityLabel={`Your profile, ${user?.name ?? ""}`}
+              style={styles.who}
+            >
               <Avatar code={user?.id} name={user?.name} size={44} />
               {/* On the board the pause switch needs the room, so only the initials show there. */}
               {wide && (screen !== "board" || width >= 1400) ? (
@@ -363,7 +370,7 @@ export function Shell({ children }: { children: ReactNode }) {
                   </T>
                 </View>
               ) : null}
-            </View>
+            </Pressable>
             {isKitchenScreen ? (
               <Button label="Switch person" variant="ghost" small onPress={signOut} />
             ) : null}
@@ -373,6 +380,40 @@ export function Shell({ children }: { children: ReactNode }) {
         </View>
         <View style={{ flex: 1 }}>{children}</View>
       </View>
+
+      <Sheet visible={profile} onClose={() => setProfile(false)} title="Your profile">
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+          <Avatar code={user?.id} name={user?.name} size={72} />
+          <View style={{ flexShrink: 1 }}>
+            <T v="h2">{user?.name}</T>
+            <T muted>
+              {ROLE_LABEL[role]}, {user?.id}
+            </T>
+          </View>
+        </View>
+        {[
+          ["Job", user?.job],
+          user ? [signInOf(user).label, signInOf(user).value] : ["", ""],
+          ["Phone", user?.phone],
+        ].map(([label, value]) =>
+          value ? (
+            <View key={label} style={{ marginTop: 12 }}>
+              <T v="small" muted>
+                {label}
+              </T>
+              <T>{value}</T>
+            </View>
+          ) : null,
+        )}
+        <Button
+          label="Sign out"
+          style={{ marginTop: 20 }}
+          onPress={() => {
+            setProfile(false);
+            askSignOut();
+          }}
+        />
+      </Sheet>
 
       <Sheet visible={leaving} onClose={() => setLeaving(false)} title="Cash up before you go?">
         <T muted>

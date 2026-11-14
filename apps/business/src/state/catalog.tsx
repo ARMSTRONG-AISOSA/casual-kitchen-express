@@ -98,7 +98,8 @@ function CatalogSync() {
           owner: p.isOwner,
           gender: p.gender ?? undefined,
           homeAddress: p.homeAddress ?? undefined,
-          ...(p.role === "manager" ? { email: p.email } : { username: p.username ?? undefined }),
+          email: p.email ?? undefined,
+          username: p.username ?? undefined,
         })),
       });
       return people;

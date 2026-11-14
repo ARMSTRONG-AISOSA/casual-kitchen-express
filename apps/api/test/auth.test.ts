@@ -51,10 +51,16 @@ describe("sign-in and roles", () => {
   });
 
   it("knows who is signed in and checks the role on each route", async () => {
-    const me = await json<{ role: string; staffCode: string; name: string }>(
-      await call("/me", kitchen),
-    );
-    expect(me).toMatchObject({ role: "kitchen", staffCode: "K-001", name: "Blessing Okafor" });
+    const me = await json<Record<string, unknown>>(await call("/me", kitchen));
+    expect(me).toMatchObject({
+      role: "kitchen",
+      staffCode: "K-001",
+      name: "Blessing Okafor",
+      // Their own profile, for Profile and the rider's Me tab; internal staff emails stay hidden.
+      jobTitle: "Head cook",
+      gender: "female",
+      email: null,
+    });
     // Kitchen staff can see staff photos but can't change the soup rotation or open People.
     expect((await call("/staff/photos", kitchen)).status).toBe(200);
     const refused = await post("/soups", kitchen, { name: "Nope" });
@@ -147,5 +153,30 @@ describe("sign-in and roles", () => {
     const resetManager = await post("/people/M-002/reset-password", manager);
     expect(resetManager.status).toBe(409);
     await resetManager.body?.cancel();
+  });
+
+  it("adds a manager by Google email, ready to link at their first Google sign-in", async () => {
+    const res = await post("/people", manager, {
+      role: "manager",
+      fullName: TEST_NAME,
+      email: "Test.Manager@Example.com",
+      jobTitle: "Shift manager",
+    });
+    expect(res.status).toBe(201);
+    const { temporaryPassword } = await json<{ temporaryPassword: string | null }>(res);
+    expect(temporaryPassword).toBeNull(); // managers have no password
+    const { db, close } = await connect(env);
+    const [u] = await db
+      .select({ email: t.user.email, verified: t.user.emailVerified })
+      .from(t.user)
+      .where(eq(t.user.email, "test.manager@example.com"));
+    await close();
+    expect(u).toEqual({ email: "test.manager@example.com", verified: true });
+    // The People list shows a real Google email, and hides the placeholder for username staff.
+    const { people } = await json<{ people: { code: string; email: string | null }[] }>(
+      await call("/people", manager),
+    );
+    expect(people.find((p) => p.code === "R-001")!.email).toBeNull();
+    expect(people.some((p) => p.email === "test.manager@example.com")).toBe(true);
   });
 });

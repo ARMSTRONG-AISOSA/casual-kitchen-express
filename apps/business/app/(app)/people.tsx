@@ -3,7 +3,7 @@ import { api } from "../../src/api";
 import { refreshPeople } from "../../src/state/catalog";
 import { useState } from "react";
 import { View } from "react-native";
-import { ROLE_LABEL, type Person, type Role } from "../../src/data/seed";
+import { ROLE_LABEL, signInOf, type Person, type Role } from "../../src/data/seed";
 import { log, useStore } from "../../src/state/store";
 import { Avatar } from "../../src/ui/avatar";
 import { Badge, Button, Card, Chip, Chips, KV, Page, Row, Sheet, T } from "../../src/ui/kit";
@@ -82,9 +82,7 @@ export default function People() {
                 <T v="h3">
                   {p.name}, {p.id}
                 </T>
-                <T muted>
-                  {p.job}, {p.username ?? p.email}
-                </T>
+                <T muted>{[p.job, signInOf(p).value].filter(Boolean).join(", ")}</T>
               </View>
             </View>
             <Badge label={p.active ? "Active" : "Deactivated"} />
@@ -134,10 +132,7 @@ export default function People() {
               v={viewing.owner ? "Owner, active" : viewing.active ? "Active" : "Deactivated"}
             />
             <KV k="Job title" v={viewing.job || "–"} />
-            <KV
-              k={viewing.username ? "Username" : "Google email"}
-              v={viewing.username ?? viewing.email ?? "–"}
-            />
+            <KV k={signInOf(viewing).label} v={signInOf(viewing).value || "–"} />
             <KV k="Phone" v={viewing.phone || "–"} />
             <KV
               k="Gender"

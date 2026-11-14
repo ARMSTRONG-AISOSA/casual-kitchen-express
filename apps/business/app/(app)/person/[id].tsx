@@ -33,7 +33,9 @@ export default function PersonEditor() {
   const [name, setName] = useState(existing?.name ?? "");
   const [job, setJob] = useState(existing?.job ?? "");
   const [phone, setPhone] = useState(existing?.phone ?? "");
-  const [login, setLogin] = useState(existing?.username ?? existing?.email ?? "");
+  const [login, setLogin] = useState(
+    (existing?.role === "manager" ? existing.email : existing?.username) ?? "",
+  );
   const [gender, setGender] = useState<Person["gender"]>(existing?.gender);
   const [homeAddress, setHomeAddress] = useState(existing?.homeAddress ?? "");
   const [photoOpen, setPhotoOpen] = useState(false);

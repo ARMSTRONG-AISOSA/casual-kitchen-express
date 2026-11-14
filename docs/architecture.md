@@ -1,6 +1,6 @@
 # CKE ARCHITECTURE
 
-**Document Status:** Draft v0.35. Records the functions, features, and decisions for the apps and the website. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day with the backend foundation in progress).  
+**Document Status:** Draft v0.37. Records the functions, features, and decisions for the apps and the website. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day with the backend foundation in progress), and again on 14 November 2026 after sign-in was built.  
 **Related documents:** `Casual-Kitchen-Express.md` (business and brand, surface level), `design.md` (UI/UX decisions and page flows), and `list-of-areas.md` (delivery areas).
 
 ---
@@ -16,7 +16,7 @@ This document records **what the system does and how it is put together** for th
 | Rider and Delivery app | Riders |
 | Website | Visitors (promotes the app) |
 
-**Status:** planning and design are complete. The three apps’ screens are built on demo data, and the backend foundation is in progress (16). `progress.md` tracks what has been built and what is left.
+**Status:** planning and design are complete. The three apps’ screens are built on demo data. The backend foundation and sign-in with roles are built (16), and the orders backend is next. `progress.md` tracks what has been built and what is left.
 
 **Conventions**
 - Feature IDs use a prefix per client or role (CUS, RID, KIT, MGR, DSP, ACC, WEB) so features can be tracked and referenced.
@@ -59,7 +59,7 @@ Business app                ├──►  Neon (Postgres database)
 | Kitchen staff | Manager | Business and Kitchen app (tablet and phone) | Acknowledge, prepare, mark ready, mark collected, toggle sold out, enter walk-in orders at the counter |
 | Dispatch officer | Manager | Business and Kitchen app (tablet and phone) | Coordinates the kitchen, riders, and customers: alerts, orders (with full customer contact details), the live riders panel, assigning an unaccepted order to a rider, rider help requests, cancellation requests (approve or decline, no other refunds), and settings except Pricing and pay and Restaurant contact |
 | Account officer | Manager | Business and Kitchen app (tablet and phone) | Record keeping and audit: reports, rider pay (including marking payouts as paid), and the Finance menu (monthly statement, daily cash-up sign-off, audit trail, exports, close month) |
-| Manager | The owner, or another manager. The first manager is set up in configuration with the owner's Google email. | Business and Kitchen app (tablet and phone) | Everything the other staff roles can do, plus menu, prices, accounts, all settings, refunds |
+| Manager | The owner, or another manager. The first manager is set up in configuration with the owner's Google email (not built yet: the seeded owner M-001 has no Google email, so the deployed database needs this step; `progress.md` section 7). | Business and Kitchen app (tablet and phone) | Everything the other staff roles can do, plus menu, prices, accounts, all settings, refunds |
 
 Permissions are role-based and enforced by the backend, never only by the app screens. Hiding a menu is not enough: each endpoint checks the role (12).
 
@@ -509,10 +509,10 @@ Entities and key fields, as a starting point for the Drizzle schema. Better Auth
 - **Catalog version:** the Setting row has a `catalog version` that goes up whenever the menu or a customer-facing setting changes. `GET /bootstrap` returns it as an ETag (14.4, decision 1).
 - **Soups:** a SoupVariety list (egusi, efo riro, ogbono to start) holds the soups the soup of the day is picked from. Managers add and remove soups; removing sets it inactive. Menu items flagged as soup take today’s soup, and each order stores the soup it got.
 - **Hours overrides:** an HoursOverride row per date (closed, or different hours) covers MGR-09’s overrides.
-- **Accounts:** Better Auth’s user, session, account, and verification tables, with its username and admin plugin fields, written by hand from Better Auth 1.7’s schema. They are confirmed against Better Auth’s own generator when sign-in is built (16.1, item 1).
+- **Accounts:** Better Auth’s user, session, account, and verification tables, with its username and admin plugin fields, written by hand from Better Auth 1.7’s schema. Sign-in works on them (username and Google, tested 14 November 2026; 16.1 item 1). The admin plugin’s columns are in the table, but the plugin isn’t used: the People routes create and change staff accounts themselves.
 - **Not yet:** the ReportView summaries come with the reports (build step 9).
 
-**API routes so far** (`apps/api/README.md` has the commands): `GET /health`; `GET /bootstrap` (menu, soups, areas, and customer-facing settings, with an ETag and 304s); `POST /soups` and `DELETE /soups/:id` (managers); `PUT /settings/soup-of-the-day` (kitchen staff and managers); `GET /media/:id` (an image from R2, cached for a year because an ID never changes what it points to, 8.3); `GET /media/credits` (the credits of the menu and soup photos in use, so a replaced or removed photo drops out); `PUT /photos/:kind/:id` and `DELETE /photos/:kind/:id` (add, replace, or remove a dish, soup, or staff photo with its credit; the API checks it is WebP within the size and dimension limits, and deletes the old photo); `GET /staff/photos` (staff photos, signed-in staff only). **Sign-in (built 14 November 2026):** Better Auth at `/api/auth/*` (username sign-in for staff; Google comes with the Google Cloud setup), `GET /me` (the signed-in person: role, staff code, photo, and whether they must change their password), `POST /me/password`, and the managers’ People routes: `GET /people`, `POST /people` (a temporary password shown once), `PATCH /people/:code`, `POST /people/:code/reset-password`, `/deactivate`, and `/reactivate`. Every change route checks the role (3.0) on the route itself, not through wildcard middleware; staff who must change a temporary password can do only that; a deactivated person is signed out straight away; staff photo files (`GET /media/:id`) need a staff session, while menu and soup photos stay public. Sign-in is rate-limited to 5 tries a minute per address through a Durable Object (`AuthRateLimiter`). The temporary `ALLOW_UNSIGNED_WRITES` guard is gone. The demo staff are in the database (`npm run db:seed-people`) with the demo password `cke-demo-2026`; managers get usernames (`efosa.m`, `ivie.m`) only on the laptop with `SEED_MANAGER_PASSWORDS=1`, because on a deployed database they sign in with Google only. The soup rotation is the first feature the apps read from the API; both apps fall back to their demo data when no API address is set.
+**API routes so far** (`apps/api/README.md` has the commands): `GET /health`; `GET /bootstrap` (menu, soups, areas, and customer-facing settings, with an ETag and 304s); `POST /soups` and `DELETE /soups/:id` (managers); `PUT /settings/soup-of-the-day` (kitchen staff and managers); `GET /media/:id` (an image from R2, cached for a year because an ID never changes what it points to, 8.3); `GET /media/credits` (the credits of the menu and soup photos in use, so a replaced or removed photo drops out); `PUT /photos/:kind/:id` and `DELETE /photos/:kind/:id` (add, replace, or remove a dish, soup, or staff photo with its credit; the API checks it is WebP within the size and dimension limits, and deletes the old photo); `GET /staff/photos` (staff photos, signed-in staff only). **Sign-in (built 14 November 2026):** Better Auth at `/api/auth/*` (username sign-in for staff; Google for customers and managers through the browser-based flow, on once `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set, with the redirect address `<API address>/api/auth/callback/google`; a manager added by Google email is linked at their first Google sign-in), `GET /me` (the signed-in person: role, staff code, photo, their own job title, phone, home address, gender, and Google email, and whether they must change their password), `POST /me/password`, and the managers’ People routes: `GET /people` (with each person’s username or Google email; the placeholder address of username staff is never shown), `POST /people` (a temporary password shown once), `PATCH /people/:code`, `POST /people/:code/reset-password`, `/deactivate`, and `/reactivate`. Every change route checks the role (3.0) on the route itself, not through wildcard middleware; staff who must change a temporary password can do only that; a deactivated person is signed out straight away; staff photo files (`GET /media/:id`) need a staff session, while menu and soup photos stay public. Sign-in is rate-limited to 5 tries a minute per address through a Durable Object (`AuthRateLimiter`). The temporary `ALLOW_UNSIGNED_WRITES` guard is gone. The demo staff are in the database (`npm run db:seed-people`) with the demo password `cke-demo-2026`; managers get usernames (`efosa.m`, `ivie.m`) only on the laptop with `SEED_MANAGER_PASSWORDS=1`, because on a deployed database they sign in with Google only. The soup rotation is the first feature the apps read from the API; both apps fall back to their demo data when no API address is set.
 
 | Entity | Key fields |
 |---|---|
@@ -608,9 +608,9 @@ Entities and key fields, as a starting point for the Drizzle schema. Better Auth
 
 **Google setup notes** (checked 10 November 2026; confirm in Google's console when building)
 - A free Google Cloud project holds the sign-in configuration.
-- The Android sign-in client is tied to the app's package name and the **SHA-1 fingerprint of its signing key**. Debug and release builds have different keys, and the release key must never change (17.2).
-- The API verifies the Google ID token and then starts its own session. A web client ID is used for that check.
-- With only the basic scopes (openid, email, profile), any Google account can sign in, even while the consent screen is in testing mode. Publishing it ("In production") makes it available to everyone and does not require Google's verification review for these basic scopes.
+- **As built (14 November 2026), with the browser-based flow (12.2, Route A):** the app opens Google's page in the phone's browser, Google returns to the API at `<API address>/api/auth/callback/google`, and the API starts its own session and hands it back to the app through the app's link scheme. This needs one **Web application** client (client ID and secret, kept as Worker secrets), with that redirect address listed: `http://localhost:8787/...` for the laptop (Google accepts plain `http` only for localhost, so the tablet reaches the laptop through `adb reverse`) and `https://cke-api.casualkitchenexpress.workers.dev/...` once deployed. No Android client and no SHA-1 fingerprints are needed; those apply only to native sign-in (Route B), which isn't used.
+- Google client secrets are shown only once, when created; afterwards the console shows the last four characters. A lost secret is replaced by adding a new one.
+- With only the basic scopes (openid, email, profile), any Google account can sign in, even while the consent screen is in testing mode (Google's Audience help, re-checked 14 November 2026: basic-scope requests are the exception to the test-user list). Adding test users does no harm. Publishing it ("In production") makes it available to everyone and does not require Google's verification review for these basic scopes.
 - The consent screen asks for an app name, a support email, and the homepage and privacy policy links. The website's pages cover the links.
 - The compatibility check is done (12.2).
 
@@ -933,7 +933,7 @@ All three apps use the same versions.
 | expo-keep-awake | ~58.0.3 | Screen awake on pickup and code entry (rider app) and on the kitchen tablet |
 | expo-image-picker | ~58.0.10 | Photos (customer profile; dishes, soups, and staff in the Business app, installed there 12 November 2026) |
 | expo-image-manipulator | ~58.0.16 | Crop, resize, and compress before upload (installed in the Business app) |
-| expo-image | ~58.0.18 | Showing photos with caching. Installed in the Business app (with its native build of 12 November 2026). The customer app gets it with its next native build; until then it shows photos with React Native’s own Image, which Android also caches. |
+| expo-image | ~58.0.18 | Showing photos with caching. Installed in the Business app (12 November 2026) and the customer app (14 November 2026). |
 | expo-font | ~58.0.11 | Loading Nunito and Inter |
 | expo-linear-gradient | ~58.0.3 | Required by the charts library (business app) |
 | expo-splash-screen | ~58.0.12 | Launch screen |
@@ -961,7 +961,7 @@ All three apps use the same versions.
 
 | Package | Version | Used for |
 |---|---|---|
-| hono | **4.13.14** | The API |
+| hono | **4.13.16** | The API. Upgraded from 4.13.14 on 14 November 2026 for security fixes; the owner approved it a day before the two-week rule allowed. |
 | @hono/zod-validator | **0.9.1** | Request validation |
 | better-auth | **1.7.14** | Sign-in, sessions, roles, and staff passwords |
 | drizzle-orm | **0.45.4** | Database access |
@@ -1013,7 +1013,7 @@ The website uses **no packages**. It is plain HTML, CSS, and JavaScript.
 7. Website (static, on GitHub Pages).
 8. Reports, rider payouts, and polish.
 
-**Changed on 12 November 2026 (owner decision): frontend first.** The app screens are built first on demo data held in each app, so the owner can see and review them. The customer app came first, then the rider app, then the Kitchen and Business app (all three built on demo data by 12 November 2026). The backend foundation (step 1) is in progress: the database, catalog, soup rotation, and photos are built, and sign-in and roles come next, then orders and statuses. The seed script (step 2) follows, and then each app’s demo data is replaced with real API calls. The rest of the order is unchanged. `progress.md` section 8 has the step-by-step status.
+**Changed on 12 November 2026 (owner decision): frontend first.** The app screens are built first on demo data held in each app, so the owner can see and review them. The customer app came first, then the rider app, then the Kitchen and Business app (all three built on demo data by 12 November 2026). The backend foundation (step 1) is built: the database, catalog, soup rotation, photos, and sign-in with roles (14 November 2026). Orders and statuses come next. The seed script (step 2) follows, and then each app’s demo data is replaced with real API calls. The rest of the order is unchanged. `progress.md` section 8 has the step-by-step status.
 
 **Platform:** every step targets Android first. iOS is added later.
 
@@ -1025,11 +1025,11 @@ The website uses **no packages**. It is plain HTML, CSS, and JavaScript.
 
 These checks were either not possible during planning or depend on the live setup.
 
-1. Better Auth's username plugin, its admin features for creating users, and its custom password-hash setting.
+1. Better Auth's username plugin, its admin features for creating users, and its custom password-hash setting. **Done 14 November 2026:** the username plugin and the custom PBKDF2 hash work in the Worker. Staff accounts are created by the API’s own People routes rather than the admin plugin.
 2. The real PBKDF2 timing at about 50,000 iterations on a deployed Worker, to confirm it fits the 10 ms CPU limit. **Done 14 November 2026:** a median of 9.5 ms at 50,000, right at the limit (figures in 12.2). The owner chose 30,000 iterations (12.2).
 3. Durable Object alarms and WebSocket hibernation on the free plan, and the daily request counts they use. **Done 14 November 2026:** on the free plan, a SQLite-backed Durable Object’s alarm set for 5 seconds ahead fired 1 ms after its time, and a WebSocket accepted with the hibernation API answered after 12 seconds idle. The daily request counts are checked once the real traffic exists (Workers Logs).
 4. Background location, the Android foreground-service notification, and the battery and heat target (7.5) on a mid-range phone.
-5. The Google sign-in console setup: package name, release-key fingerprint, consent screen, and the privacy policy link.
+5. The Google sign-in console setup: consent screen, the client, and the privacy policy link. **Mostly done 14 November 2026:** Google Auth Platform (branding, External audience in testing, one Web application client with the localhost and workers.dev redirect addresses) is set up, and Continue with Google works on the tablet in the Business app (a manager) and the customer app (a customer; a staff Google account is refused). The browser-based flow needs no package name or key fingerprint. Still to do: the privacy policy link and publishing the consent screen, with the website (step 7).
 6. The Hyperdrive caching settings (off for live order data), and Neon's current free-plan storage allowance.
 7. OpenFreeMap's current usage terms, and the required map credit.
 8. A re-check of every free allowance (Cloudflare, Neon, and Expo) just before building.
@@ -1064,7 +1064,7 @@ What this means:
 | Business app and rider app | GitHub Releases only, not promoted on the public pages |
 | Processor types (decided) | Everyday and test builds are **arm64-v8a only**. Release builds add **armeabi-v7a** for older and budget phones (set `CKE_ANDROID_ARCHITECTURES="arm64-v8a,armeabi-v7a"`). **x86 and x86_64 are never built.** Enforced by `tools/expo-plugins/with-android-architectures.js` in every app. Owner decision, 11 November 2026. |
 | Package IDs (decided) | `com.armstrongaisosa.casualkitchenexpress.customer`, `.rider`, and `.business`. They can’t change after the first release. |
-| Signing | One signing key per app, kept safe and backed up. The same key must be used for every update, and Google sign-in is tied to the key's fingerprint. |
+| Signing | One signing key per app, kept safe and backed up. The same key must be used for every update. (Google sign-in uses the browser-based flow, so it isn’t tied to the key’s fingerprint, 12.2.) |
 | Versions | Each release has a version number, release notes, and a checksum on the release page |
 | Updates | The app checks for a newer release and shows an "Update available" message that opens the release page. Expo EAS Update can send JavaScript-only changes without a new installer. |
 | Push notifications | Work without the Play Store (Firebase handles delivery) |
@@ -1159,6 +1159,8 @@ At build time, a seed script fills the database with up to **two months** of his
 
 | Version | Change |
 |---|---|
+| 0.37 | Review on 14 November 2026 after Google sign-in was tested on the tablet: 16.1 items 1 and 5 marked done (5 except the privacy link and publishing); the signing row no longer ties Google sign-in to the key; the accounts note and the status lines are current; `GET /people` hides the placeholder address of username staff; a gap recorded: the owner’s Google email isn’t configured for the deployed database yet (3). |
+| 0.36 | 14 November 2026: Hono upgraded from 4.13.14 to 4.13.16 for its security fixes (15.3). The owner approved the upgrade one day before it was two weeks old. Rider app sign-in built. Google sign-in built (browser-based flow, a Web client; no Android client or SHA-1 needed) in the API, the Business app, and the customer app, waiting for the owner’s Google client (section 9 notes). `GET /me` returns the person’s own profile details and Google email. The sign-in packages, `better-auth`, and expo-image installed in the customer app; `better-auth` declared in the Business and rider apps too (15.2). |
 | 0.35 | Owner decisions on 14 November 2026: the tablet’s 8:30 pm sign-out waits until every order placed before then is finished, and managers can turn it off in Settings (4.5, KIT-12, Setting). Sign-in built: Better Auth with staff usernames, `/me`, People routes, role checks per route, private staff photos, and Durable Object rate limiting (section 9 notes). `@better-auth/expo` 1.7.14 installed with `expo-secure-store` 58.0.2, `expo-network` 58.0.4, and `expo-web-browser` 58.0.7 (15.2). |
 | 0.34 | Owner decisions on 14 November 2026: staff passwords use PBKDF2 at 30,000 iterations instead of about 50,000, after the measurements (12.2, 14); the account’s workers.dev subdomain is `casualkitchenexpress`, so the API will be served at `<worker name>.casualkitchenexpress.workers.dev` until a custom domain exists (14.2). |
 | 0.33 | 14 November 2026: free-plan checks run on a throwaway Worker (since deleted): PBKDF2 timing at 20,000 to 100,000 iterations (12.2, 16.1 item 2) and Durable Object alarms and WebSocket hibernation (16.1 item 3). |

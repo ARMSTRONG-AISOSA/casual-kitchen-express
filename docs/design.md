@@ -1,6 +1,6 @@
 # CKE DESIGN
 
-**Document Status:** Draft v0.27. Records UI and UX decisions, design choices, page flows, and design libraries. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day).  
+**Document Status:** Draft v0.30. Records UI and UX decisions, design choices, page flows, and design libraries. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day).  
 **Related documents:** `Casual-Kitchen-Express.md` (business and brand, surface level), `architecture.md` (functions, features, data, technical decisions), and `list-of-areas.md` (delivery areas).
 
 ---
@@ -111,6 +111,7 @@ Colour choices should differ in lightness as well as hue, so they remain readabl
 - Text contrast of at least 4.5:1 everywhere, and 7:1 in the rider app.
 - Tap targets at least 44 px, and larger in the kitchen and rider apps.
 - Real labels for icon-only buttons.
+- Every password field has an eye button on its right that shows or hides what was typed (labelled “Show password” or “Hide password”). It starts hidden.
 - Status is not conveyed by colour alone.
 - Text can scale with the device setting without breaking layouts.
 
@@ -305,7 +306,7 @@ Menu photography follows the brand's photography direction. Images are shown in 
 
 | Screen | Purpose |
 |---|---|
-| Sign in | Username and password from the manager. A line says "Forgot your password? Ask your manager." |
+| Sign in | Username and password from the manager. A line says "Forgot your password? Ask your manager." Other staff are told "This app is for riders. Kitchen, dispatch, and managers use CKE Kitchen." The rider stays signed in, even when the app opens without signal. |
 | Set a new password | Shown at the first sign-in, and after a manager resets the password |
 | My profile | A read-only view of the rider's own details and staff ID. No photo is shown, to keep the app image-free. |
 | Settings | Theme (light, dark, or follow the phone), and sound and vibration |
@@ -400,13 +401,13 @@ Menu photography follows the brand's photography direction. Images are shown in 
 | Account officer | Reports, Rider pay, Finance |
 | Manager | Board, Walk-in, Sold out, Alerts, then a Manager group: Dashboard, Orders, Riders, People, Menu, Rider pay, Reports, Finance, Settings, and Demo |
 
-The top bar shows the screen title, the Demo chip on manager screens, the signed-in person, and Switch person on kitchen screens. A person who opens the app lands on their first item (the Board, Alerts, or Reports). On a narrow screen (a tablet in portrait, under 1100 dp wide), the Board’s pause switch and clock move to a second row so nothing overlaps the person and Switch person.
+The top bar shows the screen title, the Demo chip on manager screens, the signed-in person, and Switch person on kitchen screens. Tapping the person’s photo opens **Your profile**: their photo, name, role and staff ID, job, username or Google email, phone, and a Sign out button (the same cash-up check as the rail’s Sign out). A person who opens the app lands on their first item (the Board, Alerts, or Reports). On a narrow screen (a tablet in portrait, under 1100 dp wide), the Board’s pause switch and clock move to a second row so nothing overlaps the person and Switch person.
 
 ### 6.4 Kitchen screen inventory
 
 | Screen | Purpose |
 |---|---|
-| Sign in | Managers: Continue with Google. Kitchen staff, dispatch officers, and account officers: username and password from a manager. |
+| Sign in | Managers: Continue with Google. Kitchen staff, dispatch officers, and account officers: username and password from a manager. A Google account no manager added is told "That Google account isn’t a CKE manager. Ask the owner to add you in People." |
 | Order board | The main working screen |
 | Ticket detail | Items, notes, delivery or pickup, checklist by station |
 | Sold-out list | **Soup of the day** at the top (one tap picks today’s soup, and the customer app shows it straight away), then every item to switch on or off |
@@ -414,6 +415,7 @@ The top bar shows the screen title, the Demo chip on manager screens, the signed
 | Take payment | Cash (Exact, or an Other amount box, then the change due) or online (card or transfer), simulated |
 | Walk-in order sent | The order number to call out, shown large |
 | Switch person | Signs the current person out so the next one can sign in |
+| Your profile | Opened from the photo in the top bar: the signed-in person’s details and Sign out |
 | Alerts | Unaccepted orders, delays, unavailable items, rider help requests, and cancellation requests. Kitchen staff see them; dispatch officers and managers also act on them (7.3). |
 | Cash-up at close | The cash expected in the drawer, a field for the cash counted, the difference, and Save. Shown to the person on the counter before the 8:30 pm sign-out. |
 
@@ -734,6 +736,9 @@ Every design question is now decided. Anything that needs checking is listed in 
 
 | Version | Change |
 |---|---|
+| 0.30 | Owner request on 14 November 2026: tapping your photo in the Business app’s top bar opens Your profile, with Sign out (6.3, 7). |
+| 0.29 | Owner request on 14 November 2026: an eye button on every password field to show or hide the password (3.6). |
+| 0.28 | 14 November 2026, sign-in built in the rider and customer apps and Google in the Business app: the messages for the wrong app or an unknown Google account (5, 7), and a Sign out button on the rider’s new-password screen. A staff Google account can’t order in the customer app (“Use another Google account to order”). |
 | 0.27 | Owner decisions on 14 November 2026: the tablet’s 8:30 pm sign-out waits until every order placed before then is finished, and a manager-only Tablet sign-out switch in Settings turns it on or off (6.5, 7.2). A Set a new password screen in the Business app (first sign-in and after a reset). |
 | 0.26 | End-of-day review on 12 November 2026, with no new decisions: the Refunds tab in the reports flow, the refund tick in the walk-in cancel and cancellation-request flows, Photo credits wording on More, and photo taps on the Menu list. |
 | 0.25 | Owner decisions on 12 November 2026: photo upload with crop, compression, and credit fields wherever photos are added, replacing deletes the old photo everywhere; a refund confirmation tick and the refunder recorded; a Refunds report; View profile and staff photos on People, with gender and home address in the editor; Back to Orders on the order detail; the Board top bar on narrow screens. |

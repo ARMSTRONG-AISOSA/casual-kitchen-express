@@ -1,7 +1,16 @@
 import { fontFamily, logos } from "@cke/brand-tokens";
 import { router } from "expo-router";
-import { Bell, Check, ChevronLeft, CircleOff, Radio, TriangleAlert } from "lucide-react-native";
-import type { ReactNode } from "react";
+import {
+  Bell,
+  Check,
+  ChevronLeft,
+  CircleOff,
+  Eye,
+  EyeOff,
+  Radio,
+  TriangleAlert,
+} from "lucide-react-native";
+import { useState, type ReactNode } from "react";
 import {
   KeyboardAvoidingView,
   Pressable,
@@ -337,19 +346,39 @@ export function SwitchRow({
   );
 }
 
-export function Field({ label, ...input }: { label: string } & TextInputProps) {
+export function Field({ label, secureTextEntry, ...input }: { label: string } & TextInputProps) {
   const t = useTheme();
+  // A password field gets an eye button that shows or hides what was typed.
+  const [hidden, setHidden] = useState(true);
   return (
     <View style={{ marginTop: 16 }}>
       <T v="small" style={{ fontFamily: fontFamily.bodyBold, marginBottom: 6 }}>
         {label}
       </T>
-      <TextInput
-        accessibilityLabel={label}
-        placeholderTextColor={t.muted}
-        {...input}
-        style={[styles.input, { color: t.text, borderColor: t.border, backgroundColor: t.bg }]}
-      />
+      <View>
+        <TextInput
+          accessibilityLabel={label}
+          placeholderTextColor={t.muted}
+          {...input}
+          secureTextEntry={!!secureTextEntry && hidden}
+          style={[
+            styles.input,
+            { color: t.text, borderColor: t.border, backgroundColor: t.bg },
+            !!secureTextEntry && { paddingRight: 60 },
+          ]}
+        />
+        {secureTextEntry ? (
+          <Pressable
+            onPress={() => setHidden((h) => !h)}
+            accessibilityRole="button"
+            accessibilityLabel={hidden ? "Show password" : "Hide password"}
+            hitSlop={4}
+            style={styles.eye}
+          >
+            {hidden ? <Eye size={24} color={t.muted} /> : <EyeOff size={24} color={t.muted} />}
+          </Pressable>
+        ) : null}
+      </View>
     </View>
   );
 }
@@ -433,5 +462,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     fontFamily: fontFamily.bodyMedium,
     fontSize: 20,
+  },
+  eye: {
+    position: "absolute",
+    right: 2,
+    top: 2,
+    bottom: 2,
+    width: 56,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

@@ -6,6 +6,8 @@ import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { WHATSAPP_URL } from "../../src/data/order";
 import { useStore } from "../../src/state/store";
+import { api } from "../../src/api";
+import { signInWithGoogle } from "../../src/state/session";
 import { useTheme } from "../../src/state/theme";
 import { Button, Card, Chip, Field, Notice, Screen, Segmented, T } from "../../src/ui/kit";
 import { Sheet } from "../../src/ui/sheet";
@@ -35,8 +37,13 @@ export default function ProfileScreen() {
           <Button
             label="Continue with Google"
             variant="ghost"
-            onPress={() => {
+            onPress={async () => {
               if (s.deactivated) return setSheet("reactivate");
+              if (api) {
+                const error = await signInWithGoogle(set, "/profile");
+                toast(error ?? "Signed in with Google");
+                return;
+              }
               set((x) => ({
                 signedIn: true,
                 name: x.name || "Ada Okoro",

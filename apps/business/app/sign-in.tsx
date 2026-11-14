@@ -71,6 +71,41 @@ export default function SignIn() {
       setBusy(false);
     }
   };
+  // Managers: Google's page opens in the browser and comes back here (architecture.md 12.2).
+  const signInGoogle = async () => {
+    if (busy) return;
+    setBusy(true);
+    setError("");
+    try {
+      const res = await authClient!.signIn.social({ provider: "google", callbackURL: "/sign-in" });
+      if (res.error)
+        return setError(
+          res.error.status === 404 || /provider/i.test(res.error.message ?? "")
+            ? "Google sign-in isn’t set up on the server yet."
+            : signInError(res.error),
+        );
+      // Closed, cancelled, or refused (a deactivated account, or an email no manager added).
+      if (!(await refreshCookie()))
+        return setError(
+          "Google sign-in didn’t finish. If you’re a manager, check that the owner added this Google email in People.",
+        );
+      const me = await api!.me();
+      if (me.role !== "manager") {
+        await authClient!.signOut();
+        await refreshCookie();
+        return setError(
+          me.role === "customer"
+            ? "That Google account isn’t a CKE manager. Ask the owner to add you in People."
+            : "Sign in with your username and password above.",
+        );
+      }
+      enterAs(me, set);
+    } catch {
+      setError(signInError(null));
+    } finally {
+      setBusy(false);
+    }
+  };
   const signIn = () => {
     if (live) return void signInLive();
     const p = staff.find((x) => x.username === username.trim().toLowerCase());
@@ -128,15 +163,9 @@ export default function SignIn() {
             label="Continue with Google"
             variant="ghost"
             style={{ marginTop: 8 }}
-            disabled={live}
-            onPress={() => enter("M-001", "manager")}
+            disabled={busy}
+            onPress={() => (live ? void signInGoogle() : enter("M-001", "manager"))}
           />
-          {live ? (
-            <T v="small" muted style={{ marginTop: 6 }}>
-              Google sign-in is being set up. For now, managers sign in with their username on this
-              test tablet.
-            </T>
-          ) : null}
         </View>
         {live && !__DEV__ ? null : (
           <View style={[styles.or, { borderTopColor: t.line }]}>

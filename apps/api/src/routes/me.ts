@@ -7,6 +7,7 @@ import { readActor, type Actor } from "../auth/actor";
 import { createAuth } from "../auth/auth";
 import type { Db } from "../db/client";
 import * as t from "../db/schema";
+import { STAFF_EMAIL_DOMAIN } from "./people";
 
 type Ctx = { Bindings: Env; Variables: { db: Db; actor: Actor } };
 
@@ -16,17 +17,43 @@ export const me = new Hono<Ctx>()
   .get("/", async (c) => {
     const actor = await readActor(c);
     if (!actor) return c.json({ error: "Sign in to continue" }, 401);
-    let photoId: string | null = null;
+    // Staff see their own details on Profile and the rider's Me tab (MGR-03, RID-21).
+    let profile = {
+      photoId: null,
+      jobTitle: null,
+      phone: null,
+      homeAddress: null,
+      gender: null,
+    } as {
+      photoId: string | null;
+      jobTitle: string | null;
+      phone: string | null;
+      homeAddress: string | null;
+      gender: "female" | "male" | "prefer_not_to_say" | null;
+    };
     if (actor.staffCode) {
       const [row] = await c
         .get("db")
-        .select({ photoId: t.staffProfile.photoId })
+        .select({
+          photoId: t.staffProfile.photoId,
+          jobTitle: t.staffProfile.jobTitle,
+          phone: t.staffProfile.phone,
+          homeAddress: t.staffProfile.homeAddress,
+          gender: t.staffProfile.gender,
+        })
         .from(t.staffProfile)
         .where(eq(t.staffProfile.userId, actor.id));
-      photoId = row?.photoId ?? null;
+      if (row) profile = row;
     }
+    // The email from Google, shown on the customer's profile (CUS-21). Staff emails are internal.
+    const [u] = await c
+      .get("db")
+      .select({ email: t.user.email })
+      .from(t.user)
+      .where(eq(t.user.id, actor.id));
+    const email = u && !u.email.endsWith(STAFF_EMAIL_DOMAIN) ? u.email : null;
     c.header("Cache-Control", "no-store");
-    return c.json({ ...actor, photoId });
+    return c.json({ ...actor, ...profile, email });
   })
   /**
    * POST /me/password: change your own password. Needed at the first sign-in and after a manager

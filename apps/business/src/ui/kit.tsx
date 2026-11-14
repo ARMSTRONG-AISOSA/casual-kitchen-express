@@ -1,6 +1,6 @@
 import { fontFamily, naira } from "@cke/brand-tokens";
-import { Bell, Check, CookingPot, TriangleAlert } from "lucide-react-native";
-import type { ReactNode } from "react";
+import { Bell, Check, CookingPot, Eye, EyeOff, TriangleAlert } from "lucide-react-native";
+import { useState, type ReactNode } from "react";
 import {
   Modal,
   Pressable,
@@ -239,20 +239,41 @@ export function Segmented<V extends string>({
 export function Field({
   label,
   hint,
+  secureTextEntry,
   ...input
 }: { label: string; hint?: string } & TextInputProps) {
   const t = useTheme();
+  // A password field gets an eye button that shows or hides what was typed.
+  const [hidden, setHidden] = useState(true);
   return (
     <View style={{ marginTop: 14 }}>
       <T v="label" style={{ marginBottom: 6 }}>
         {label}
       </T>
-      <TextInput
-        accessibilityLabel={label}
-        placeholderTextColor={t.muted}
-        {...input}
-        style={[styles.input, { color: t.text, borderColor: t.line, backgroundColor: t.surface }]}
-      />
+      <View>
+        <TextInput
+          accessibilityLabel={label}
+          placeholderTextColor={t.muted}
+          {...input}
+          secureTextEntry={!!secureTextEntry && hidden}
+          style={[
+            styles.input,
+            { color: t.text, borderColor: t.line, backgroundColor: t.surface },
+            !!secureTextEntry && { paddingRight: 56 },
+          ]}
+        />
+        {secureTextEntry ? (
+          <Pressable
+            onPress={() => setHidden((h) => !h)}
+            accessibilityRole="button"
+            accessibilityLabel={hidden ? "Show password" : "Hide password"}
+            hitSlop={4}
+            style={styles.eye}
+          >
+            {hidden ? <Eye size={22} color={t.muted} /> : <EyeOff size={22} color={t.muted} />}
+          </Pressable>
+        ) : null}
+      </View>
       {hint ? (
         <T v="small" muted style={{ marginTop: 4 }}>
           {hint}
@@ -525,6 +546,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     fontFamily: fontFamily.body,
     fontSize: 17,
+  },
+  eye: {
+    position: "absolute",
+    right: 2,
+    top: 2,
+    bottom: 2,
+    width: 48,
+    alignItems: "center",
+    justifyContent: "center",
   },
   switchRow: {
     flexDirection: "row",

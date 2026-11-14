@@ -1,13 +1,14 @@
 import { fontFamily } from "@cke/brand-tokens";
-import { Image, StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
+import { Image } from "expo-image";
+import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
 import { useStore } from "../state/store";
 import Svg, { Ellipse, Path } from "react-native-svg";
 import { useTheme } from "../state/theme";
 
 /**
  * A dish photo. Shows the real photo when the API has one (sourced as the brand document asks, with
- * credits on More, Photo credits), and the drawn placeholder otherwise. Images are cached by the
- * phone: each address never changes, so it downloads once.
+ * credits on More, Photo credits), and the drawn placeholder otherwise. expo-image keeps photos on
+ * the phone: each address never changes, so it downloads once.
  */
 export function PhotoPlaceholder({
   height,
@@ -34,7 +35,13 @@ export function PhotoPlaceholder({
         accessibilityLabel={`${label} photo`}
         style={[styles.box, { height, width, backgroundColor: t.kraft }, style]}
       >
-        <Image source={{ uri }} resizeMode="cover" style={StyleSheet.absoluteFill} />
+        <Image
+          source={{ uri }}
+          contentFit="cover"
+          cachePolicy="memory-disk"
+          transition={150}
+          style={StyleSheet.absoluteFill}
+        />
         {caption ? <Text style={styles.note}>{label}</Text> : null}
       </View>
     );
