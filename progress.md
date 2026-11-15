@@ -1208,3 +1208,14 @@ Append a new dated entry after each work session. Never edit or delete earlier e
 **Files created/updated:** `packages/api-client/src/index.ts`; `apps/customer/src/state/live.tsx` (new), `src/state/store.tsx`, `src/state/session.tsx`, `src/ui/preview-tools.tsx`, `app/_layout.tsx`, `app/checkout.tsx`, `app/pay.tsx`, `app/track.tsx`, `app/rate.tsx`, `app/address.tsx`, `app/(tabs)/orders.tsx`; `docs/architecture.md` v0.48, `progress.md`.
 
 **Next step:** step 6d: the real map, push notifications, and riders’ background location.
+
+## [2026-11-15] Paused before step 6d
+
+**What was done:**
+- The owner took a break. Everything was paused: the API, the three Metro servers (8081, 8082, 8083), the database container (`cke-db-1`, stopped, data kept), and the Gradle and Kotlin build daemons. The tablet was disconnected from adb.
+- Nothing is half-done: steps 6a, 6b, and 6c are committed (last commit 553a5e2), not pushed. The working tree only has this log entry.
+- Still in place for testing: the temporary test customer `tablet.test` (section 7), order O-3228 (ready, unassigned), and Musa online.
+
+**To resume:** `docker start cke-db-1`, then the API (`npm run dev:lan` in `apps/api`) and the Metro servers; reconnect the tablet with `adb connect` (the port changes after a break, so ask the owner for the current IP:port).
+
+**Next step:** step 6d (the map with MapLibre and OpenFreeMap, riders' background location, then push once the owner has set up Firebase and Expo), and the owner tests 6a to 6d together.
