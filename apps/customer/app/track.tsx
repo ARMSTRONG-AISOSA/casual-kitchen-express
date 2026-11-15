@@ -1,6 +1,7 @@
 import { DEFAULTS } from "@cke/validation";
 import * as Linking from "expo-linking";
 import { router } from "expo-router";
+import { toTab } from "../src/nav";
 import { Check, MessageCircle } from "lucide-react-native";
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
@@ -35,13 +36,9 @@ export default function TrackScreen() {
   const o = s.order;
   if (!o) {
     return (
-      <Screen header={<TopBar title="Order tracking" onBack={() => router.replace("/orders")} />}>
+      <Screen header={<TopBar title="Order tracking" onBack={() => toTab("/orders")} />}>
         <T muted>Nothing in progress. Your next order will show here while it’s on its way.</T>
-        <Button
-          label="Browse the menu"
-          onPress={() => router.replace("/")}
-          style={{ marginTop: 16 }}
-        />
+        <Button label="Browse the menu" onPress={() => toTab("/")} style={{ marginTop: 16 }} />
       </Screen>
     );
   }
@@ -83,7 +80,7 @@ export default function TrackScreen() {
   };
 
   return (
-    <Screen header={<TopBar title={`Order ${o.no}`} onBack={() => router.replace("/orders")} />}>
+    <Screen header={<TopBar title={`Order ${o.no}`} onBack={() => toTab("/orders")} />}>
       {o.cancelled ? (
         <Notice>
           <T>

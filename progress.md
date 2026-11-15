@@ -979,8 +979,36 @@ Append a new dated entry after each work session. Never edit or delete earlier e
 - None new (a fix). Back on a rail screen goes to the person’s first screen.
 
 **Open questions / not yet decided:**
-- The customer and rider apps use tabs, which don’t pile up the same way; to check when their screens are connected to the API (step 6).
+- The customer and rider apps use tabs, which don’t pile up the same way; to check when their screens are connected to the API (step 6). (Checked the same day; see the next entry.)
 
 **Next step:**
 - The owner tries Practice orders and Reset, then commit. Then the API call-reduction review (architecture.md 14.4) and step 4c, the orders backend.
+- Done: committed as `ca3a149` at the owner’s request; the owner checks the whole Demo screen next.
+
+---
+
+## [2026-11-15] The customer and rider apps checked for the same pile-up
+
+**What was done:**
+- The owner asked for the customer and rider apps to be checked for the Business app’s memory problem. Both had a smaller version of it: their main screens are tabs (which exist once), but a few buttons that return to the tabs from a screen on top opened **a whole new set of tabs** each time.
+  - **Customer app:** Order tracking’s Back (to Orders) and Back to menu, the cart’s Back to menu and Add more, and the menu after deactivating or deleting an account used `router.replace` with a tab route. Measured: six trips between Order tracking and Orders added 54 MB, and leaving the app then took 14 back presses (Orders, Menu, Orders, Menu, …).
+  - **Rider app:** My deliveries’ Back used `router.navigate("/(tabs)")`, and Home’s and the Queue’s Go to my deliveries pushed without clearing. Measured: six trips between the Queue and My deliveries added 90 MB, and the back button cycled Queue, Home, My deliveries more than 16 times.
+- **Fix:** the customer app gets `toTab` (`apps/customer/src/nav.ts`: close the screens on top, then switch tab), and the rider app gets `toTabs` beside its existing `toDeliveries` and `toQueue` (`apps/rider/src/nav.ts`), which now also serve Home’s and the Queue’s Go to my deliveries. The preview tools’ jumps (customer tracking stage, rider reset) use the same helpers.
+- **Tested on the tablet after the fix**, with the same six trips: the customer app added 9 MB and left after 3 back presses (tracking, Orders, Menu); the rider app added 23 MB and left after 3 (My deliveries, Queue, Home). A pickup demo order (O-2173, demo card) was placed in the customer app for the test, and the rider accepted demo order O-2174; both are demo data on the tablet only and went away when the apps were restarted.
+- The Kitchen app is open on Demo controls for the owner’s check; the tablet has about 1.8 GB of memory available.
+- Checks: typecheck 8 of 8, lint 3 of 3, Prettier clean.
+
+**Files created/updated:**
+- `apps/customer/src/nav.ts` (new), `app/track.tsx`, `app/cart.tsx`, `app/delete.tsx`, `app/deactivate.tsx`, `src/ui/preview-tools.tsx`
+- `apps/rider/src/nav.ts`, `app/deliveries.tsx`, `app/(tabs)/index.tsx`, `app/(tabs)/queue.tsx`, `src/ui/preview-tools.tsx`
+- `progress.md`
+
+**Decisions locked in:**
+- None (a fix). Rule for all three apps: a button that returns to a main screen (a rail item or a tab) clears the screens on top first; only task screens are pushed.
+
+**Open questions / not yet decided:**
+- None new.
+
+**Next step:**
+- The owner checks the whole Demo screen, then commit this fix. Then the API call-reduction review (architecture.md 14.4) and step 4c, the orders backend.
 

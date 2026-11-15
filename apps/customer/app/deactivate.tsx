@@ -1,4 +1,5 @@
 import { router } from "expo-router";
+import { toTab } from "../src/nav";
 import { useState } from "react";
 import { View } from "react-native";
 import { useStore } from "../src/state/store";
@@ -23,7 +24,7 @@ export default function DeactivateScreen() {
             onPress={() => {
               set({ deactivated: true, signedIn: false });
               toast("Account deactivated. Sign in again to come back.");
-              router.replace("/");
+              toTab("/");
             }}
           />
           <Button

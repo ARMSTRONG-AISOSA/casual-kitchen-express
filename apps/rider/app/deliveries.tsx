@@ -5,7 +5,7 @@ import { KITCHEN, km } from "../src/data/orders";
 import { deliverFirst, useStore } from "../src/state/store";
 import { useTheme } from "../src/state/theme";
 import { Button, Card, Screen, T, TopBar } from "../src/ui/kit";
-import { toQueue } from "../src/nav";
+import { toQueue, toTabs } from "../src/nav";
 
 // My deliveries (RID-06): only the next stop has a big button. Later stops are listed below in
 // the suggested order, nearest first, and the rider can change it.
@@ -13,7 +13,7 @@ export default function Deliveries() {
   const { s, set } = useStore();
   const t = useTheme();
   const [next, ...later] = s.carrying;
-  const back = () => router.navigate("/(tabs)");
+  const back = toTabs;
   if (!next) {
     return (
       <Screen

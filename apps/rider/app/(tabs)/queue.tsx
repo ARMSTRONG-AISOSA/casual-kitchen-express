@@ -1,4 +1,5 @@
 import { router } from "expo-router";
+import { toDeliveries } from "../../src/nav";
 import { Pressable, StyleSheet, View } from "react-native";
 import { km, orderLoad, readyText } from "../../src/data/orders";
 import { MAX_ORDERS, fits, usedLoad, useStore } from "../../src/state/store";
@@ -73,7 +74,7 @@ export default function Queue() {
         <Button
           label="Go to my deliveries"
           variant="alt"
-          onPress={() => router.push("/deliveries")}
+          onPress={toDeliveries}
           style={{ marginTop: 16 }}
         />
       ) : null}

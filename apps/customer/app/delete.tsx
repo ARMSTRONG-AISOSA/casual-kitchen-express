@@ -1,5 +1,6 @@
 import { DELETE_ACCOUNT_PHRASE } from "@cke/validation";
 import { router } from "expo-router";
+import { toTab } from "../src/nav";
 import { useState } from "react";
 import { Pressable, View } from "react-native";
 import { useStore } from "../src/state/store";
@@ -29,7 +30,7 @@ export default function DeleteScreen() {
             onPress={() => {
               reset();
               toast("Account deleted");
-              router.replace("/");
+              toTab("/");
             }}
           />
           <Button

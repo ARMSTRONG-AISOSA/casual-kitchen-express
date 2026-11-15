@@ -1,5 +1,5 @@
 import { naira } from "@cke/brand-tokens";
-import { router } from "expo-router";
+import { toDeliveries } from "../../src/nav";
 import { useRider } from "../../src/state/session";
 import { MAX_ORDERS, alertRider, useStore } from "../../src/state/store";
 import { Button, Card, KV, Screen, StateBanner, T, TopBar } from "../../src/ui/kit";
@@ -47,7 +47,7 @@ export default function Home() {
         <Button
           label="Go to my deliveries"
           variant="alt"
-          onPress={() => router.push("/deliveries")}
+          onPress={toDeliveries}
           style={{ marginTop: 14 }}
         />
       ) : null}

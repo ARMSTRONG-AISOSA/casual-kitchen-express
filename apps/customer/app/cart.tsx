@@ -1,5 +1,6 @@
 import { naira } from "@cke/brand-tokens";
 import { router } from "expo-router";
+import { toTab } from "../src/nav";
 import { StyleSheet, View } from "react-native";
 import { dishName, findItem } from "../src/data/menu";
 import { cartFood, useStore } from "../src/state/store";
@@ -20,11 +21,7 @@ export default function CartScreen() {
         <T muted style={{ marginTop: 8 }}>
           Your order is empty. Add something from the menu.
         </T>
-        <Button
-          label="Browse the menu"
-          onPress={() => router.replace("/")}
-          style={{ marginTop: 16 }}
-        />
+        <Button label="Browse the menu" onPress={() => toTab("/")} style={{ marginTop: 16 }} />
       </Screen>
     );
   }
@@ -91,7 +88,7 @@ export default function CartScreen() {
         label="Add more"
         variant="ghost"
         small
-        onPress={() => router.replace("/")}
+        onPress={() => toTab("/")}
         style={{ marginTop: 12 }}
       />
       <Card>

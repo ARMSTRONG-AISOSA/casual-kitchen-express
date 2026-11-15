@@ -1,5 +1,5 @@
 import { naira } from "@cke/brand-tokens";
-import { router } from "expo-router";
+import { toTabs } from "../nav";
 import { View } from "react-native";
 import { QUEUE } from "../data/orders";
 import { initial, useStore } from "../state/store";
@@ -75,7 +75,7 @@ export function PreviewTools() {
               mustSetPassword: false,
               themePref: s.themePref,
             });
-            router.navigate("/(tabs)");
+            toTabs();
           }}
         />
       </View>

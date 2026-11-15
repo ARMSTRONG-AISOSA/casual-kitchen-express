@@ -1,4 +1,5 @@
 import { router } from "expo-router";
+import { toTab } from "../nav";
 import { StyleSheet, View } from "react-native";
 import { DELIVERY_STEPS, PICKUP_STEPS } from "../data/order";
 import { firstTimeCustomer, makeLine, returningCustomer, useStore } from "../state/store";
@@ -36,8 +37,9 @@ export function PreviewTools() {
     const o = ensureOrder();
     const max = (o.mode === "delivery" ? DELIVERY_STEPS : PICKUP_STEPS).length - 1;
     set({ order: { ...o, stage: Math.max(0, Math.min(max, o.stage + d)) } });
-    // navigate, not push, so pressing the button again doesn't stack more tracking screens.
-    router.navigate("/track");
+    // Close what's open first, so pressing the button again doesn't stack more tracking screens.
+    if (router.canDismiss()) router.dismissAll();
+    router.push("/track");
   };
 
   const row = (label: string, children: React.ReactNode) => (
@@ -168,7 +170,7 @@ export function PreviewTools() {
         style={{ marginTop: 8 }}
         onPress={() => {
           reset();
-          router.navigate("/");
+          toTab("/");
         }}
       />
     </View>
