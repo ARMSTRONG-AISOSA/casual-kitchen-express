@@ -7,27 +7,52 @@ import { touch, type Tx } from "./store";
 type Kind = (typeof t.alertKind.enumValues)[number];
 type Q = Tx | Db;
 
-/**
- * How long an order can wait before an alert (MGR-14). Not set in the documents, so these are
- * starting values, recorded in architecture.md 9 for the owner to adjust:
- * - waiting for a rider: 5 minutes after Ready ("unaccepted");
- * - not acknowledged: 5 minutes after it was placed ("stuck");
- * - in the kitchen: 30 minutes after it was acknowledged ("stuck");
- * - on the road: 45 minutes after pickup ("stuck").
- */
-export const ALERT_AFTER_MIN = { rider: 5, acknowledge: 5, kitchen: 30, road: 45 } as const;
+/** The kinds opened by the timed check, the ones that beep (MGR-14). */
+export const TIMER_KINDS: Kind[] = ["unaccepted", "stuck"];
 
-/** Opens an alert, unless one of the same kind is already open for the order. */
+/**
+ * How long an order can sit in each stage before an alert opens (MGR-14), and whether the
+ * Business app beeps. Dispatch officers and managers set them in Settings, Alerts, within the
+ * ranges in ALERT_TIMERS (@cke/validation; owner decision, 15 November 2026).
+ */
+export async function alertLimits(db: Q) {
+  const [s] = await db
+    .select({
+      sound: t.setting.alertSound,
+      rider: t.setting.alertRiderMin,
+      acknowledge: t.setting.alertAcknowledgeMin,
+      kitchen: t.setting.alertKitchenMin,
+      road: t.setting.alertRoadMin,
+    })
+    .from(t.setting)
+    .where(eq(t.setting.id, 1));
+  return s!;
+}
+
+/**
+ * Opens an alert, unless one of the same kind is already open for the order. With `since` (the
+ * start of the stage the order is in), an alert of that kind made during the stage counts too,
+ * even if someone cleared it, so a timer alert opens once per stage and clearing it sticks.
+ */
 export async function openAlert(
   tx: Q,
   kind: Kind,
   orderId: string,
   requestId: string | null = null,
+  since?: Date,
 ) {
   const [open] = await tx
     .select({ id: t.alert.id })
     .from(t.alert)
-    .where(and(eq(t.alert.kind, kind), eq(t.alert.orderId, orderId), isNull(t.alert.clearedAt)));
+    .where(
+      and(
+        eq(t.alert.kind, kind),
+        eq(t.alert.orderId, orderId),
+        since
+          ? sql`(${t.alert.clearedAt} is null or ${t.alert.createdAt} >= ${since})`
+          : isNull(t.alert.clearedAt),
+      ),
+    );
   if (open) return null;
   const [made] = await tx
     .insert(t.alert)
@@ -108,18 +133,24 @@ export async function alertViews(db: Q, where: { ids?: string[]; open?: boolean 
 }
 
 /**
- * The timed check, run every minute by the Cron Trigger (14.0, background jobs): opens alerts for
- * orders waiting too long, marks those orders Delayed so the customer sees "Running a little
- * late" (4.3), and clears waiting-for-a-rider alerts once a rider has the order.
- * Returns the alert and order IDs it changed, so they can be sent over the live connection.
+ * The timed check, run every minute from the live hub's alarm while orders are open (14.0,
+ * background jobs): opens alerts for orders waiting longer than the times in Settings, Alerts,
+ * marks those orders Delayed so the customer sees "Running a little late" (4.3), and clears
+ * waiting-for-a-rider alerts once a rider has the order. Returns the alert and order IDs it
+ * changed, so they can be sent over the live connection, and the newly opened alerts that should
+ * beep (none when the beep is off).
  */
 export async function scanAlerts(db: Db, now = new Date()) {
   const ago = (min: number) => new Date(now.getTime() - min * 60_000);
   const alerts: string[] = [];
   const orders: string[] = [];
+  const opened: string[] = [];
+  let sound = false;
   await db.transaction(async (tx) => {
+    const limit = await alertLimits(tx);
+    sound = limit.sound;
     const waiting = await tx
-      .select({ id: t.order.id })
+      .select({ id: t.order.id, readyAt: t.order.readyAt })
       .from(t.order)
       .leftJoin(t.delivery, eq(t.delivery.orderId, t.order.id))
       .where(
@@ -127,25 +158,40 @@ export async function scanAlerts(db: Db, now = new Date()) {
           eq(t.order.status, "ready"),
           eq(t.order.type, "delivery"),
           isNull(t.delivery.id),
-          lt(t.order.readyAt, ago(ALERT_AFTER_MIN.rider)),
+          lt(t.order.readyAt, ago(limit.rider)),
         ),
       );
     for (const o of waiting) {
-      const id = await openAlert(tx, "unaccepted", o.id);
-      if (id) alerts.push(id);
+      const id = await openAlert(tx, "unaccepted", o.id, null, o.readyAt!);
+      if (id) (alerts.push(id), opened.push(id));
     }
     const stuck = await tx
-      .select({ id: t.order.id, exception: t.order.exception })
+      .select({
+        id: t.order.id,
+        exception: t.order.exception,
+        status: t.order.status,
+        placedAt: t.order.placedAt,
+        acknowledgedAt: t.order.acknowledgedAt,
+        pickedUpAt: t.order.pickedUpAt,
+      })
       .from(t.order)
       .where(
-        sql`(${t.order.status} = 'confirmed' and ${t.order.placedAt} < ${ago(ALERT_AFTER_MIN.acknowledge)})
-          or (${t.order.status} in ('acknowledged', 'preparing') and ${t.order.acknowledgedAt} < ${ago(ALERT_AFTER_MIN.kitchen)})
-          or (${t.order.status} in ('picked_up', 'arriving') and ${t.order.pickedUpAt} < ${ago(ALERT_AFTER_MIN.road)})`,
+        sql`(${t.order.status} = 'confirmed' and ${t.order.placedAt} < ${ago(limit.acknowledge)})
+          or (${t.order.status} in ('acknowledged', 'preparing') and ${t.order.acknowledgedAt} < ${ago(limit.kitchen)})
+          or (${t.order.status} in ('picked_up', 'arriving') and ${t.order.pickedUpAt} < ${ago(limit.road)})`,
       );
     for (const o of stuck) {
-      const id = await openAlert(tx, "stuck", o.id);
+      // The stage it's stuck in started here.
+      const since =
+        o.status === "confirmed"
+          ? o.placedAt
+          : o.status === "picked_up" || o.status === "arriving"
+            ? o.pickedUpAt!
+            : o.acknowledgedAt!;
+      const id = await openAlert(tx, "stuck", o.id, null, since);
       if (id) {
         alerts.push(id);
+        opened.push(id);
         if (!o.exception) {
           await tx
             .update(t.order)
@@ -182,5 +228,5 @@ export async function scanAlerts(db: Db, now = new Date()) {
       alerts.push(...taken.map((a) => a.id));
     }
   });
-  return { alerts, orders };
+  return { alerts, orders, beep: sound ? opened : [] };
 }

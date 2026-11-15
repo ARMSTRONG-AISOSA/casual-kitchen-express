@@ -1,6 +1,7 @@
 import { Redirect, Stack, usePathname } from "expo-router";
 import { myRole, useStore } from "../../src/state/store";
 import { useTheme } from "../../src/state/theme";
+import { AlertWatch } from "../../src/ui/alert-watch";
 import { NotForRole, Shell, canOpen } from "../../src/ui/shell";
 
 // Everything behind sign-in. A role that opens a screen outside its menu sees "Not available".
@@ -12,6 +13,7 @@ export default function AppLayout() {
   const screen = path.split("/")[1] || "board";
   return (
     <Shell>
+      <AlertWatch />
       {canOpen(myRole(s), screen) ? (
         <Stack
           screenOptions={{

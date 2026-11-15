@@ -17,7 +17,8 @@ import { Button, Card, ConfirmTick, Page, Row, Sheet, StatusPill, T } from "../.
 import { NEW_PICK, RefundPicker, refundFor, type RefundPick } from "../../src/ui/refund";
 import { useToast } from "../../src/ui/toast";
 
-// Alerts (MGR-14): orders no rider has accepted, rider help requests, and cancellation requests.
+// Alerts (MGR-14): orders no rider has accepted, orders running late (past an alert timer in
+// Settings, Alerts), rider help requests, and cancellation requests.
 // Dispatch officers and managers act on them; kitchen staff see them.
 export default function Alerts() {
   const { s, set } = useStore();
@@ -47,11 +48,13 @@ export default function Alerts() {
                 label={
                   a.kind === "unaccepted"
                     ? "Waiting for a rider"
-                    : a.kind === "help"
-                      ? "Rider needs help"
-                      : a.kind === "cancel"
-                        ? "Cancellation request"
-                        : "Item unavailable"
+                    : a.kind === "late"
+                      ? "Running late"
+                      : a.kind === "help"
+                        ? "Rider needs help"
+                        : a.kind === "cancel"
+                          ? "Cancellation request"
+                          : "Item unavailable"
                 }
               />
               <T v="small" muted>
@@ -74,6 +77,20 @@ export default function Alerts() {
                     label="Assign to a rider"
                     small
                     onPress={() => router.push(`/assign/${a.orderNo}`)}
+                  />
+                ) : null}
+                {a.kind === "late" ? (
+                  <Button
+                    label="Clear"
+                    variant="ghost"
+                    small
+                    onPress={() => {
+                      set((st) => ({
+                        ...clearAlert(st, a.id),
+                        ...log(st, "account", `Cleared the late alert for ${a.orderNo}`),
+                      }));
+                      toast("Alert cleared");
+                    }}
                   />
                 ) : null}
                 {a.kind === "help" ? (

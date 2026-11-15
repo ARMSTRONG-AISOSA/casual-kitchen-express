@@ -87,7 +87,7 @@ export class LiveHub extends DurableObject<Env> {
     try {
       const found = await scanAlerts(db);
       const messages = [
-        ...(await alertMessages(db, found.alerts)),
+        ...(await alertMessages(db, found.alerts, found.beep)),
         ...(await orderMessages(db, this.env.BETTER_AUTH_SECRET, found.orders)),
       ];
       if (messages.length) await this.publish(messages);

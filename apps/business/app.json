@@ -34,6 +34,14 @@
           "cameraPermission": "CKE Kitchen uses the camera to take pictures of dishes and staff."
         }
       ],
+      [
+        "expo-notifications",
+        {
+          "icon": "../../brand/cke-logo-package/logo/png/cke-icon-mono-charcoal.png",
+          "color": "#C83F2D",
+          "sounds": ["./assets/sounds/cke_alert.wav"]
+        }
+      ],
       "../../tools/expo-plugins/with-android-architectures.js"
     ]
   }

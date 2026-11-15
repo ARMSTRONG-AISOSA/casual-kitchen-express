@@ -29,6 +29,13 @@
       "when": 1794501730413,
       "tag": "0003_photo-source",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794732056168,
+      "tag": "0004_alert-settings",
+      "breakpoints": true
     }
   ]
 }

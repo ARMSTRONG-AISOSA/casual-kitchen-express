@@ -1,4 +1,4 @@
-// Demo records behind the Reports screen: 60 days, the last item is yesterday. In the real app these
+// Demo records behind the Reports screen: 90 days, the last item is yesterday. In the real app these
 // come from the API for the chosen range (architecture.md 14.4, decision 3).
 // A repeatable pseudo-random number, so the demo figures stay the same between visits.
 export const seeded = (n: number) => {
@@ -6,10 +6,13 @@ export const seeded = (n: number) => {
   return x - Math.floor(x);
 };
 
-/* ---------- demo records: 60 days, the last item is yesterday ---------- */
+/** How many days of demo history there are (architecture.md 18.3: three months). */
+export const HISTORY_DAYS = 90;
+
+/* ---------- demo records: 90 days, the last item is yesterday ---------- */
 
 export const AOV = 4300;
-export const DAYS = Array.from({ length: 60 }, (_, i) => {
+export const DAYS = Array.from({ length: HISTORY_DAYS }, (_, i) => {
   const weekend = (i + 2) % 7 >= 5;
   const f = 0.85 + seeded(i) * 0.3;
   return {
@@ -51,7 +54,7 @@ export const DELIVERIES: Delivery[] = DAYS.flatMap((d, day) =>
 /* ---------- refunds (Reports, Refunds tab) ---------- */
 
 export type RefundRow = {
-  day: number; // 0 to 59, or 60 for today
+  day: number; // 0 to HISTORY_DAYS - 1, or HISTORY_DAYS for today
   at: number;
   orderNo: string;
   channel: "online" | "walkin";
@@ -76,7 +79,7 @@ const DAY_MS = 86_400_000;
 // About 6% of online orders are cancelled or refunded and 2% of walk-ins (architecture.md 18.3),
 // each recorded with who did it. Cancelling before the kitchen starts refunds automatically.
 export const REFUND_ROWS: RefundRow[] = DAYS.flatMap((d, day) => {
-  const startOfDay = new Date().setHours(0, 0, 0, 0) - (60 - day) * DAY_MS;
+  const startOfDay = new Date().setHours(0, 0, 0, 0) - (HISTORY_DAYS - day) * DAY_MS;
   const n = Math.round(d.online * 0.06 * (0.6 + seeded(day + 0.7) * 0.8));
   const w = seeded(day + 0.9) < d.walkin * 0.02 ? 1 : 0;
   const rows: RefundRow[] = [];
@@ -112,7 +115,8 @@ export const REFUND_ROWS: RefundRow[] = DAYS.flatMap((d, day) => {
       at: startOfDay + hour * 3_600_000 + Math.floor(seeded(k + 0.95) * 59) * 60_000,
       orderNo: walkin
         ? `W-${String(1 + Math.floor(seeded(k + 0.3) * 12)).padStart(3, "0")}`
-        : `O-${String(day * 38 + 1 + Math.floor(seeded(k + 0.3) * 37)).padStart(4, "0")}`,
+        : // Counting back from today's first order (O-2166), about 24 online orders a day.
+          `O-${String(2166 - (HISTORY_DAYS - day) * 24 + Math.floor(seeded(k + 0.3) * 24)).padStart(4, "0")}`,
       channel: walkin ? "walkin" : "online",
       amount: partial ? Math.round(full / 200) * 100 : full,
       kind: partial ? "partial" : "full",

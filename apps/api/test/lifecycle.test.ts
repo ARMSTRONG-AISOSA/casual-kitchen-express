@@ -153,6 +153,13 @@ beforeAll(async () => {
     deliveryFee: s!.deliveryFee,
     riderPay: s!.riderPay,
     cancellationLimit: s!.cancellationLimit,
+    alertSound: s!.alertSound,
+    alertRiderMin: s!.alertRiderMin,
+    alertAcknowledgeMin: s!.alertAcknowledgeMin,
+    alertKitchenMin: s!.alertKitchenMin,
+    alertRoadMin: s!.alertRoadMin,
+    alertsUpdatedAt: s!.alertsUpdatedAt,
+    alertsUpdatedBy: s!.alertsUpdatedBy,
   };
   await db
     .update(t.setting)
@@ -731,6 +738,9 @@ describe("alerts and the live connection", () => {
     expect(open.find((a) => a.orderId === unseen.id)?.kind).toBe("stuck");
     expect(found.orders).toContain(unseen.id);
     expect(u!.exception).toBe("delayed");
+    // Both are new timer alerts, so they beep (the beep is on by default).
+    const ids = open.map((a) => a.id);
+    expect(found.beep).toEqual(expect.arrayContaining(ids));
     // A rider taking it clears the waiting alert on the next check.
     await call(`/rider/queue/${waiting.id}/accept`, musa, { method: "POST" });
     const { db: db2, close: close2 } = await connect(env);
@@ -777,6 +787,105 @@ describe("settings", () => {
       .where(inArray(t.auditLog.target, ["setting:deliveryFee", "setting:paused"]));
     await close();
     expect(logs.some((l) => l.kind === "money" && l.action.includes("1600"))).toBe(true);
+  });
+});
+
+describe("alert settings", () => {
+  const usual = { sound: true, rider: 5, acknowledge: 5, kitchen: 15, road: 25 };
+  it("saves the section in one go, within the ranges, and records who changed it", async () => {
+    // Kitchen staff can't change them; dispatch and managers can.
+    expect((await call("/settings/alerts", kitchen, { method: "PUT", body: usual })).status).toBe(
+      403,
+    );
+    for (const bad of [
+      { ...usual, rider: 4 },
+      { ...usual, rider: 16 },
+      { ...usual, acknowledge: 0 },
+      { ...usual, acknowledge: 6 },
+      { ...usual, kitchen: 9 },
+      { ...usual, kitchen: 31 },
+      { ...usual, road: 46 },
+      { ...usual, road: 12.5 },
+    ])
+      expect((await call("/settings/alerts", dispatch, { method: "PUT", body: bad })).status).toBe(
+        400,
+      );
+    const { db, close } = await connect(env);
+    await db
+      .update(t.setting)
+      .set({
+        alertSound: true,
+        alertRiderMin: 5,
+        alertAcknowledgeMin: 5,
+        alertKitchenMin: 15,
+        alertRoadMin: 25,
+      })
+      .where(eq(t.setting.id, 1));
+    await close();
+    const saved = await json<{
+      changed: boolean;
+      alerts: typeof usual & { updatedAt: string; updatedBy: { code: string } };
+    }>(
+      await call("/settings/alerts", dispatch, {
+        method: "PUT",
+        body: { ...usual, sound: false, rider: 10, acknowledge: 1 },
+      }),
+    );
+    expect(saved.changed).toBe(true);
+    expect(saved.alerts).toMatchObject({ sound: false, rider: 10, acknowledge: 1, kitchen: 15 });
+    expect(saved.alerts.updatedBy.code).toBe("D-001");
+    expect(Date.now() - new Date(saved.alerts.updatedAt).getTime()).toBeLessThan(60_000);
+    // Saving the same again changes nothing and writes nothing.
+    const again = await json<{ changed: boolean }>(
+      await call("/settings/alerts", manager, {
+        method: "PUT",
+        body: { ...usual, sound: false, rider: 10, acknowledge: 1 },
+      }),
+    );
+    expect(again.changed).toBe(false);
+    const got = await json<{ alerts: { rider: number; updatedBy: { code: string } } }>(
+      await call("/settings", manager),
+    );
+    expect(got.alerts.rider).toBe(10);
+    expect(got.alerts.updatedBy.code).toBe("D-001");
+    const { db: db2, close: close2 } = await connect(env);
+    const logs = await db2.select().from(t.auditLog).where(eq(t.auditLog.target, "setting:alerts"));
+    await db2.delete(t.auditLog).where(eq(t.auditLog.target, "setting:alerts"));
+    await close2();
+    expect(logs).toHaveLength(1);
+    expect(logs[0]!.action).toBe(
+      "Changed the alert settings: turned the beep off, waiting for a rider from 5 to 10 minutes, not acknowledged from 5 to 1 minute",
+    );
+  });
+
+  it("opens alerts at the saved times, and doesn't beep when the beep is off", async () => {
+    // From the test above: the beep is off, not acknowledged after 1 minute, a rider after 10.
+    const unseen = await placeDelivery();
+    const waiting = await readyDelivery();
+    const { db, close } = await connect(env);
+    const soon = await scanAlerts(db, new Date(Date.now() + 2 * 60_000)); // two minutes from now
+    const opened = await db
+      .select()
+      .from(t.alert)
+      .where(inArray(t.alert.orderId, [unseen.id, waiting.id]));
+    await close();
+    // Not acknowledged after 2 minutes: alert. Ready 2 minutes with no rider: not yet (10).
+    expect(opened.map((a) => a.orderId)).toEqual([unseen.id]);
+    expect(soon.beep).toEqual([]);
+    // Cleared by hand, it stays cleared: the next checks don't open it again in the same stage.
+    expect(
+      (await call(`/alerts/${opened[0]!.id}/clear`, dispatch, { method: "POST" })).status,
+    ).toBe(200);
+    const { db: db2, close: close2 } = await connect(env);
+    await scanAlerts(db2, new Date(Date.now() + 3 * 60_000));
+    const after = await db2.select().from(t.alert).where(eq(t.alert.orderId, unseen.id));
+    // Waiting for a rider after 11 minutes: now it opens.
+    await scanAlerts(db2, new Date(Date.now() + 11 * 60_000));
+    const rider = await db2.select().from(t.alert).where(eq(t.alert.orderId, waiting.id));
+    await close2();
+    expect(after).toHaveLength(1);
+    expect(after[0]!.clearedAt).not.toBeNull();
+    expect(rider.map((a) => a.kind)).toEqual(["unaccepted"]);
   });
 });
 

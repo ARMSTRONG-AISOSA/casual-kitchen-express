@@ -1,4 +1,4 @@
-import { DEFAULTS } from "@cke/validation";
+import { ALERT_SETTINGS_USUAL, DEFAULTS, minutes, type AlertSettings } from "@cke/validation";
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 import {
   AREAS,
@@ -47,6 +47,11 @@ export type Settings = {
    * finished (KIT-12). Managers can turn it off in Settings. On by default.
    */
   autoSignOut: boolean;
+  /** Settings, Alerts (MGR-14): the beep and the four timers, in minutes. */
+  alerts: AlertSettings;
+  /** When the Alerts section was last saved, and by whom (staff ID). Empty until someone saves. */
+  alertsSavedAt?: number;
+  alertsSavedBy?: string;
 };
 
 export type StaffPhoto = {
@@ -71,6 +76,8 @@ export type State = {
   orders: Order[];
   riders: Rider[];
   alerts: Alert[];
+  /** Timer alerts already opened, as "order:stage", so each stage alerts once even after clearing. */
+  alertKeys: string[];
   settings: Settings;
   cashUps: CashUp[];
   /** Today's cash-up (ACC-04): counted at close, then signed off in Finance. */
@@ -115,6 +122,7 @@ export const initial = (): State => ({
   orders: seedOrders(),
   riders: RIDERS_ONLINE,
   alerts: seedAlerts(),
+  alertKeys: ["O-2177:rider"],
   settings: {
     paused: false,
     areas: Object.fromEntries(AREAS.map((a) => [a, true])),
@@ -126,6 +134,7 @@ export const initial = (): State => ({
     riderPay: DEFAULTS.riderPay,
     whatsapp: "2349095466063",
     autoSignOut: true,
+    alerts: ALERT_SETTINGS_USUAL,
   },
   cashUps: seedCashUps(),
   today: { counted: null },
@@ -243,8 +252,9 @@ export type Refund = {
 };
 
 /** The person signed in, as recorded on money actions: “Efosa Igbinedion, Manager (M-001)”. */
-export function actorLabel(s: State) {
-  const p = me(s);
+/** "Name, Role (ID)" for a staff member, or for whoever is signed in. */
+export function actorLabel(s: State, id = s.userId ?? undefined) {
+  const p = person(s, id);
   return p ? `${p.name}, ${ROLE_LABEL[p.role as Role] ?? p.role} (${p.id})` : "System";
 }
 
@@ -314,6 +324,70 @@ export function partialRefund(s: State, no: string, amount: number, reason: stri
       `Partly refunded: ${reason}`,
     ),
     ...recordRefund(s, o, amount, "partial", reason),
+  };
+}
+
+/* ---------- alert timers (MGR-14) ---------- */
+
+export type Stage = "acknowledge" | "kitchen" | "rider" | "road";
+
+const STAGE_TEXT: Record<Stage, (no: string, min: number) => string> = {
+  acknowledge: (no, m) => `${no} hasn’t been acknowledged for ${minutes(m)}.`,
+  kitchen: (no, m) => `${no} has been in the kitchen for ${minutes(m)}.`,
+  rider: (no, m) => `No rider has accepted ${no} for ${minutes(m)}.`,
+  road: (no, m) => `${no} has been on the road for ${minutes(m)}.`,
+};
+
+/** When the order's latest event with one of these labels happened, or when it was placed. */
+const since = (o: Order, labels: string[]) =>
+  [...o.events].reverse().find((e) => labels.includes(e.label))?.at ?? o.placedAt;
+
+/** The stage an order is waiting in, and since when; null when no timer applies. */
+export function waitingIn(o: Order): { stage: Stage; from: number } | null {
+  if (o.status === "new") return { stage: "acknowledge", from: o.placedAt };
+  if (o.status === "preparing")
+    return { stage: "kitchen", from: since(o, ["Acknowledged", "preparing"]) };
+  if (o.status === "ready" && o.type === "delivery" && !o.riderId)
+    return { stage: "rider", from: since(o, ["Ready", "ready"]) };
+  if (o.status === "out") return { stage: "road", from: since(o, ["Picked up", "out"]) };
+  return null;
+}
+
+/**
+ * The timed check, as the API runs it every minute (architecture.md 9 notes): opens an alert for
+ * each order past its stage's timer, once per stage, and clears late alerts once the order is
+ * finished. Returns the new alerts (to beep for), or null when nothing changed.
+ */
+export function checkAlerts(s: State, now = Date.now()) {
+  const limits = s.settings.alerts;
+  const opened: Alert[] = [];
+  const keys: string[] = [];
+  for (const o of s.orders) {
+    const w = waitingIn(o);
+    if (!w) continue;
+    const key = `${o.no}:${w.stage}`;
+    const min = limits[w.stage];
+    if (now - w.from < min * 60_000 || s.alertKeys.includes(key)) continue;
+    // One late alert open per order at a time, as in the API.
+    const kind = w.stage === "rider" ? "unaccepted" : "late";
+    keys.push(key);
+    if (s.alerts.some((a) => a.kind === kind && a.orderNo === o.no)) continue;
+    opened.push({
+      id: `t-${key}-${now}`,
+      kind,
+      orderNo: o.no,
+      text: STAGE_TEXT[w.stage](o.no, min),
+      at: now,
+    });
+  }
+  const finished = new Set(
+    s.orders.filter((o) => o.status === "done" || o.status === "cancelled").map((o) => o.no),
+  );
+  const kept = s.alerts.filter((a) => !(a.kind === "late" && finished.has(a.orderNo)));
+  if (!keys.length && kept.length === s.alerts.length) return null;
+  return {
+    opened,
+    patch: { alerts: [...opened, ...kept], alertKeys: [...s.alertKeys, ...keys] },
   };
 }
 

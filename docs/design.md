@@ -1,6 +1,6 @@
 # CKE DESIGN
 
-**Document Status:** Draft v0.34. Records UI and UX decisions, design choices, page flows, and design libraries. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day).  
+**Document Status:** Draft v0.35. Records UI and UX decisions, design choices, page flows, and design libraries. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day).  
 **Related documents:** `Casual-Kitchen-Express.md` (business and brand, surface level), `architecture.md` (functions, features, data, technical decisions), and `list-of-areas.md` (delivery areas).
 
 ---
@@ -315,7 +315,7 @@ Menu photography follows the brand's photography direction. Images are shown in 
 | My profile | A read-only view of the rider's own details and staff ID. No photo is shown, to keep the app image-free. |
 | Settings | Theme (light, dark, or follow the phone), and sound and vibration |
 | Home | Online and offline toggle, day summary |
-| Queue | Ready orders with order number, drop-off neighbourhood, distance, and load against the budget ("Load 5 of 6") |
+| Queue | Ready orders with order number, drop-off neighbourhood, distance, and load against the budget ("Load 5 of 9") |
 | Order detail | Review before accepting |
 | Active deliveries | Current stops, one primary action at a time |
 | Pickup | Match the bag number, "Picked up" |
@@ -362,7 +362,7 @@ Menu photography follows the brand's photography direction. Images are shown in 
 |---|---|
 | Primary bar button | Full-width, very tall: black with white text in light mode, white with black text in dark mode |
 | Online toggle | Very large, with clear on and off labels. **Decided (12 November 2026):** “Go offline” is disabled while the rider still carries an order, with the line “Finish your deliveries before going offline.”, so no order is left without a rider. Release order (RID-12) is the way out of a delivery. |
-| Order card | Order number large, neighbourhood, distance, and load as a number against the budget ("Load 5 of 6"), with no light, medium, or heavy label |
+| Order card | Order number large, neighbourhood, distance, and load as a number against the budget ("Load 5 of 9"), with no light, medium, or heavy label |
 | Code entry | Large numeric keypad, four boxes |
 | Status banner | Colour, icon, and label together |
 | New-order banner | Golden Yellow background with black text, plus a strong sound and vibration |
@@ -382,7 +382,7 @@ Menu photography follows the brand's photography direction. Images are shown in 
 | Readable at a distance | Order numbers, item names, and quantities are large and bold on the tablet. |
 | Big touch targets | Buttons are large enough for quick taps with busy hands. |
 | Three clear stages | New, Preparing, Ready, each with a colour, an icon, and a label. |
-| Sound alerts | Two tones: a pleasant double chime for a new online order, and an urgent repeating tone for something that needs attention (an order no rider has accepted, or a delay). A volume control and a mute switch. Saving a walk-in order gives a visual confirmation only. |
+| Sound alerts | Two tones: a pleasant double chime for a new online order, and an urgent tone for something that needs attention (an order no rider has accepted, or a delay). **Built 15 November 2026 (the attention tone):** a short rising double beep, made for CKE, plays once when an alert timer runs out, on every device that shows Alerts, with a notification saying which order and why (tap it to open Alerts). It sounds even with the screen off. Dispatch officers and managers turn it on or off in Settings, Alerts (on by default); the tablet’s own volume sets how loud. The new-order chime comes later. Saving a walk-in order gives a visual confirmation only. |
 | Few taps | One tap to acknowledge, one tap per ticked item, one tap for Ready. |
 | Fast counter entry | A walk-in order takes one tap per item, then Charge, a payment choice, and Confirm. |
 | Calm look | White and cream, charcoal text, brand red for actions, little decoration. |
@@ -420,7 +420,7 @@ The top bar shows the screen title, the Demo chip on manager screens, the signed
 | Walk-in order sent | The order number to call out, shown large |
 | Switch person | Signs the current person out so the next one can sign in |
 | Your profile | Opened from the photo in the top bar: the signed-in person’s details and Sign out |
-| Alerts | Unaccepted orders, delays, unavailable items, rider help requests, and cancellation requests. Kitchen staff see them; dispatch officers and managers also act on them (7.3). |
+| Alerts | Unaccepted orders (“Waiting for a rider”), orders running late (“Running late”: not acknowledged, too long in the kitchen, or too long on the road, at the times set in Settings, Alerts), unavailable items, rider help requests, and cancellation requests. Kitchen staff see them; dispatch officers and managers also act on them (7.3), and can Clear a late alert, which stays cleared. |
 | Cash-up at close | The cash expected in the drawer, a field for the cash counted, the difference, and Save. Shown to the person on the counter before the 8:30 pm sign-out. |
 
 ### 6.5 Kitchen page flows
@@ -456,13 +456,13 @@ Same philosophy as the kitchen: practical first, polished second. Larger control
 | Item editor | Name, description, price, image, options, load value, station |
 | Orders | All orders for Today, Yesterday, or any date range back to the first order. Search by order number or customer ID, filter by channel (All, Online, Walk-in), status, staff member, and payment method, and sort by time placed or amount. Shows the count and total value, and loads long ranges 150 rows at a time. |
 | Order detail | The full timeline with timestamps and staff IDs, payment, and Refund (managers only: a full refund, or a typed partial amount up to 99% of what was paid; it stays available while something is left to refund). Online orders show a **Customer** card: name, customer ID, phone, and delivery address (label, neighbourhood, landmark), with **Call** and **WhatsApp** buttons. Waiting orders show **Assign to a rider**. A **Back to Orders** button sits at the top. Refunds need an “I’m sure…” tick, and each refund shows who made it (name, role, staff ID, time). |
-| Riders | Riders online now, what each is carrying and their load (“Load 5 of 6”), and Call rider. Offline riders are listed below. |
+| Riders | Riders online now, what each is carrying and their load (“Load 5 of 9”), and Call rider. Offline riders are listed below. |
 | Assign to a rider | Online riders whose remaining capacity fits the order, with their load and current stops. One tap assigns. |
 | Rider pay | Each rider's owed balance, per-delivery pay, mark a period as paid (simulated), and payout history. Account officers and managers. |
 | Finance | Four tabs: **Statement** (a month’s sales by channel and payment method, refunds, delivery fees, rider pay earned and paid, cash variances, and net), **Cash-ups** (each day’s expected, counted, difference, who counted, Sign off, and who signed it off with the time), **Audit trail** (every money action with who and when, with filters), and **Close month**. Export as CSV or PDF. Account officers and managers. |
 | Demo controls | Three sections. **Tour guide** (managers only, MGR-39): one line on what it shows and **Start tour** (7.3). **Practice orders:** New online order (adds one pretend customer order to the Board), auto-play (a simulated kitchen and riders move orders along), and the speed. **Reset:** puts today’s orders, alerts, cash-ups, payouts, and settings back to the start, with confirmation. Each control has a one-line explanation under it. |
-| Settings | Online order hours (8:00 am to 6:00 pm) and walk-in hours (8:00 am to 8:30 pm), pause orders, the neighbourhood list and delivery boundary, rider capacity and the batch drop-off distance, rider tracking mode (light or milestones only), the cancellation limit (3 to 7 in 7 days), the delivery fee (₦1,500 by default), and the rider pay per delivery (₦1,000 by default). The delivery fee and rider pay are editable, and changes show in the customer and rider apps straight away. **Restaurant contact** holds the WhatsApp number behind “Contact the restaurant” in the customer app. **Tablet sign-out** (managers only) turns the tablet’s automatic sign-out at 8:30 pm on or off; it’s on by default. Pricing and pay, Restaurant contact, and Tablet sign-out are shown to managers only; dispatch officers see the other sections. |
-| Reports | Orders, sales, timings, riders, areas and staff, menu, customers (with a leaderboard), and refunds, for 7, 30, or 60 days or a custom date range, with a channel filter. The report tabs sit on top under a “Report” label; below a divider, the **Date range** and the **Channel** (All, Online, Walk-in) each sit in their own labelled box, side by side on wide screens and stacked otherwise, so the three kinds of choice are never confused. Account officers and managers. |
+| Settings | Online order hours (8:00 am to 6:00 pm) and walk-in hours (8:00 am to 8:30 pm), pause orders, **Alerts** (see below), the neighbourhood list and delivery boundary, rider capacity and the batch drop-off distance, rider tracking mode (light or milestones only), the cancellation limit (3 to 7 in 7 days), the delivery fee (₦1,500 by default), and the rider pay per delivery (₦1,000 by default). The delivery fee and rider pay are editable, and changes show in the customer and rider apps straight away. **Restaurant contact** holds the WhatsApp number behind “Contact the restaurant” in the customer app. **Tablet sign-out** (managers only) turns the tablet’s automatic sign-out at 8:30 pm on or off; it’s on by default. Pricing and pay, Restaurant contact, and Tablet sign-out are shown to managers only; dispatch officers see the other sections. **Alerts** (dispatch officers and managers, MGR-14): at the top, a switch for **Beep when an alert opens**; then a slider for each alert timer, with − and + for one minute at a time, its range under it, and the usual time in its hint: Waiting for a rider (5 to 15 minutes, usually 5), Not acknowledged (1 to 5, usually 5), Too long in the kitchen (10 to 30, usually 15), and Too long on the road (10 to 45, usually 25). Nothing changes until **Save alert settings**, which opens an **Alert settings saved** dialog with a green tick and the saved values. “Undo changes” and “Use the usual times” appear when they apply. Under the buttons, one line says “Not saved yet.”, or who changed it last and when (for example “Last changed 15 Nov 2026, 10:42 am by Osas Edo, Dispatch officer (D-001).”). When notifications are off for the app on that tablet, a red line says so and how to turn them on. |
+| Reports | Orders, sales, timings, riders, areas and staff, menu, customers (with a leaderboard), and refunds, for 7, 30, 60, or 90 days or a custom date range, with a channel filter. The report tabs sit on top under a “Report” label; below a divider, the **Date range** and the **Channel** (All, Online, Walk-in) each sit in their own labelled box, side by side on wide screens and stacked otherwise, so the three kinds of choice are never confused. Account officers and managers. |
 
 ### 7.3 Page flows
 
@@ -484,6 +484,13 @@ Same philosophy as the kitchen: practical first, polished second. Larger control
 2. Enter the new delivery fee or rider pay in naira and tap Save prices.
 3. Rider pay can’t be more than the delivery fee, and the app says so if it is.
 4. The customer app and the rider app show the new amounts straight away. Orders already placed keep their price. The change is logged with who made it and when.
+
+**Change the alert timers or the beep (dispatch officers and managers)**
+1. Open Settings. The Alerts section is second, under Opening hours.
+2. Turn **Beep when an alert opens** on or off.
+3. Drag each slider, or tap − and +, to the number of minutes an order can wait at that stage before an alert opens. Each stops at its range.
+4. Tap **Save alert settings**. The **Alert settings saved** dialog lists what’s now in use; tap Done.
+5. Every Business app uses the new times straight away. The change goes in the audit log, and the section shows who changed it last and when.
 
 **Reset a rider or staff password**
 1. Open People and find the person.
@@ -523,7 +530,7 @@ Same philosophy as the kitchen: practical first, polished second. Larger control
 
 **View reports and historic data**
 1. Open Reports and choose a report from the tabs at the top: Orders, Sales, Times, Riders, areas, and staff, Menu, Customers, or Refunds.
-2. In the Date range box, pick 7, 30, or 60 days with one tap, or choose Custom range and pick a From and To date.
+2. In the Date range box, pick 7, 30, 60, or 90 days with one tap, or choose Custom range and pick a From and To date.
 3. In the Channel box, pick All, Online, or Walk-in.
 4. Each report opens with summary cards (for example total orders, total sales, average delivery time), then a simple chart, then the details. Every figure follows the chosen date range and channel.
 5. Tap any row or bar to drill down to the individual orders. Tap an order to see its full timeline with every timestamp (placed, acknowledged, ready, picked up, delivered).
@@ -738,7 +745,7 @@ Every design question is now decided. Anything that needs checking is listed in 
 | Rider navigation | Bottom tabs; single home screen | **Decided:** bottom tabs Home, Queue, Earnings, and Me (5.3) |
 | Kitchen and manager navigation | Side rail; bottom tabs | **Decided:** a side rail. Since 12 November 2026 each staff role sees its own items, and managers see the kitchen items plus a Manager group (6.3). |
 | Walk-in cash amounts | A fixed list; amounts above the total | **Decided (changed 12 November 2026):** an Exact button and an Other amount box. The earlier ₦500, ₦1,000, ₦2,000, and ₦5,000 buttons are removed, because they left only Exact for totals above ₦5,000 (6.5) |
-| Rider order load | Light, medium, or heavy labels; a number against the budget | **Decided:** a number against the budget, for example "Load 5 of 6" (5.5) |
+| Rider order load | Light, medium, or heavy labels; a number against the budget | **Decided:** a number against the budget, for example "Load 5 of 9" (5.5; the budget is 9 since 15 November 2026) |
 | Kitchen and manager theme choices | Light and dark; light, dark, and follow phone | **Decided:** Light, Dark, and Follow phone, like the other apps (3.9) |
 
 ---
@@ -747,6 +754,7 @@ Every design question is now decided. Anything that needs checking is listed in 
 
 | Version | Change |
 |---|---|
+| 0.35 | Owner decisions on 15 November 2026 (later): the Alerts section in Settings, with the beep switch, a slider per alert timer within its range, Save, the saved dialog, and who changed it last (7.2, 7.3); the attention tone built as a one-time beep per alert (6.2); Running late alerts with Clear (6.4); rider loads shown against a budget of 9 (5, 7.2); a 90-day choice in Reports (7.2, 7.3). |
 | 0.34 | Owner decision on 15 November 2026: the refund box, with Full refund or a typed Partial refund up to 99% of what was paid, wherever a refund is made (6.5, 7.2, 7.3). |
 | 0.33 | Fix on 15 November 2026: Business app rail items switch screens instead of stacking them (the stacked screens slowed the tablet), and the back button on a rail screen goes to the person’s first item (6.3). |
 | 0.32 | Owner decision on 15 November 2026: a tour guide for managers on Demo controls (7.2, 7.3), one straight tour where each step opens its screen. Demo controls now has Tour guide, Practice orders, and Reset sections, each control with a one-line explanation. |

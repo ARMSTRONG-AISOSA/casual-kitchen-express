@@ -1,4 +1,4 @@
-import { cancellationLimit } from "@cke/validation";
+import { alertChanges, alertSettings, cancellationLimit } from "@cke/validation";
 import { zValidator } from "@hono/zod-validator";
 import { asc, eq, gte, sql } from "drizzle-orm";
 import { Hono } from "hono";
@@ -6,7 +6,7 @@ import { z } from "zod";
 import { requireRole, type Actor } from "../auth/actor";
 import type { Db } from "../db/client";
 import * as t from "../db/schema";
-import { catalogMessage, send } from "../live/publish";
+import { alertSettingsMessage, catalogMessage, send } from "../live/publish";
 import { watNow } from "../orders/clock";
 
 type Ctx = { Bindings: Env; Variables: { db: Db; actor: Actor } };
@@ -48,6 +48,25 @@ const view = (s: typeof t.setting.$inferSelect) => ({
   catalogVersion: s.catalogVersion,
 });
 
+/** The Alerts section (MGR-14): the beep, the four times, and who saved them last and when. */
+async function alertsView(db: Db) {
+  const [r] = await db
+    .select({ s: t.setting, name: t.staffProfile.fullName, code: t.staffProfile.code })
+    .from(t.setting)
+    .leftJoin(t.staffProfile, eq(t.staffProfile.userId, t.setting.alertsUpdatedBy))
+    .where(eq(t.setting.id, 1));
+  const s = r!.s;
+  return {
+    sound: s.alertSound,
+    rider: s.alertRiderMin,
+    acknowledge: s.alertAcknowledgeMin,
+    kitchen: s.alertKitchenMin,
+    road: s.alertRoadMin,
+    updatedAt: s.alertsUpdatedAt,
+    updatedBy: r!.code ? { name: r!.name, code: r!.code } : null,
+  };
+}
+
 const LABELS: Record<string, string> = {
   onlineHours: "online order hours",
   walkinHours: "walk-in hours",
@@ -80,8 +99,60 @@ export const settings = new Hono<Ctx>()
         .where(gte(t.hoursOverride.day, watNow().date))
         .orderBy(asc(t.hoursOverride.day)),
     ]);
-    return c.json({ settings: view(s!), areas, overrides });
+    return c.json({ settings: view(s!), alerts: await alertsView(db), areas, overrides });
   })
+
+  /**
+   * PUT /settings/alerts: the whole Alerts section, saved with one tap (MGR-14, owner decision
+   * 15 November 2026). Dispatch officers and managers. Each save that changes something is written
+   * to the audit log with the before and after, and the section shows who saved it last and when.
+   */
+  .put(
+    "/alerts",
+    requireRole("dispatch", "manager"),
+    zValidator("json", alertSettings),
+    async (c) => {
+      const db = c.get("db");
+      const actor = c.get("actor");
+      const b = c.req.valid("json");
+      const changed = await db.transaction(async (tx) => {
+        const [s] = await tx.select().from(t.setting).where(eq(t.setting.id, 1)).for("update");
+        const was = {
+          sound: s!.alertSound,
+          rider: s!.alertRiderMin,
+          acknowledge: s!.alertAcknowledgeMin,
+          kitchen: s!.alertKitchenMin,
+          road: s!.alertRoadMin,
+        };
+        const said = alertChanges(was, b);
+        if (!said.length) return false;
+        await tx
+          .update(t.setting)
+          .set({
+            alertSound: b.sound,
+            alertRiderMin: b.rider,
+            alertAcknowledgeMin: b.acknowledge,
+            alertKitchenMin: b.kitchen,
+            alertRoadMin: b.road,
+            alertsUpdatedAt: new Date(),
+            alertsUpdatedBy: actor.id,
+          })
+          .where(eq(t.setting.id, 1));
+        await tx.insert(t.auditLog).values({
+          actorId: actor.id,
+          kind: "setting",
+          action: `Changed the alert settings: ${said.join(", ")}`,
+          target: "setting:alerts",
+          before: was,
+          after: b,
+        });
+        return true;
+      });
+      const alerts = await alertsView(db);
+      if (changed) send(c, alertSettingsMessage(alerts));
+      return c.json({ alerts, changed });
+    },
+  )
 
   .patch("/", requireRole("dispatch", "manager"), zValidator("json", changes), async (c) => {
     const db = c.get("db");

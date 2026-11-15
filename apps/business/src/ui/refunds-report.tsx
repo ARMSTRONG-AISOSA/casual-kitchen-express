@@ -1,7 +1,7 @@
 import { naira } from "@cke/brand-tokens";
 import { useState } from "react";
 import { View } from "react-native";
-import { REFUND_ROWS, type RefundRow } from "../data/report-data";
+import { REFUND_ROWS, type RefundRow, HISTORY_DAYS } from "../data/report-data";
 import { clock, useStore } from "../state/store";
 import { useTheme } from "../state/theme";
 import { Button, Card, Chip, Chips, Section, Stat, T } from "./kit";
@@ -26,8 +26,8 @@ export function RefundsReport({
   const [sort, setSort] = useState<"newest" | "largest">("newest");
   const [shown, setShown] = useState(20);
 
-  const today: RefundRow[] = s.refunds.map((r) => ({ ...r, day: 60 }));
-  const rows = [...today, ...REFUND_ROWS.filter((r) => r.day >= 60 - range)]
+  const today: RefundRow[] = s.refunds.map((r) => ({ ...r, day: HISTORY_DAYS }));
+  const rows = [...today, ...REFUND_ROWS.filter((r) => r.day >= HISTORY_DAYS - range)]
     .filter((r) => channel === "all" || r.channel === channel)
     .sort((a, b) => (sort === "newest" ? b.at - a.at : b.amount - a.amount));
   const total = rows.reduce((a, r) => a + r.amount, 0);
@@ -113,7 +113,7 @@ export function RefundsReport({
               <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 10 }}>
                 <T v="label">
                   {r.orderNo}
-                  {r.day === 60 ? " (today)" : ""}
+                  {r.day === HISTORY_DAYS ? " (today)" : ""}
                 </T>
                 <T bold>
                   {naira(r.amount)}

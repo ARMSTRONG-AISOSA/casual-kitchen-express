@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { View, useWindowDimensions } from "react-native";
 import { BarChart } from "react-native-gifted-charts";
 import { AREAS } from "../../src/data/seed";
-import { AOV, DAYS, DELIVERIES } from "../../src/data/report-data";
+import { AOV, DAYS, DELIVERIES, HISTORY_DAYS } from "../../src/data/report-data";
 import { useStore } from "../../src/state/store";
 import { useTheme } from "../../src/state/theme";
 import { Button, Card, Chip, Chips, KV, Page, Section, Stat, T } from "../../src/ui/kit";
@@ -11,7 +11,7 @@ import { RefundsReport } from "../../src/ui/refunds-report";
 import { useToast } from "../../src/ui/toast";
 
 type Report = "orders" | "sales" | "times" | "riders" | "menu" | "customers" | "refunds";
-type Range = 7 | 30 | 60;
+type Range = 7 | 30 | 60 | 90;
 type Channel = "all" | "online" | "walkin";
 
 const REPORTS: [Report, string][] = [
@@ -43,7 +43,7 @@ export default function Reports() {
   const wide = width >= 1250;
 
   const days = DAYS.slice(-range);
-  const firstDay = 60 - range;
+  const firstDay = HISTORY_DAYS - range;
   const online = days.reduce((a, d) => a + d.online, 0);
   const walkin = days.reduce((a, d) => a + d.walkin, 0);
   const perDay = days.map((d) =>
@@ -171,7 +171,7 @@ export default function Reports() {
         <Card style={{ marginTop: 0, flex: wide ? 3 : undefined }}>
           <FilterLabel text="Date range" />
           <Chips>
-            {[7, 30, 60].map((r) => (
+            {([7, 30, 60, 90] as const).map((r) => (
               <Chip
                 key={r}
                 label={`${r} days`}

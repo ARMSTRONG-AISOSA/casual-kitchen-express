@@ -85,14 +85,26 @@ export async function orderMessages(
   return messages;
 }
 
-/** Alerts, opened or cleared (MGR-14). */
-export async function alertMessages(db: Db, alertIds: string[]): Promise<LiveMessage[]> {
+/**
+ * Alerts, opened or cleared (MGR-14). `beep` lists the newly opened timer alerts the Business app
+ * should sound for: once per alert, on every device that shows Alerts, when the beep is on.
+ */
+export async function alertMessages(
+  db: Db,
+  alertIds: string[],
+  beep: string[] = [],
+): Promise<LiveMessage[]> {
   if (!alertIds.length) return [];
   return (await alertViews(db, { ids: [...new Set(alertIds)] })).map((alert) => ({
     to: ALERT_WATCHERS,
-    data: { type: "alert", alert, version: alert.version },
+    data: { type: "alert", alert, version: alert.version, beep: beep.includes(alert.id) },
   }));
 }
+
+/** The Alerts settings changed: every screen showing them updates (MGR-14). */
+export const alertSettingsMessage = (alerts: unknown): LiveMessage[] => [
+  { to: ["dispatch", "manager"], data: { type: "alert-settings", alerts } },
+];
 
 /** The riders panel rows for these riders (online, load, what they carry). */
 export async function riderMessages(db: Db, riderIds: string[]): Promise<LiveMessage[]> {

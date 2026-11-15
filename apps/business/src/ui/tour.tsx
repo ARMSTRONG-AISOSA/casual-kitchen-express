@@ -79,7 +79,7 @@ export const TOUR: { id: TourStepId; title: string; body: string }[] = [
   {
     id: "reports",
     title: "Reports",
-    body: "Charts for orders, sales, timings, riders, areas, the menu, customers, and refunds. Choose 7, 30, or 60 days or your own dates, and online, walk-in, or both.",
+    body: "Charts for orders, sales, timings, riders, areas, the menu, customers, and refunds. Choose 7, 30, 60, or 90 days or your own dates, and online, walk-in, or both.",
   },
   {
     id: "finance",
@@ -89,7 +89,7 @@ export const TOUR: { id: TourStepId; title: string; body: string }[] = [
   {
     id: "settings",
     title: "Settings",
-    body: "How the restaurant runs: opening hours, the delivery fee, rider pay, delivery areas, the WhatsApp contact number, and the tablet’s automatic sign-out at 8:30 pm.",
+    body: "How the restaurant runs: opening hours, alert timers and the alert beep, the delivery fee, rider pay, delivery areas, the WhatsApp contact number, and the tablet’s automatic sign-out at 8:30 pm.",
   },
   {
     id: "demo",

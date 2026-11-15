@@ -1,3 +1,4 @@
+import { DEFAULTS } from "@cke/validation";
 import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { Db } from "../db/client";
 import * as t from "../db/schema";
@@ -86,7 +87,7 @@ export async function riderLoad(db: Q, riderId: string) {
   const [loadMap, drops] = await Promise.all([loads(db, ids), dropOffs(db, ids)]);
   return {
     online: state?.online ?? false,
-    budget: state?.capacityBudget ?? s?.budget ?? 6,
+    budget: state?.capacityBudget ?? s?.budget ?? DEFAULTS.capacityBudget,
     batchDistanceM: s?.batch ?? 1500,
     orders: carrying.map((d) => ({
       ...d,

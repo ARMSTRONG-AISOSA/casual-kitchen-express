@@ -17,7 +17,7 @@ Run these from the repository root:
 | 3c. Add the menu and staff photos (about 5 minutes)                                        | `npm run db:seed-media --workspace @cke/api`  | `23 menu and 10 staff photos stored, …`            |
 | 3d. Add three months of demo history (about 5 seconds; wipes and regenerates the old demo history; refuses if real online orders exist) | `npm run db:seed-history --workspace @cke/api` | `Demo history: … (90 days)` … `Checks passed.` |
 | Run the API for the tablet                                                                 | `npm run dev:lan --workspace @cke/api`        | `Ready on http://0.0.0.0:8787`                     |
-| 4. Run the tests (stop `dev:lan` first: the two share local state and the tests can stall) | `npm run test --workspace @cke/api`           | `Tests 35 passed (35)`                               |
+| 4. Run the tests (stop `dev:lan` first: the two share local state and the tests can stall) | `npm run test --workspace @cke/api`           | `Tests 37 passed (37)`                               |
 | Stop the database (data is kept)                                                           | `npm run db:down --workspace @cke/api`        | `Container cke-db-1 Removed`                       |
 
 The local password (`cke-local-only`) only works on this laptop: the database listens on
@@ -52,8 +52,9 @@ check the new file in `drizzle/`, then run step 2 again.
 | `POST /cancellation-requests/:id/approve`, `/decline` | Dispatch officers and managers decide customers' requests |
 | `/rider/*` | Riders: online, the queue (only what fits), accept (one winner), deliveries, stop order, picked up, arriving, deliver with the code, help, release, earnings |
 | `GET /riders`, `POST /orders/:id/assign`, `POST /help-requests/:id/resolve` | Dispatch and managers: the riders panel, assigning a waiting order, and manual completions |
-| `GET /alerts`, `POST /alerts/:id/clear` | Open alerts; the timed check runs from the live hub's alarm while orders are open |
+| `GET /alerts`, `POST /alerts/:id/clear` | Open alerts; the timed check runs from the live hub's alarm while orders are open, at the times in Settings, Alerts, once per stage per order |
 | `/settings`, `/settings/areas/:id`, `/settings/hours-overrides/:day` | Dispatch and managers: hours, pause, areas, capacity, tracking, the cancellation limit; managers also the fee, rider pay, and WhatsApp number |
+| `PUT /settings/alerts` | Dispatch and managers: the Alerts section in one save (the beep and the four alert timers, each within its range); audit-logged, with who saved it last and when in `GET /settings` |
 | `/me/addresses` | Customers: the address book (an address outside the range is refused) |
 
 Every change needs a signed-in person with the right role (`docs/architecture.md` 3.0). Sign-in

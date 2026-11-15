@@ -342,7 +342,7 @@ function rReset() {
   Object.assign(R, { mode: "light", modePref: "light", signedIn: false, firstTime: true, online: false, sel: "O-2174", carrying: [], stage: "pickup", code: "", tries: 0, helpSent: false, sound: true, vibrate: true, raceLost: false, earnTab: "today", today: 5, newBanner: true, pay: 1000 });
 }
 rReset();
-const BUDGET = 6;
+const BUDGET = 9;
 const used = () => R.carrying.reduce((a, o) => a + o.load, 0);
 const fits = o => R.carrying.length < 3 && used() + o.load <= BUDGET && !R.carrying.find(c => c.no === o.no);
 const sel = () => QUEUE.find(q => q.no === R.sel) || QUEUE[0];
@@ -391,7 +391,7 @@ screen("r-home", {
 });
 screen("r-queue", {
   title: "Order queue", ids: ["RID-03", "RID-04", "RID-05", "RID-14"],
-  note: "<p>Ready orders appear here. The queue only shows orders that fit what the rider is already carrying (up to three orders and a load of 6). The first rider to accept wins.</p>",
+  note: "<p>Ready orders appear here. The queue only shows orders that fit what the rider is already carrying (up to three orders and a load of 9). The first rider to accept wins.</p>",
   render() {
     if (!R.online) return rshell(`${rtop("Queue")}<div class="scroll"><div class="state off">You’re offline</div><p>Go online to see orders that are ready.</p></div>`, "r-queue", `<button class="rbtn go-online" data-act="toggleOnline">Go online</button>`);
     const list = QUEUE.filter(fits);

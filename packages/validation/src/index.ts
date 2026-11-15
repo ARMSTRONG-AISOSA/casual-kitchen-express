@@ -23,7 +23,8 @@ export const DELETE_ACCOUNT_PHRASE = "DELETE ACCOUNT";
 export const DEFAULTS = {
   deliveryFee: 1500,
   riderPay: 1000,
-  capacityBudget: 6,
+  /** Load points a rider can carry: light items 1, medium 2, heavy 3 (owner decision, 15 November 2026). */
+  capacityBudget: 9,
   maxOrdersPerRider: 3,
   batchDistanceKm: 1.5,
   cancellationLimit: 3,
@@ -31,6 +32,79 @@ export const DEFAULTS = {
   cancellationLimitMax: 7,
   cancellationWindowDays: 7,
 } as const;
+
+/**
+ * Alert timers (MGR-14, owner decision 15 November 2026): how many minutes an order can sit in a
+ * stage before an alert opens, each with the range dispatch officers and managers can set in
+ * Settings, Alerts.
+ */
+export const ALERT_TIMERS = {
+  rider: {
+    label: "Waiting for a rider",
+    from: "after the food is ready",
+    min: 5,
+    max: 15,
+    usual: 5,
+  },
+  acknowledge: {
+    label: "Not acknowledged",
+    from: "after the order arrives",
+    min: 1,
+    max: 5,
+    usual: 5,
+  },
+  kitchen: {
+    label: "Too long in the kitchen",
+    from: "after the kitchen taps it",
+    min: 10,
+    max: 30,
+    usual: 15,
+  },
+  road: {
+    label: "Too long on the road",
+    from: "after the rider picks it up",
+    min: 10,
+    max: 45,
+    usual: 25,
+  },
+} as const;
+export type AlertTimer = keyof typeof ALERT_TIMERS;
+export const ALERT_TIMER_KEYS = Object.keys(ALERT_TIMERS) as AlertTimer[];
+
+const timer = (k: AlertTimer) =>
+  z
+    .number()
+    .int("Whole minutes only")
+    .min(ALERT_TIMERS[k].min, `${ALERT_TIMERS[k].label}: at least ${ALERT_TIMERS[k].min} minutes`)
+    .max(ALERT_TIMERS[k].max, `${ALERT_TIMERS[k].label}: at most ${ALERT_TIMERS[k].max} minutes`);
+
+/** The Alerts section in Settings, saved together with one tap. */
+export const alertSettings = z.object({
+  sound: z.boolean(),
+  rider: timer("rider"),
+  acknowledge: timer("acknowledge"),
+  kitchen: timer("kitchen"),
+  road: timer("road"),
+});
+export type AlertSettings = z.infer<typeof alertSettings>;
+/** "1 minute", "5 minutes". */
+export const minutes = (n: number) => `${n} minute${n === 1 ? "" : "s"}`;
+
+/** What a save changed, in words, for the audit log: "turned the beep off, waiting for a rider from 5 to 10 minutes". */
+export const alertChanges = (was: AlertSettings, now: AlertSettings) => [
+  ...(was.sound !== now.sound ? [`turned the beep ${now.sound ? "on" : "off"}`] : []),
+  ...ALERT_TIMER_KEYS.filter((k) => was[k] !== now[k]).map(
+    (k) => `${ALERT_TIMERS[k].label.toLowerCase()} from ${was[k]} to ${minutes(now[k])}`,
+  ),
+];
+
+export const ALERT_SETTINGS_USUAL: AlertSettings = {
+  sound: true,
+  rider: ALERT_TIMERS.rider.usual,
+  acknowledge: ALERT_TIMERS.acknowledge.usual,
+  kitchen: ALERT_TIMERS.kitchen.usual,
+  road: ALERT_TIMERS.road.usual,
+};
 
 /** MGR-31: rider pay can't exceed the delivery fee. */
 export const pricingSettings = z

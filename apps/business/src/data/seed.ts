@@ -455,6 +455,9 @@ export function seedOrders(now = Date.now()): Order[] {
       ...(status === "ready" || status === "out" || status === "done"
         ? [{ label: "Ready", at: ago(placed - 14), by: "K-001" }]
         : []),
+      ...(status === "out" || (status === "done" && extra.riderId)
+        ? [{ label: "Picked up", at: ago(placed - 17), by: extra.riderId ?? "System" }]
+        : []),
     ],
     ...extra,
   });
@@ -496,7 +499,7 @@ export function seedOrders(now = Date.now()): Order[] {
         fee: 0,
       },
     ),
-    online("O-2174", "C-01093", [line("jollof", 1, true), line("soda", 1, true)], "out", 40, {
+    online("O-2174", "C-01093", [line("jollof", 1, true), line("soda", 1, true)], "out", 30, {
       riderId: "R-002",
     }),
     walkin("W-004", [line("jollof"), line("plantain")], "done", 52, { cashReceived: 5000 }),
@@ -527,7 +530,8 @@ export const RIDERS_ONLINE: Rider[] = [
 
 export type Alert = {
   id: string;
-  kind: "unaccepted" | "help" | "cancel" | "unavailable";
+  /** "late": an order past an alert timer: not acknowledged, in the kitchen, or on the road. */
+  kind: "unaccepted" | "late" | "help" | "cancel" | "unavailable";
   orderNo: string;
   text: string;
   at: number;

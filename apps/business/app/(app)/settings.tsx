@@ -1,4 +1,5 @@
 import { naira } from "@cke/brand-tokens";
+import { DEFAULTS } from "@cke/validation";
 import { useState } from "react";
 import { AREAS } from "../../src/data/seed";
 import { log, myRole, useStore } from "../../src/state/store";
@@ -14,9 +15,10 @@ import {
   SwitchRow,
   T,
 } from "../../src/ui/kit";
+import { AlertSettingsSection } from "../../src/ui/alert-settings";
 import { useToast } from "../../src/ui/toast";
 
-// Settings (design.md 7.2). Dispatch officers see every section except Pricing and pay and
+// Settings (design.md 7.2). Dispatch officers see every section, Alerts included, except Pricing and pay and
 // Restaurant contact, which are for managers only (architecture.md 3.0).
 export default function Settings() {
   const { s, set } = useStore();
@@ -51,6 +53,8 @@ export default function Settings() {
         </Card>
       </Section>
 
+      <AlertSettingsSection />
+
       <Section title="Delivery area">
         <Card style={{ marginTop: 0 }}>
           <T v="small" muted>
@@ -77,7 +81,7 @@ export default function Settings() {
           <T v="label">Capacity budget</T>
           <T v="small" muted style={{ marginBottom: 8 }}>
             Light items count 1, medium 2, heavy 3. A rider carries up to three orders within this
-            budget.
+            budget. Usually {DEFAULTS.capacityBudget}.
           </T>
           <Stepper
             value={st.budget}

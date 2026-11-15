@@ -3,6 +3,7 @@
 import { sql } from "drizzle-orm";
 import {
   bigint,
+  check,
   bigserial,
   boolean,
   date,
@@ -309,28 +310,47 @@ export const soupVariety = pgTable("soup_variety", {
  * One row. `catalogVersion` goes up whenever the menu or a customer-facing setting changes, so
  * apps fetch them again only then (14.4, decision 1).
  */
-export const setting = pgTable("setting", {
-  id: smallint("id").primaryKey().default(1),
-  onlineOpens: time("online_opens").notNull().default("08:00"),
-  onlineCloses: time("online_closes").notNull().default("18:00"),
-  walkinOpens: time("walkin_opens").notNull().default("08:00"),
-  walkinCloses: time("walkin_closes").notNull().default("20:30"),
-  tabletSignOut: time("tablet_sign_out").notNull().default("20:30"),
-  paused: boolean("paused").notNull().default(false),
-  pausedUntil: at("paused_until"),
-  boundary: jsonb("boundary").$type<[number, number][]>(), // [lng, lat] polygon (4.7)
-  capacityBudget: smallint("capacity_budget").notNull().default(6),
-  batchDistanceM: integer("batch_distance_m").notNull().default(1500),
-  trackingMode: trackingMode("tracking_mode").notNull().default("light"),
-  deliveryFee: integer("delivery_fee").notNull().default(1500),
-  riderPay: integer("rider_pay").notNull().default(1000),
-  cancellationLimit: smallint("cancellation_limit").notNull().default(3),
-  whatsappNumber: text("whatsapp_number").notNull().default("2349095466063"),
-  soupVarietyId: uuid("soup_variety_id").references(() => soupVariety.id),
-  catalogVersion: integer("catalog_version").notNull().default(1),
-  updatedAt: at("updated_at").notNull().defaultNow(),
-  updatedBy: text("updated_by"),
-});
+export const setting = pgTable(
+  "setting",
+  {
+    id: smallint("id").primaryKey().default(1),
+    onlineOpens: time("online_opens").notNull().default("08:00"),
+    onlineCloses: time("online_closes").notNull().default("18:00"),
+    walkinOpens: time("walkin_opens").notNull().default("08:00"),
+    walkinCloses: time("walkin_closes").notNull().default("20:30"),
+    tabletSignOut: time("tablet_sign_out").notNull().default("20:30"),
+    paused: boolean("paused").notNull().default(false),
+    pausedUntil: at("paused_until"),
+    boundary: jsonb("boundary").$type<[number, number][]>(), // [lng, lat] polygon (4.7)
+    capacityBudget: smallint("capacity_budget").notNull().default(9),
+    batchDistanceM: integer("batch_distance_m").notNull().default(1500),
+    trackingMode: trackingMode("tracking_mode").notNull().default("light"),
+    deliveryFee: integer("delivery_fee").notNull().default(1500),
+    riderPay: integer("rider_pay").notNull().default(1000),
+    cancellationLimit: smallint("cancellation_limit").notNull().default(3),
+    whatsappNumber: text("whatsapp_number").notNull().default("2349095466063"),
+    soupVarietyId: uuid("soup_variety_id").references(() => soupVariety.id),
+    // Alerts (MGR-14): the beep, and the minutes an order can sit in each stage (ALERT_TIMERS in
+    // @cke/validation holds the ranges). Saved together; when and by whom is kept for the screen.
+    alertSound: boolean("alert_sound").notNull().default(true),
+    alertRiderMin: smallint("alert_rider_min").notNull().default(5),
+    alertAcknowledgeMin: smallint("alert_acknowledge_min").notNull().default(5),
+    alertKitchenMin: smallint("alert_kitchen_min").notNull().default(15),
+    alertRoadMin: smallint("alert_road_min").notNull().default(25),
+    alertsUpdatedAt: at("alerts_updated_at"),
+    alertsUpdatedBy: text("alerts_updated_by"),
+    catalogVersion: integer("catalog_version").notNull().default(1),
+    updatedAt: at("updated_at").notNull().defaultNow(),
+    updatedBy: text("updated_by"),
+  },
+  (s) => [
+    // The ranges in ALERT_TIMERS (@cke/validation), kept here too so nothing can store a time outside them.
+    check("alert_rider_range", sql`${s.alertRiderMin} between 5 and 15`),
+    check("alert_acknowledge_range", sql`${s.alertAcknowledgeMin} between 1 and 5`),
+    check("alert_kitchen_range", sql`${s.alertKitchenMin} between 10 and 30`),
+    check("alert_road_range", sql`${s.alertRoadMin} between 10 and 45`),
+  ],
+);
 
 /** Overrides to the usual hours, for example a holiday (MGR-09). */
 export const hoursOverride = pgTable("hours_override", {

@@ -572,7 +572,7 @@ type Task = {
  * Hands the day's deliveries to riders in the order they became ready (section 6). Orders ready
  * within 10 minutes of each other, going the same way (within the batch distance) and within the
  * load budget, ride together, up to three, and are dropped off nearest first. Each group goes to
- * whoever is free first. When an order waits more than 12 minutes, dispatch often steps in and
+ * whoever is free first. When an order waits more than 15 minutes, dispatch often steps in and
  * assigns it (DSP-05).
  */
 function planRiders(tasks: Task[], riders: { id: string; freeAt: Date }[]) {
@@ -597,7 +597,9 @@ function planRiders(tasks: Task[], riders: { id: string; freeAt: Date }[]) {
     const first = g[0]!.ready;
     const lastReady = g.at(-1)!.ready;
     const rider = riders.reduce((a, b) => (a.freeAt <= b.freeAt ? a : b));
-    const earliest = plus(first, between(2, 9));
+    // A free rider at the kitchen hears the new order and takes it within a few minutes; now and
+    // then one is slow (on a call, finishing food).
+    const earliest = plus(first, between(0.5, 4) + (chance(0.1) ? between(2, 5) : 0));
     const accepted = rider.freeAt > earliest ? plus(rider.freeAt, between(0.5, 2)) : earliest;
     const waited = (accepted.getTime() - first.getTime()) / 60_000;
     const assignedBy = waited > 15 && chance(0.4) ? DISPATCH : null;
@@ -813,8 +815,9 @@ for (const [dayIndex, day] of days.entries()) {
       continue;
     }
 
-    // Cooking: 8 to 20 minutes, with the odd slow one.
-    const ready = plus(kitchenAck, between(8, 20) + (chance(0.06) ? between(6, 14) : 0));
+    // Plating and packing: the rice and soups are cooked ahead, so 5 to 13 minutes, with the odd
+    // slow one (a fresh pot, a big order).
+    const ready = plus(kitchenAck, between(5, 13) + (chance(0.06) ? between(6, 14) : 0));
     o.readyAt = ready;
 
     // Riders are given orders in the order they become ready, not the order they were placed, so
@@ -840,12 +843,13 @@ for (const [dayIndex, day] of days.entries()) {
         const accepted = plan!.accepted;
         const ride = (plan!.delivered.getTime() - picked.getTime()) / 60_000;
         const waited = (accepted.getTime() - ready.getTime()) / 60_000;
-        if (waited > 5) {
-          // Nobody took it within 5 minutes: the alert, cleared when a rider (or dispatch) acts.
+        if (waited > setting.alertRiderMin) {
+          // Nobody took it within the "waiting for a rider" time in Settings, Alerts (5 minutes
+          // usually): the alert, cleared when a rider (or dispatch) acts.
           rows.alerts.push({
             kind: "unaccepted",
             orderId: id,
-            createdAt: plus(ready, 5),
+            createdAt: plus(ready, setting.alertRiderMin),
             clearedBy: assignedBy,
             clearedAt: accepted,
           });
@@ -1295,6 +1299,36 @@ if (lastClosed) {
   }
 }
 
+/* ---------- running late (MGR-14): the timed check, as the API runs it ---------- */
+
+// An order that sat in a stage longer than the times in Settings, Alerts got a "stuck" alert and
+// was marked Delayed ("Running a little late"); the alert cleared when the order was finished.
+// One per order, at the first stage that ran over, as the API does when nobody clears it by hand.
+const lateBy = { acknowledge: 0, kitchen: 0, road: 0 };
+{
+  const deliveryOf = new Map(rows.deliveries.map((d) => [d.orderId, d]));
+  const min = (a: Date, b: Date) => (b.getTime() - a.getTime()) / 60_000;
+  for (const o of rows.orders) {
+    const end = (o.deliveredAt ?? o.collectedAt ?? o.cancelledAt) as Date;
+    const placed = o.placedAt as Date;
+    const ack = o.acknowledgedAt as Date | undefined;
+    const ready = o.readyAt as Date | undefined;
+    const picked = deliveryOf.get(o.id!)?.pickedUpAt as Date | undefined;
+    let at: Date | null = null;
+    let stage: keyof typeof lateBy | null = null;
+    if (min(placed, ack ?? end) > setting.alertAcknowledgeMin)
+      ((at = plus(placed, setting.alertAcknowledgeMin)), (stage = "acknowledge"));
+    else if (ack && min(ack, ready ?? end) > setting.alertKitchenMin)
+      ((at = plus(ack, setting.alertKitchenMin)), (stage = "kitchen"));
+    else if (picked && min(picked, end) > setting.alertRoadMin)
+      ((at = plus(picked, setting.alertRoadMin)), (stage = "road"));
+    if (!at || !stage) continue;
+    lateBy[stage]++;
+    o.exception = "delayed";
+    rows.alerts.push({ kind: "stuck", orderId: o.id!, createdAt: at, clearedAt: end });
+  }
+}
+
 /* ---------- checks before anything is saved (18.3, quality rules) ---------- */
 
 const problems: string[] = [];
@@ -1458,5 +1492,6 @@ console.log(`Demo history: ${firstDay} to ${lastDay} (${DAYS} days)
   Deliveries: ${rows.deliveries.length} (${rows.deliveries.filter((d) => d.stopNumber! > 1).length} as a second or third stop, ${rows.deliveries.filter((d) => d.assignedBy).length} assigned by dispatch)
   Refunds: ${rows.refunds.length} (${rows.refunds.filter((r) => r.kind === "partial").length} partial), ${naira(rows.refunds.reduce((s, r) => s + r.amount, 0))}
   Sales: ${naira(sales)}; payouts: ${rows.payouts.length} (${rows.payouts.filter((p) => p.status === "owed").length} owed); cash-ups: ${rows.cashUps.length}; closed months: ${rows.closes.map((c) => c.month.slice(0, 7)).join(", ") || "none"}
+  Alerts: ${rows.alerts.filter((a) => a.kind === "unaccepted").length} waiting for a rider (after ${setting.alertRiderMin} min); running late: ${lateBy.acknowledge} not acknowledged (${setting.alertAcknowledgeMin} min), ${lateBy.kitchen} in the kitchen (${setting.alertKitchenMin} min), ${lateBy.road} on the road (${setting.alertRoadMin} min)
   Audit entries: ${rows.audit.length}. Checks passed. Database size: ${size} MB`);
 await client.end();

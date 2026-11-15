@@ -2,7 +2,7 @@
 
 The working memory for Casual Kitchen Express (CKE). Read this first, then the documents it points to. The top half (sections 1 to 8) is the current state; the **Log** at the bottom is append-only history.
 
-**Last updated:** 14 November 2026 (Google sign-in tested, documents reviewed)
+**Last updated:** 15 November 2026 (alert timers and beep, load budget 9, 90-day reports)
 **Stage:** all three apps’ screens are built on demo data. The **backend foundation and sign-in are done**: Postgres and R2 hold the menu, soups, areas, staff, and photos; sign-in works in all three apps (usernames for staff, Continue with Google for managers and customers, tested on the tablet), with a role check on every route. **Next: the orders backend** (section 8, step 4c). Local commits only, nothing pushed.
 
 ---
@@ -27,8 +27,8 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and thr
 | File | What it is | Authority |
 |---|---|---|
 | `progress.md` | This file: status, rules, next steps, log | Start here |
-| `docs/architecture.md` (v0.43) | Functions, 129 feature IDs (CUS, RID, KIT, MGR, DSP, ACC, WEB), order lifecycle, data model, the API routes built so far, decisions, free-tier limits, **locked versions (section 15)**, build order (16), **16.1 to verify at build**, seed data | Wins on anything technical |
-| `docs/design.md` (v0.34) | UI rules per app, screens, page flows, colours, components | Wins on anything visual or UX |
+| `docs/architecture.md` (v0.44) | Functions, 129 feature IDs (CUS, RID, KIT, MGR, DSP, ACC, WEB), order lifecycle, data model, the API routes built so far, decisions, free-tier limits, **locked versions (section 15)**, build order (16), **16.1 to verify at build**, seed data | Wins on anything technical |
+| `docs/design.md` (v0.35) | UI rules per app, screens, page flows, colours, components | Wins on anything visual or UX |
 | `docs/Casual-Kitchen-Express.md` (v1.10) | Brand and business, surface level only | Wins on brand (name, colours, logo, tone, menu, packaging) |
 | `docs/list-of-areas.md` | Delivery areas, boundary, landmarks, neighbourhood list | Areas still to confirm on a map |
 | `docs/photo-credits.md` | Every starting menu photo’s author, licence, and source, and the staff photos | The record the brand document asks for |
@@ -91,7 +91,7 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and thr
 - **Hours:** online orders and delivery 8:00 am to 6:00 pm. Walk-in service until 8:30 pm. The kitchen tablet signs out at 8:30 pm.
 - **Delivery area:** from Uselu to Oluku Market. Nothing beyond Oluku Market. Pins are checked against a boundary polygon, and pickup is offered outside it.
 - **Prices:** a flat delivery fee, ₦1,500 by default, and rider pay ₦1,000 per delivery by default. Managers can edit both, and the changes show in the customer and rider apps for new orders. Rider pay can't exceed the fee.
-- **Riders:** all deliveries by CKE's own riders. They pick from a queue (first to accept wins), carry one order by default and up to three when the load fits (light 1, medium 2, heavy 3, budget 6), and confirm delivery with the customer's 4-digit code.
+- **Riders:** all deliveries by CKE's own riders. They pick from a queue (first to accept wins), carry one order by default and up to three when the load fits (light 1, medium 2, heavy 3, budget 9 since 15 November 2026), and confirm delivery with the customer's 4-digit code.
 - **Walk-in orders:** entered on the kitchen tablet, paid at the counter in cash (Exact or an Other amount box, with change due) or online, W- order numbers, a separate channel in all data and reports.
 - **Attribution:** every action is recorded against a staff ID. On the shared tablet, actions belong to whoever is signed in.
 - **Cancellation:** a quiet link, a required reason, and a confirmation tick. Free cancel before the kitchen acknowledges, a request after that, and none once ready. After 3 cancellations in 7 days, request only (managers can set the limit from 3 to 7).
@@ -151,8 +151,8 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and thr
 - **Demo sign-in hints in development builds:** the Business app’s sign-in screen lists the demo accounts and the demo password only in development builds (`__DEV__`); release builds don’t show them. The rider app’s sign-in screen fills in `musa.a` and the demo password, in development builds only. Decide before release whether the public demo keeps shared demo staff accounts at all.
 
 **Known gaps and notes (no decision needed unless the owner wants one)**
-- **Alert wait times (owner may adjust):** waiting for a rider 5 minutes after Ready; not acknowledged 5 minutes after placing; in the kitchen 30 minutes after acknowledging; on the road 45 minutes after pickup (`architecture.md` 9 notes). Not set in the documents before; starting values.
-- **A 90-day report period (Proposal):** with three months of history, a “90 days” quick choice beside 7, 30, and 60 days would show it all in one tap (the custom range already can). The report periods are Decided, so this waits for the owner.
+- **Alert timers (decided, 15 November 2026):** set in Settings, Alerts by dispatch officers and managers: waiting for a rider 5 to 15 minutes (usually 5), not acknowledged 1 to 5 (usually 5), in the kitchen 10 to 30 (usually 15), on the road 10 to 45 (usually 25), and a beep switch. On the three months of demo history, the usual times flag about 1 delivery in 5 as waiting for a rider and about 1 in 5 on the road (nearly all to Iguosa and Oluku, 8 to 10 km away, which take 25 to 30 minutes). Raising them to 10 and 30 minutes would roughly halve each (owner to choose; the history is re-run with whatever is saved).
+- **The alert beep needs the rebuilt Business app** (expo-notifications is native, 15 November 2026). The customer and rider apps didn’t change natively.
 - **Memory and CPU Proposals** (`architecture.md` 13.1): left for later (owner, 15 November 2026).
 - ~~**Hono security advisories**~~ **Done 14 November 2026:** upgraded to Hono 4.13.16 (owner approved it a day early). `npm audit` is down to 14 moderate findings, all in development tools.
 - **“Other area in range”** is a choice in the customer app’s area picker, but not a seeded area in the database. Settle how it is stored when addresses are connected (step 6).
@@ -1111,3 +1111,41 @@ Append a new dated entry after each work session. Never edit or delete earlier e
 **Next step:**
 - The owner tests the refund box on the tablet. Then commit, and step 6: connecting the app screens to the API.
 
+
+---
+
+## [2026-11-15] Alert timers and the alert beep, rider load budget 9, and a 90-day report choice
+
+**What was done:**
+- **Tablet reconnected** with a new pairing (Android 12; Wireless debugging port changed).
+- **Committed the earlier work first** (partial refunds and three months of history, `b116eae`), so this work sits in its own commit.
+- **Alerts section in Settings (owner decision, MGR-14):** dispatch officers and managers. A **Beep when an alert opens** switch at the top, then a slider per timer, each with − and + and its range: waiting for a rider 5 to 15 minutes (usually 5), not acknowledged 1 to 5 (usually 5), too long in the kitchen 10 to 30 (usually 15), too long on the road 10 to 45 (usually 25). **Save alert settings** opens an **Alert settings saved** dialog (green tick, the values, who it’s recorded as). “Undo changes” and “Use the usual times” appear when they apply. Under the buttons: “Not saved yet.” or “Last changed 15 Nov 2026, 11:06 am by Osas Edo, Dispatch officer (D-001).” A red line shows when the tablet has notifications turned off for the app.
+  - **API:** `PUT /settings/alerts` (the whole section in one save, each time checked against its range; audit-logged in words with before and after; who and when kept on the setting row and returned by `GET /settings`; sent live to open Settings screens). Migration `0004_alert-settings` adds the columns with database range checks and moves the budget from 6 to 9 only if nobody had changed it. The timed check now reads the saved times.
+  - **Bug fixed:** clearing a “stuck” or “waiting for a rider” alert by hand didn’t stick: the next minute’s check opened it again (and, with the beep, would have beeped every minute). Now each stage alerts at most once per order.
+  - **The beep (owner chose notifications, once per alert, everyone who sees Alerts):** a local notification on an “Order alerts” Android channel with an original rising double-beep tone made for CKE (`assets/sounds/cke_alert.wav`), so it sounds with the screen off. Tapping it opens Alerts. Live alert messages carry a `beep` flag from the server, so turning the beep off applies at once everywhere. Accounts staff don’t hear it. Needed `expo-notifications` 58.1.7 (already locked) and a rebuilt Business app (arm64-v8a only, 1 h 7 min build on this laptop).
+  - **The demo** runs the same timed check every 20 seconds on its own orders, with a new “Running late” alert kind and Clear.
+- **Rider load budget 9 (owner decision):** item load levels unchanged; still at most three orders. The default in `@cke/validation`, the database, the API fallback, the prototypes, and every “Load x of 9” in the rider and Business apps.
+- **Reports:** 90 days beside 7, 30, and 60 (owner approved the Proposal). The demo report data is now 90 days; the demo refund rows’ order numbers now count back from today’s (they ran past today’s numbers before).
+- **The three months of history re-run** with the new budget and the saved alert times. Kept for the pitch only after re-tuning two invented figures that made the restaurant look slow against the owner’s targets: a free rider now takes a new order within about 4 minutes (was 2 to 9), and plating takes 5 to 13 minutes because food is cooked ahead (was 8 to 20). Ride times stay distance-based. Result: 3,224 online orders and 1,050 walk-ins; 2,580 deliveries, about 6% a second or third stop (was 2% to 4%); dispatch assigned about 3%; rider wait median 2.7 minutes (9 in 10 within 10); order to door median 31 minutes; ratings 4.49. Alerts recorded as the API would have: 508 waiting for a rider, and 766 running late (111 not acknowledged, 154 kitchen, 501 road). How often each time would trigger, for the owner’s choice: rider wait over 5 minutes 20%, over 10 10%, over 15 7%; kitchen over 15 4%; road over 25 21%, over 30 9%, over 35 2% (Iguosa and Oluku, 8 to 10 km away, take 25 to 30 minutes).
+- **Tested on the tablet:** the Alerts section in portrait and landscape; dragging (snapped to 10), tapping the track (jumped to 1), and − and +; Save, the dialog, and the last-changed line; five beeps fired for the starting orders as they aged, each with the right words; a practice order beeped 70 seconds after it was placed with “not acknowledged” at 1 minute; a cleared alert stayed cleared; the channel uses the CKE tone; Reports at 90 days (4,157 orders); “Load x of 9” in the rider queue and the Riders screen. Wording fixed after testing: “1 minute” (it said “1 minutes”) and clearer screen-reader labels on − and +. Left the demo on the usual times.
+- **Checks:** 37 API tests pass (2 new: the alert settings route with every out-of-range value, and alerts at the saved times with the beep off and clearing that sticks). Four test files timed out once while the Android build and Metro were using the processor and passed when re-run. Typecheck and lint 11 of 11, Prettier clean.
+
+**Files created/updated:**
+- `packages/validation/src/index.ts` (alert timers, `alertSettings`, `alertChanges`, `minutes`, budget 9)
+- `apps/api/src/db/schema.ts`, `drizzle/0004_alert-settings.sql` (new), `src/orders/alerts.ts`, `src/orders/riders.ts`, `src/routes/settings.ts`, `src/live/publish.ts`, `src/live/hub.ts`, `scripts/seed-history.ts`, `test/lifecycle.test.ts`, `README.md`
+- `apps/business/app.json`, `package.json`, `assets/sounds/cke_alert.wav` (new), `src/alert-sound.ts` (new), `src/ui/slider.tsx` (new), `src/ui/alert-settings.tsx` (new), `src/ui/alert-watch.tsx` (new), `src/state/store.tsx`, `src/data/seed.ts`, `src/data/report-data.ts`, `src/ui/refunds-report.tsx`, `src/ui/tour.tsx`, `app/(app)/_layout.tsx`, `app/(app)/settings.tsx`, `app/(app)/alerts.tsx`, `app/(app)/reports.tsx`
+- `design/prototypes/cke-rider-app.html`, `design/prototypes/cke-kitchen-manager-app.html` (budget 9)
+- `docs/architecture.md` v0.44, `docs/design.md` v0.35, `progress.md`, `package-lock.json`
+
+**Decisions locked in (owner, 15 November 2026):**
+- Alert timers set in Settings within the ranges above, with a beep switch, one-tap save, a saved dialog, and a record of who changed them last.
+- The beep: a local notification, once per alert, on every device that shows Alerts.
+- Rider load budget 9; load levels unchanged.
+- A 90-day quick choice in Reports.
+
+**Open questions / not yet decided:**
+- Whether to keep the usual alert times or raise waiting for a rider to 10 and on the road to 30 (figures above).
+- The new-order chime (design 6.2) isn’t built yet; only the attention beep is.
+
+**Next step:**
+- The owner tests the Alerts section and the beep. Then step 6: connecting the app screens to the API (the beep then comes from the live connection’s `beep` flag).
