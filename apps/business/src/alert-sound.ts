@@ -8,8 +8,14 @@ import { Platform } from "react-native";
 // when the screen is off or the app is in the background. No push service is involved: the app
 // already hears about new alerts over the live connection (architecture.md 10).
 
+// The new-order chime (design.md 6.2, KIT-02) works the same way on its own channel and tone: a
+// pleasant double chime when a new online order arrives, if the chime is on in Settings, Alerts.
+
 // Android keeps a channel's sound once it's made, so a new tone needs a new channel ID.
 const CHANNEL = "alerts-v1";
+// orders-v1 was made on the test tablet before the chime was in the app, with the phone's default
+// sound, so it's removed and orders-v2 carries the chime.
+const ORDERS = "orders-v2";
 let ready: Promise<boolean> | null = null;
 
 // Show the notification and play its sound while the app is open too.
@@ -34,6 +40,14 @@ export function prepareAlertSound() {
       importance: AndroidImportance.HIGH,
       sound: "cke_alert.wav",
       vibrationPattern: [0, 250, 150, 250],
+      lockscreenVisibility: AndroidNotificationVisibility.PUBLIC,
+    });
+    await Notifications.deleteNotificationChannelAsync("orders-v1").catch(() => {});
+    await Notifications.setNotificationChannelAsync(ORDERS, {
+      name: "New online orders",
+      description: "A chime when a new online order arrives on the board",
+      importance: AndroidImportance.HIGH,
+      sound: "cke_chime.wav",
       lockscreenVisibility: AndroidNotificationVisibility.PUBLIC,
     });
     const now = await Notifications.getPermissionsAsync();
@@ -64,5 +78,18 @@ export async function beep(title: string, body: string) {
     });
   } catch {
     // A notification that couldn't be shown; the alert is still on the Alerts screen.
+  }
+}
+
+/** Plays the new-order chime with the order's number and what's in it. */
+export async function chime(title: string, body: string) {
+  if (!(await prepareAlertSound()) && !(await alertSoundAllowed())) return;
+  try {
+    await Notifications.scheduleNotificationAsync({
+      content: { title, body, sound: "cke_chime.wav", data: { open: "board" } },
+      trigger: { channelId: ORDERS },
+    });
+  } catch {
+    // A notification that couldn't be shown; the order is still on the board.
   }
 }

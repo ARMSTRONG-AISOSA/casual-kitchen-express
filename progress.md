@@ -27,8 +27,8 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and thr
 | File | What it is | Authority |
 |---|---|---|
 | `progress.md` | This file: status, rules, next steps, log | Start here |
-| `docs/architecture.md` (v0.44) | Functions, 129 feature IDs (CUS, RID, KIT, MGR, DSP, ACC, WEB), order lifecycle, data model, the API routes built so far, decisions, free-tier limits, **locked versions (section 15)**, build order (16), **16.1 to verify at build**, seed data | Wins on anything technical |
-| `docs/design.md` (v0.35) | UI rules per app, screens, page flows, colours, components | Wins on anything visual or UX |
+| `docs/architecture.md` (v0.46) | Functions, 129 feature IDs (CUS, RID, KIT, MGR, DSP, ACC, WEB), order lifecycle, data model, the API routes built so far, decisions, free-tier limits, **locked versions (section 15)**, build order (16), **16.1 to verify at build**, seed data | Wins on anything technical |
+| `docs/design.md` (v0.37) | UI rules per app, screens, page flows, colours, components | Wins on anything visual or UX |
 | `docs/Casual-Kitchen-Express.md` (v1.10) | Brand and business, surface level only | Wins on brand (name, colours, logo, tone, menu, packaging) |
 | `docs/list-of-areas.md` | Delivery areas, boundary, landmarks, neighbourhood list | Areas still to confirm on a map |
 | `docs/photo-credits.md` | Every starting menu photo’s author, licence, and source, and the staff photos | The record the brand document asks for |
@@ -132,6 +132,8 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and thr
 
 ## 7. Open items
 
+- **Temporary test customer (15 November 2026):** `tablet.test` (user ID `tablet-test-customer`, email `tablet.test@example.com`) in the laptop database only, for placing real online orders while testing step 6 before the customer app is connected. Delete it and its orders when step 6c is tested (`deleteOrders` in `apps/api/test/cleanup.ts`, then the `account`, `customer_profile`, `address`, and `user` rows).
+
 **Owner actions, in the order they will be needed**
 1. **Cloudflare account: done (14 November 2026).** Wrangler is logged in on the laptop (`npx wrangler whoami` shows the account). The early 16.1 checks are done (items 2 and 3). The workers.dev subdomain is `casualkitchenexpress`, and staff passwords use 30,000 iterations (owner, 14 November 2026).
 2. **Google sign-in: done (14 November 2026).** Project `cke-project-514706` (no card), Google Auth Platform set up (External, in testing), and one **Web application** client “CKE API” with the redirect addresses `http://localhost:8787/api/auth/callback/google` and `https://cke-api.casualkitchenexpress.workers.dev/api/auth/callback/google`. The client ID and secret are in `apps/api/.dev.vars` (not committed); the downloaded JSON is in the owner’s Downloads folder, keep it private. Still to do with the website (step 8): the privacy policy link, then publishing the consent screen. While it is in testing, add any Google account that will test the apps under **Audience → Test users** if Google blocks it.
@@ -151,7 +153,7 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and thr
 - **Demo sign-in hints in development builds:** the Business app’s sign-in screen lists the demo accounts and the demo password only in development builds (`__DEV__`); release builds don’t show them. The rider app’s sign-in screen fills in `musa.a` and the demo password, in development builds only. Decide before release whether the public demo keeps shared demo staff accounts at all.
 
 **Known gaps and notes (no decision needed unless the owner wants one)**
-- **Alert timers (decided, 15 November 2026):** set in Settings, Alerts by dispatch officers and managers: waiting for a rider 5 to 15 minutes (usually 5), not acknowledged 1 to 5 (usually 5), in the kitchen 10 to 30 (usually 15), on the road 10 to 45 (usually 25), and a beep switch. On the three months of demo history, the usual times flag about 1 delivery in 5 as waiting for a rider and about 1 in 5 on the road (nearly all to Iguosa and Oluku, 8 to 10 km away, which take 25 to 30 minutes). Raising them to 10 and 30 minutes would roughly halve each (owner to choose; the history is re-run with whatever is saved).
+- **Alert timers (decided, 15 November 2026):** set in Settings, Alerts by dispatch officers and managers: waiting for a rider 5 to 15 minutes (usually 10), not acknowledged 1 to 5 (usually 5), in the kitchen 10 to 30 (usually 15), on the road 10 to 45 (usually 30), a beep switch, and a new-order chime switch. On the demo history the usual times flag about 1 delivery in 10 as waiting for a rider and about 11% of orders as running late.
 - **The alert beep needs the rebuilt Business app** (expo-notifications is native, 15 November 2026). The customer and rider apps didn’t change natively.
 - **Memory and CPU Proposals** (`architecture.md` 13.1): left for later (owner, 15 November 2026).
 - ~~**Hono security advisories**~~ **Done 14 November 2026:** upgraded to Hono 4.13.16 (owner approved it a day early). `npm audit` is down to 14 moderate findings, all in development tools.
@@ -187,7 +189,7 @@ The order below follows `architecture.md` 16, adjusted by the owner’s frontend
 | 4b | Sign-in and roles: Better Auth in the Worker (usernames for staff, Google for managers and customers), sessions in all three apps, a role check on every route (3.0), first-sign-in password change, manager password reset, deactivation signs a person out, the tablet’s 8:30 pm sign-out, Your profile and Sign out, the show-password eye. The early 16.1 checks (PBKDF2 timing, Durable Object alarms). | **Done** (`c694fb1` and the 14 November commit) |
 | 4c | **Orders backend:** menu management (items, prices, sold out, options), orders and status events (online and walk-in), simulated payments, refunds with the tick and refunder, cancellation requests, alerts, deliveries, the rider queue (first to accept wins), delivery codes, Durable Objects for live updates, and “only what changed” on reconnect (14.4). Split into five parts: (1) menu management and the core orders, (2) cancellations and refunds, (3) the rider queue and deliveries, (4) alerts, (5) the live connection; plus the address book and settings that checkout needs. | **Done** (15 November 2026) |
 | 5 | **Seed script:** three months of demo history (18.3), with its own checks | **Done** (15 November 2026) |
-| 6 | **Connect the screens to the API** in all three apps, replacing the demo data (**Next**); the real map (MapLibre) with the delivery boundary, push notifications (Expo and Firebase), and background location for riders | To do |
+| 6 | **Connect the screens to the API** in all three apps, replacing the demo data: (a) the Business app, (b) the rider app, (c) the customer app, (d) the real map (MapLibre) with the delivery boundary, push notifications (Expo and Firebase), and background location for riders | **6a done** (15 November 2026); 6b next |
 | 7 | Capacity rules, batching, and the demo simulator (18.4) | To do |
 | 8 | Website: turn `design/prototypes/cke-website.html` into the static GitHub Pages site | To do |
 | 9 | Reports on real data (pre-computed summaries), rider payouts, Finance, polish, the remaining 16.1 checks (battery, performance, contrast), Neon at deploy, signed release APKs (arm64-v8a and armeabi-v7a) on GitHub Releases | To do |
@@ -1149,3 +1151,31 @@ Append a new dated entry after each work session. Never edit or delete earlier e
 
 **Next step:**
 - The owner tests the Alerts section and the beep. Then step 6: connecting the app screens to the API (the beep then comes from the live connection’s `beep` flag).
+
+---
+
+## [2026-11-15] Usual alert times 10 and 30, the new-order chime, and step 6a: the Business app on live data
+
+**What was done:**
+- **The owner tested** the Alerts section and the beep: all well.
+- **Usual alert times (owner decision):** waiting for a rider 10 minutes (was 5) and on the road 30 (was 25). Shared rules, database defaults (migration `0005`, which moves only a row nobody has saved its own times on), docs. The three months of history re-run: 255 waiting-for-a-rider alerts (1 delivery in 10, was 1 in 5) and about 460 orders running late (about 11%, was 18%).
+- **The new-order chime (design 6.2, KIT-02):** a soft descending “ding-dong” made for CKE (`assets/sounds/cke_chime.wav`), on its own Android channel, once per new online order, with a notification naming the order and what’s in it (tap it to open the board). A **Chime for new online orders** switch sits under the beep in Settings, Alerts, saved with the same button and audit-logged. The API marks a new online order’s live message `chime: true` when it’s on. Needed one more Business app build (2 h 1 min while the laptop was busy). Found on the tablet: the first chime channel had been made by the previous build before the tone existed, so Android gave it the default sound and never lets an app change it; moved to `orders-v2` and the old one is deleted.
+- **Step 6a, the Business app on live data:** a live sync (`src/state/live.tsx`) loads, per role, the board, alerts, riders panel, settings, and today’s orders, keeps one WebSocket to `/live`, applies each message, catches up with `/changes` after a gap, and closes in the background; a translation layer (`src/state/mapping.ts`) turns API records into the app’s shapes (line names such as “Jollof rice with chicken” and “Efo riro with eba”, stages, timeline labels, alert wording); one actions hook (`src/state/ops.ts`) sends every action to the API. API: the staff order view now carries the rider; the client gained typed calls for orders, alerts, requests, riders, settings, and the menu. The “Demo” chip now shows only on screens still on demo figures; Demo controls on a live tablet explain that practice orders return with the simulator.
+- **Tested on the tablet against the real database** (a temporary customer `tablet.test` placed real orders; section 7): a new online order appeared on the board within seconds and chimed; acknowledge, tick (the order became Preparing), and Ready reached the database; the riders panel showed Musa online live; Assign recorded R-001 as assigned by dispatch and the panel updated to “Load 3 of 9”; a walk-in (W-001, cash) went through; the API’s timed check opened a stuck alert and the tablet beeped; Clear recorded M-001 and lifted Delayed; a customer’s cancellation request appeared live and was approved with a ₦1,500 partial refund; Sold out flipped the database and `/bootstrap`; Settings, Alerts saved to the database with the audit line and who saved it; the kitchen role (Blessing) saw the live board without loading what it isn’t allowed. Not yet tested: resolving a rider’s help request (needs the rider app, 6b).
+- **Checks:** 37 API tests pass (the live-connection test now checks the chime flag); typecheck, lint, and Prettier clean.
+
+**Files created/updated:**
+- `packages/validation/src/index.ts`, `packages/api-client/src/index.ts`
+- `apps/api/src/db/schema.ts`, `drizzle/0005_usual-times-and-chime.sql` (new), `src/live/publish.ts`, `src/routes/orders.ts`, `src/routes/settings.ts`, `src/orders/view.ts`, `test/lifecycle.test.ts`
+- `apps/business/app.json`, `assets/sounds/cke_chime.wav` (new), `src/alert-sound.ts`, `src/state/live.tsx` (new), `src/state/mapping.ts` (new), `src/state/ops.ts` (new), `src/state/store.tsx`, `src/state/catalog.tsx`, `src/data/seed.ts`, `src/ui/alert-settings.tsx`, `src/ui/alert-watch.tsx`, `src/ui/shell.tsx`, `app/(app)/_layout.tsx`, `board.tsx`, `ticket/[no].tsx`, `walk-in-pay.tsx`, `alerts.tsx`, `assign/[no].tsx`, `sold-out.tsx`, `menu.tsx`, `settings.tsx`, `order/[no].tsx`, `demo.tsx`
+- `docs/architecture.md` v0.46, `docs/design.md` v0.37, `progress.md`
+
+**Decisions locked in (owner, 15 November 2026):**
+- Usual alert times 10 minutes for a rider and 30 on the road.
+- The new-order chime built now, with its own switch.
+
+**Open questions / not yet decided:**
+- None new.
+
+**Next step:**
+- Step 6b: the rider app on live data (then 6c, the customer app, and 6d, the map, push, and background location).

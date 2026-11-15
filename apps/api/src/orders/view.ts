@@ -109,6 +109,16 @@ export async function loadOrders(db: Db, rows: OrderRow[], full: boolean) {
           .innerJoin(t.neighbourhood, eq(t.neighbourhood.id, t.address.neighbourhoodId))
           .where(inArray(t.address.id, addressIds))
       : [];
+  // The rider carrying each order, so the board's handoff view and the order list show who has it.
+  const riders = await db
+    .select({
+      orderId: t.delivery.orderId,
+      code: t.staffProfile.code,
+      name: t.staffProfile.fullName,
+    })
+    .from(t.delivery)
+    .innerJoin(t.staffProfile, eq(t.staffProfile.userId, t.delivery.riderId))
+    .where(inArray(t.delivery.orderId, ids));
   const enteredIds = [...new Set(rows.map((o) => o.enteredBy).filter((x): x is string => !!x))];
   const enterers = enteredIds.length
     ? await db
@@ -127,6 +137,7 @@ export async function loadOrders(db: Db, rows: OrderRow[], full: boolean) {
     const address = addresses.find((a) => a.id === o.addressId);
     const pay = payments.find((p) => p.orderId === o.id);
     const by = enterers.find((e) => e.userId === o.enteredBy);
+    const rider = riders.find((r) => r.orderId === o.id);
     return {
       id: o.id,
       number: o.number,
@@ -164,6 +175,7 @@ export async function loadOrders(db: Db, rows: OrderRow[], full: boolean) {
           }
         : null,
       enteredBy: by ? { code: by.code, name: by.name } : null,
+      rider: rider ? { code: rider.code, name: rider.name } : null,
       ...(full
         ? {
             payment: pay

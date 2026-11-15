@@ -384,8 +384,16 @@ export const CUSTOMERS: Customer[] = [
 ];
 
 export type OrderStatus = "new" | "preparing" | "ready" | "out" | "done" | "cancelled";
-export type Line = { name: string; qty: number; station: Station; ticked: boolean };
-export type Event = { label: string; at: number; by: string };
+export type Line = {
+  name: string;
+  qty: number;
+  station: Station;
+  ticked: boolean;
+  /** The line's database ID, once the order comes from the API (ticking a line sends it). */
+  id?: string;
+};
+/** A timeline entry. `byName` comes with the API, so names show without the staff list. */
+export type Event = { label: string; at: number; by: string; byName?: string };
 
 export type Order = {
   no: string;
@@ -405,10 +413,36 @@ export type Order = {
   events: Event[];
   cancelRequested?: boolean;
   refunded?: number;
+  /** From the API (build step 6): the order's database ID, its load, and its rider's name. */
+  id?: string;
+  load?: number;
+  riderName?: string;
+  /** "Running a little late" or another exception the customer sees (4.3). */
+  exception?: "delayed" | "item_unavailable" | "delivery_issue" | null;
+  /** A row from the order list, without its lines yet: the detail screen fetches the rest. */
+  partial?: boolean;
+  /** Refunds with who made them, from the order detail (MGR-15). */
+  refunds?: {
+    amount: number;
+    kind: "full" | "partial";
+    reason: string;
+    at: number;
+    by: string;
+    byName: string;
+    byRole: string;
+  }[];
+  customerPhone?: string;
+  address?: {
+    label: string;
+    street: string | null;
+    landmark: string | null;
+    neighbourhood: string;
+  };
 };
 
 export const orderTotal = (o: Order) => o.food + o.fee;
 export const orderLoad = (o: Order) =>
+  o.load ??
   o.lines.reduce(
     (a, l) =>
       a +
@@ -519,7 +553,8 @@ export function seedOrders(now = Date.now()): Order[] {
   ];
 }
 
-export type Rider = { id: string; online: boolean };
+/** A rider on the riders panel. The name and phone come with the API (DSP-03). */
+export type Rider = { id: string; online: boolean; name?: string; phone?: string | null };
 
 export const RIDERS_ONLINE: Rider[] = [
   { id: "R-001", online: true },
@@ -535,6 +570,9 @@ export type Alert = {
   orderNo: string;
   text: string;
   at: number;
+  /** From the API: the request to decide (cancellation or help), and the order's database ID. */
+  requestId?: string;
+  orderId?: string;
 };
 
 export const seedAlerts = (now = Date.now()): Alert[] => [

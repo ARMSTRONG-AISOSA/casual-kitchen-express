@@ -5,7 +5,8 @@ import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { Order, OrderStatus } from "../../src/data/seed";
-import { acknowledge, firstName, minsAgo, useStore } from "../../src/state/store";
+import { useOps } from "../../src/state/ops";
+import { firstName, minsAgo, useStore } from "../../src/state/store";
 import { useTheme } from "../../src/state/theme";
 import { Badge, Button, Chip, Chips, StatusPill, T } from "../../src/ui/kit";
 import { useToast } from "../../src/ui/toast";
@@ -28,7 +29,8 @@ const typeLabel = (o: Order) =>
 
 // The order board (KIT-01): New, Preparing, Ready. Tap a new ticket to acknowledge it.
 export default function Board() {
-  const { s, set } = useStore();
+  const { s } = useStore();
+  const ops = useOps();
   const t = useTheme();
   const toast = useToast();
   const { width } = useWindowDimensions();
@@ -38,7 +40,7 @@ export default function Board() {
 
   const open = (o: Order) => {
     if (o.status === "new") {
-      set((st) => acknowledge(st, o.no));
+      ops.acknowledge(o.no);
       toast(`${o.no} acknowledged`);
     } else router.push(`/ticket/${o.no}`);
   };

@@ -2,7 +2,8 @@ import { naira } from "@cke/brand-tokens";
 import { DEFAULTS } from "@cke/validation";
 import { useState } from "react";
 import { AREAS } from "../../src/data/seed";
-import { log, myRole, useStore } from "../../src/state/store";
+import { useOps } from "../../src/state/ops";
+import { myRole, useStore } from "../../src/state/store";
 import {
   Button,
   Card,
@@ -21,7 +22,8 @@ import { useToast } from "../../src/ui/toast";
 // Settings (design.md 7.2). Dispatch officers see every section, Alerts included, except Pricing and pay and
 // Restaurant contact, which are for managers only (architecture.md 3.0).
 export default function Settings() {
-  const { s, set } = useStore();
+  const { s } = useStore();
+  const ops = useOps();
   const toast = useToast();
   const manager = myRole(s) === "manager";
   const st = s.settings;
@@ -32,8 +34,7 @@ export default function Settings() {
   const payN = Number(pay.replace(/[^0-9]/g, ""));
   const payTooHigh = payN > feeN;
   const waOk = /^234\d{10}$/.test(wa.replace(/\D/g, ""));
-  const change = (patch: Partial<typeof st>, what: string) =>
-    set((x) => ({ settings: { ...x.settings, ...patch }, ...log(x, "setting", what) }));
+  const change = (patch: Partial<typeof st>, what: string) => ops.setting(patch, what);
 
   return (
     <Page>
@@ -60,7 +61,7 @@ export default function Settings() {
           <T v="small" muted>
             From Uselu to Oluku Market. Nothing beyond Oluku Market.
           </T>
-          {AREAS.map((a) => (
+          {(s.live ? Object.keys(st.areas) : AREAS).map((a) => (
             <SwitchRow
               key={a}
               label={a}

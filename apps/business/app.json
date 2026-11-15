@@ -39,7 +39,7 @@
         {
           "icon": "../../brand/cke-logo-package/logo/png/cke-icon-mono-charcoal.png",
           "color": "#C83F2D",
-          "sounds": ["./assets/sounds/cke_alert.wav"]
+          "sounds": ["./assets/sounds/cke_alert.wav", "./assets/sounds/cke_chime.wav"]
         }
       ],
       "../../tools/expo-plugins/with-android-architectures.js"

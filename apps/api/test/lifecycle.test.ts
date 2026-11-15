@@ -154,6 +154,7 @@ beforeAll(async () => {
     riderPay: s!.riderPay,
     cancellationLimit: s!.cancellationLimit,
     alertSound: s!.alertSound,
+    alertChime: s!.alertChime,
     alertRiderMin: s!.alertRiderMin,
     alertAcknowledgeMin: s!.alertAcknowledgeMin,
     alertKitchenMin: s!.alertKitchenMin,
@@ -691,8 +692,11 @@ describe("alerts and the live connection", () => {
     const r = await live(musa);
     await k.waitFor((m) => m.type === "hello");
     const o = await placeDelivery();
-    // The kitchen sees the new order; the customer sees their own.
-    await k.waitFor((m) => m.type === "order" && (m.order as Order).id === o.id);
+    // The kitchen sees the new order, with the new-order chime (on by default); the customer sees
+    // their own.
+    await k.waitFor(
+      (m) => m.type === "order" && (m.order as Order).id === o.id && m.chime === true,
+    );
     await cu.waitFor((m) => m.type === "order" && (m.order as Order).id === o.id);
     await acknowledge(o.id);
     await cu.waitFor(
@@ -791,7 +795,7 @@ describe("settings", () => {
 });
 
 describe("alert settings", () => {
-  const usual = { sound: true, rider: 5, acknowledge: 5, kitchen: 15, road: 25 };
+  const usual = { sound: true, chime: true, rider: 5, acknowledge: 5, kitchen: 15, road: 25 };
   it("saves the section in one go, within the ranges, and records who changed it", async () => {
     // Kitchen staff can't change them; dispatch and managers can.
     expect((await call("/settings/alerts", kitchen, { method: "PUT", body: usual })).status).toBe(

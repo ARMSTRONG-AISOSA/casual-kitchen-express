@@ -3,16 +3,8 @@ import { router } from "expo-router";
 import { useState } from "react";
 import { View } from "react-native";
 import { orderTotal, type Alert } from "../../src/data/seed";
-import {
-  actorLabel,
-  cancelOrder,
-  clearAlert,
-  findOrder,
-  log,
-  minsAgo,
-  myRole,
-  useStore,
-} from "../../src/state/store";
+import { useOps } from "../../src/state/ops";
+import { actorLabel, findOrder, minsAgo, myRole, useStore } from "../../src/state/store";
 import { Button, Card, ConfirmTick, Page, Row, Sheet, StatusPill, T } from "../../src/ui/kit";
 import { NEW_PICK, RefundPicker, refundFor, type RefundPick } from "../../src/ui/refund";
 import { useToast } from "../../src/ui/toast";
@@ -21,7 +13,8 @@ import { useToast } from "../../src/ui/toast";
 // Settings, Alerts), rider help requests, and cancellation requests.
 // Dispatch officers and managers act on them; kitchen staff see them.
 export default function Alerts() {
-  const { s, set } = useStore();
+  const { s } = useStore();
+  const ops = useOps();
   const toast = useToast();
   const role = myRole(s);
   const acts = role === "dispatch" || role === "manager";
@@ -84,13 +77,7 @@ export default function Alerts() {
                     label="Clear"
                     variant="ghost"
                     small
-                    onPress={() => {
-                      set((st) => ({
-                        ...clearAlert(st, a.id),
-                        ...log(st, "account", `Cleared the late alert for ${a.orderNo}`),
-                      }));
-                      toast("Alert cleared");
-                    }}
+                    onPress={() => (ops.clearAlert(a), toast("Alert cleared"))}
                   />
                 ) : null}
                 {a.kind === "help" ? (
@@ -98,35 +85,16 @@ export default function Alerts() {
                     <Button
                       label="Approve completion"
                       small
-                      onPress={() => {
-                        set((st) => ({
-                          ...clearAlert(st, a.id),
-                          orders: st.orders.map((x) =>
-                            x.no === a.orderNo
-                              ? {
-                                  ...x,
-                                  status: "done",
-                                  events: [
-                                    ...x.events,
-                                    {
-                                      label: "Completed by approval",
-                                      at: Date.now(),
-                                      by: st.userId ?? "",
-                                    },
-                                  ],
-                                }
-                              : x,
-                          ),
-                          ...log(st, "account", `Approved a manual completion for ${a.orderNo}`),
-                        }));
-                        toast(`${a.orderNo} completed`);
-                      }}
+                      onPress={() => (
+                        ops.resolveHelp(a, "manual_completion"),
+                        toast(`${a.orderNo} completed`)
+                      )}
                     />
                     <Button
                       label="Keep open"
                       variant="ghost"
                       small
-                      onPress={() => (set((st) => clearAlert(st, a.id)), toast("Kept open"))}
+                      onPress={() => (ops.resolveHelp(a, "kept_open"), toast("Kept open"))}
                     />
                   </>
                 ) : null}
@@ -141,17 +109,10 @@ export default function Alerts() {
                       label="Decline"
                       variant="ghost"
                       small
-                      onPress={() => {
-                        set((st) => ({
-                          ...clearAlert(st, a.id),
-                          ...log(
-                            st,
-                            "account",
-                            `Declined the cancellation request for ${a.orderNo}`,
-                          ),
-                        }));
-                        toast("Request declined. The customer is told.");
-                      }}
+                      onPress={() => (
+                        ops.declineCancel(a),
+                        toast("Request declined. The customer is told.")
+                      )}
                     />
                   </>
                 ) : null}
@@ -204,10 +165,7 @@ export default function Alerts() {
           style={{ marginTop: 16 }}
           onPress={() => {
             const a = approving!;
-            set((st) => ({
-              ...cancelOrder(st, a.orderNo, "Customer request approved", amount ?? undefined),
-              ...clearAlert(st, a.id),
-            }));
+            ops.approveCancel(a, pick, amount ?? undefined);
             setApproving(null);
             toast(`${a.orderNo} cancelled and ${naira(amount ?? 0)} refunded`);
           }}

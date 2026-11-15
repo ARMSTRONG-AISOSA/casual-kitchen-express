@@ -1,8 +1,8 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { orderLoad } from "../../../src/data/seed";
+import { useOps } from "../../../src/state/ops";
 import {
-  assignRider,
   findOrder,
   nameOf,
   riderFits,
@@ -16,7 +16,8 @@ import { useToast } from "../../../src/ui/toast";
 // Assign to a rider (DSP-05): only online riders whose remaining capacity fits the order.
 export default function Assign() {
   const { no } = useLocalSearchParams<{ no: string }>();
-  const { s, set } = useStore();
+  const { s } = useStore();
+  const ops = useOps();
   const toast = useToast();
   const [pick, setPick] = useState<string | null>(null);
   const o = findOrder(s, no);
@@ -77,7 +78,7 @@ export default function Assign() {
           label="Assign"
           style={{ marginTop: 16 }}
           onPress={() => {
-            set((st) => assignRider(st, o.no, pick ?? ""));
+            ops.assign(o.no, pick ?? "");
             toast(`${o.no} assigned to ${nameOf(s, pick ?? "")}`);
             setPick(null);
             router.back();

@@ -2,18 +2,23 @@ import { naira } from "@cke/brand-tokens";
 import { router, useLocalSearchParams } from "expo-router";
 import { goTo } from "../../../src/ui/nav";
 import { ChevronLeft, MessageCircle, Phone } from "lucide-react-native";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { View } from "react-native";
-import { CUSTOMERS, orderTotal } from "../../../src/data/seed";
+import {
+  CUSTOMERS,
+  ROLE_LABEL,
+  orderTotal,
+  type Customer,
+  type Role,
+} from "../../../src/data/seed";
+import { useOps } from "../../../src/state/ops";
 import {
   actorLabel,
-  cancelOrder,
   clock,
   findOrder,
   log,
   myRole,
   nameOf,
-  partialRefund,
   useStore,
 } from "../../../src/state/store";
 import {
@@ -52,14 +57,34 @@ export default function OrderDetail() {
   const [pick, setPick] = useState<RefundPick>(NEW_PICK);
   const [reason, setReason] = useState<string | null>(null);
   const [sure, setSure] = useState(false);
+  const ops = useOps();
   const o = findOrder(s, no);
+  // Live: the full record (timeline, payment, refunds, customer card) is fetched on opening.
+  const loadDetail = ops.loadDetail;
+  useEffect(() => {
+    void loadDetail(no);
+    // Only when a different order opens, or the order first arrives in the list.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [no, !!o]);
   if (!o)
     return (
       <Page>
         <T>Order not found.</T>
       </Page>
     );
-  const c = CUSTOMERS.find((x) => x.id === o.customerId);
+  // The customer card: from the order itself when live, from the demo customers otherwise.
+  const c: Customer | undefined = s.live
+    ? o.channel === "online" && o.customerId
+      ? {
+          id: o.customerId,
+          name: o.name ?? "",
+          phone: o.customerPhone ?? "",
+          label: o.address?.label ?? "",
+          area: o.address?.neighbourhood ?? "",
+          landmark: o.address?.landmark ?? o.address?.street ?? "",
+        }
+      : undefined
+    : CUSTOMERS.find((x) => x.id === o.customerId);
   const waiting = o.status === "ready" && o.type === "delivery" && !o.riderId;
   const pendingCancel = s.alerts.find((a) => a.kind === "cancel" && a.orderNo === o.no);
 
@@ -76,7 +101,10 @@ export default function OrderDetail() {
     toast(`In the real app this ${how === "Call" ? "calls" : "opens WhatsApp with"} ${c.name}`);
   };
 
-  const refunds = s.refunds.filter((r) => r.orderNo === o.no);
+  const refunds = (o.refunds ?? s.refunds.filter((r) => r.orderNo === o.no)).map((r) => ({
+    ...r,
+    byRole: ROLE_LABEL[r.byRole as Role] ?? r.byRole,
+  }));
   const paid = orderTotal(o);
   const left = paid - (o.refunded ?? 0);
   const { amount } = refundFor(pick, paid, left);
@@ -97,7 +125,7 @@ export default function OrderDetail() {
       </Row>
       <T muted>
         {o.channel === "walkin" ? "Walk-in" : "Online"}, placed {clock(o.placedAt)}
-        {o.riderId ? `, rider ${nameOf(s, o.riderId)} (${o.riderId})` : ""}
+        {o.riderId ? `, rider ${o.riderName ?? nameOf(s, o.riderId)} (${o.riderId})` : ""}
       </T>
 
       {c ? (
@@ -149,6 +177,7 @@ export default function OrderDetail() {
 
       <Section title="Items">
         <Card style={{ marginTop: 0 }}>
+          {o.partial ? <T muted>Loading the order…</T> : null}
           {o.lines.map((l, i) => (
             <KV key={i} k={`${l.qty} × ${l.name}`} v="" />
           ))}
@@ -182,7 +211,13 @@ export default function OrderDetail() {
             <KV
               key={i}
               k={`${clock(e.at)}  ${e.label}`}
-              v={e.by === "System" ? "System" : `${nameOf(s, e.by)}, ${e.by}`}
+              v={
+                e.byName && (e.by === "System" || !e.by)
+                  ? e.byName
+                  : e.by === "System"
+                    ? "System"
+                    : `${e.byName ?? nameOf(s, e.by)}, ${e.by}`
+              }
             />
           ))}
         </Card>
@@ -227,11 +262,7 @@ export default function OrderDetail() {
           style={{ marginTop: 16 }}
           onPress={() => {
             if (!amount) return;
-            set((st) =>
-              pick.kind === "full"
-                ? cancelOrder(st, o.no, reason ?? "")
-                : partialRefund(st, o.no, amount, reason ?? ""),
-            );
+            ops.refund(o.no, reason ?? "", pick, amount);
             setRefund(false);
             toast(`Refund of ${naira(amount)} recorded`);
           }}

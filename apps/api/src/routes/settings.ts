@@ -58,6 +58,7 @@ async function alertsView(db: Db) {
   const s = r!.s;
   return {
     sound: s.alertSound,
+    chime: s.alertChime,
     rider: s.alertRiderMin,
     acknowledge: s.alertAcknowledgeMin,
     kitchen: s.alertKitchenMin,
@@ -119,6 +120,7 @@ export const settings = new Hono<Ctx>()
         const [s] = await tx.select().from(t.setting).where(eq(t.setting.id, 1)).for("update");
         const was = {
           sound: s!.alertSound,
+          chime: s!.alertChime,
           rider: s!.alertRiderMin,
           acknowledge: s!.alertAcknowledgeMin,
           kitchen: s!.alertKitchenMin,
@@ -130,6 +132,7 @@ export const settings = new Hono<Ctx>()
           .update(t.setting)
           .set({
             alertSound: b.sound,
+            alertChime: b.chime,
             alertRiderMin: b.rider,
             alertAcknowledgeMin: b.acknowledge,
             alertKitchenMin: b.kitchen,

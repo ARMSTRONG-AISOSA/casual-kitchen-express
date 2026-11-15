@@ -4,16 +4,8 @@ import { Check } from "lucide-react-native";
 import { useState } from "react";
 import { Pressable, View } from "react-native";
 import { orderTotal, type Station } from "../../../src/data/seed";
-import {
-  actorLabel,
-  cancelOrder,
-  findOrder,
-  firstName,
-  markCollected,
-  markReady,
-  tick,
-  useStore,
-} from "../../../src/state/store";
+import { useOps } from "../../../src/state/ops";
+import { actorLabel, findOrder, firstName, useStore } from "../../../src/state/store";
 import { useTheme } from "../../../src/state/theme";
 import {
   Button,
@@ -41,7 +33,8 @@ const REASONS = [
 // Ticket detail (design.md 6.4): items by station with one tap per tick, then Ready or Collected.
 export default function Ticket() {
   const { no } = useLocalSearchParams<{ no: string }>();
-  const { s, set } = useStore();
+  const { s } = useStore();
+  const ops = useOps();
   const t = useTheme();
   const toast = useToast();
   const [cancel, setCancel] = useState(false);
@@ -87,7 +80,7 @@ export default function Ticket() {
             {lines.map(({ l, i }) => (
               <Pressable
                 key={i}
-                onPress={() => set((x) => tick(x, o.no, i))}
+                onPress={() => ops.tick(o, i)}
                 disabled={o.status !== "preparing"}
                 accessibilityRole="checkbox"
                 accessibilityState={{ checked: l.ticked }}
@@ -123,7 +116,7 @@ export default function Ticket() {
           <Button
             label="Ready"
             onPress={() => {
-              set((x) => markReady(x, o.no));
+              ops.ready(o.no);
               toast(
                 o.type === "delivery"
                   ? `${o.no} is in the rider queue`
@@ -137,7 +130,7 @@ export default function Ticket() {
           <Button
             label="Collected"
             onPress={() => {
-              set((x) => markCollected(x, o.no));
+              ops.collected(o.no);
               toast(`${o.no} collected`);
               router.back();
             }}
@@ -187,7 +180,7 @@ export default function Ticket() {
           disabled={!reason || !sure || !amount}
           style={{ marginTop: 16 }}
           onPress={() => {
-            set((x) => cancelOrder(x, o.no, reason ?? "", amount ?? undefined));
+            ops.cancel(o.no, reason ?? "", pick, amount ?? undefined);
             setCancel(false);
             toast(`${o.no} cancelled and ${naira(amount ?? 0)} refunded`);
             router.back();

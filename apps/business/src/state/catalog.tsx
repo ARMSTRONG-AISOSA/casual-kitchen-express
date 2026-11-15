@@ -3,6 +3,7 @@ import { useEffect, type ReactNode } from "react";
 import { AppState } from "react-native";
 import { api } from "../api";
 import type { Person } from "../data/seed";
+import { CATALOG_NAME } from "../ui/thumb";
 import { myRole, useStore } from "./store";
 
 // Server data goes through TanStack Query (architecture.md 14). The catalog is fetched when the app
@@ -36,7 +37,27 @@ function CatalogSync() {
     enabled: !!api,
     queryFn: async () => {
       const b = await api!.bootstrap();
-      set({
+      const items = b.menu.flatMap((c) => c.items);
+      // The app's dishes take their price (with the default choice), load, and sold-out flag
+      // from the menu in the database (MGR-05, KIT-09).
+      set((st) => ({
+        menu: st.menu.map((m) => {
+          const name =
+            m.id === "soup"
+              ? "Soup of the day"
+              : m.id === "xsoup"
+                ? "Extra soup"
+                : CATALOG_NAME[m.id];
+          const item = items.find((i) => i.name === name);
+          if (!item) return m;
+          const usual = item.options.find((o) => o.isDefault);
+          return {
+            ...m,
+            price: item.price + (usual?.priceChange ?? 0),
+            load: item.load as 1 | 2 | 3,
+            soldOut: !item.available,
+          };
+        }),
         soups: b.soups,
         soupToday: b.soupOfTheDay?.name ?? b.soups[0]?.name ?? "",
         catalogFrom: "api",
@@ -46,7 +67,7 @@ function CatalogSync() {
             x.imageId ? [[x.name, api!.mediaUrl(x.imageId)]] : [],
           ),
         ),
-      });
+      }));
       return b;
     },
   });

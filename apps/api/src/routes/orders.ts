@@ -481,7 +481,7 @@ export const myOrders = new Hono<Ctx>()
             }
           : {},
     );
-    send(c, await orderMessages(db, c.env.BETTER_AUTH_SECRET, [o.id]));
+    send(c, await orderMessages(db, c.env.BETTER_AUTH_SECRET, [o.id], { newOnline: true }));
     return c.json({ order: await customerView(db, c.env.BETTER_AUTH_SECRET, o) }, 201);
   })
 

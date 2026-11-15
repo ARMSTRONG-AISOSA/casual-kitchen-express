@@ -93,6 +93,165 @@ export type Bootstrap = {
   }[];
 };
 
+/* ---------- orders, alerts, riders, and settings (build step 6) ---------- */
+
+export type OrderStatus =
+  | "placed"
+  | "confirmed"
+  | "acknowledged"
+  | "preparing"
+  | "ready"
+  | "ready_for_collection"
+  | "rider_accepted"
+  | "picked_up"
+  | "arriving"
+  | "delivered"
+  | "collected"
+  | "cancelled";
+
+/** An order as staff see it (the board, the live connection, and the order detail). */
+export type StaffOrder = {
+  id: string;
+  number: string;
+  businessDate: string;
+  channel: "online" | "walkin";
+  type: "delivery" | "pickup" | "eat_in" | "take_away";
+  status: OrderStatus;
+  exception: "delayed" | "item_unavailable" | "delivery_issue" | null;
+  foodTotal: number;
+  deliveryFee: number;
+  total: number;
+  paymentMethod: "card" | "transfer" | "cash";
+  label: string | null;
+  placedAt: string;
+  readyAt: string | null;
+  load: number;
+  items: {
+    id: string;
+    name: string;
+    unitPrice: number;
+    quantity: number;
+    options: string[];
+    station: "rice" | "soups_and_swallows" | "snacks_and_drinks";
+    ticked: boolean;
+  }[];
+  customer: {
+    code: string;
+    name: string;
+    phone?: string;
+    address?: {
+      label: string;
+      street: string | null;
+      landmark: string | null;
+      neighbourhood: string;
+    };
+  } | null;
+  enteredBy: { code: string; name: string } | null;
+  rider: { code: string; name: string } | null;
+  version: number;
+  /** The order detail only. */
+  payment?: {
+    method: string;
+    amount: number;
+    cashReceived: number | null;
+    changeDue: number | null;
+  } | null;
+  refunds?: {
+    amount: number;
+    kind: "full" | "partial";
+    reason: string;
+    at: string | null;
+    by: { code: string; name: string; role: string } | null;
+  }[];
+  events?: {
+    status: OrderStatus;
+    at: string;
+    by:
+      { kind: "staff"; code: string | null; name: string | null } | { kind: "customer" | "system" };
+  }[];
+};
+
+/** A row in the order list (any date range). */
+export type OrderRow = Pick<
+  StaffOrder,
+  | "id"
+  | "number"
+  | "businessDate"
+  | "channel"
+  | "type"
+  | "status"
+  | "exception"
+  | "total"
+  | "paymentMethod"
+  | "placedAt"
+  | "label"
+> & { customerCode: string | null; customerName: string | null; enteredByCode: string | null };
+
+export type AlertView = {
+  id: string;
+  kind: "unaccepted" | "stuck" | "item_unavailable" | "cancellation_request" | "help_request";
+  createdAt: string;
+  cleared: boolean;
+  requestId: string | null;
+  order: { id: string; number: string; channel: string; status: OrderStatus } | null;
+  customerName: string | null;
+  reason: string | null;
+  rider: { code: string; name: string } | null;
+  version: number;
+};
+
+export type RiderPanel = {
+  code: string;
+  name: string;
+  phone: string | null;
+  online: boolean;
+  budget: number;
+  load: number;
+  carrying: { orderId: string; number: string; status: string; neighbourhood: string }[];
+  version: number;
+};
+
+export type AlertSettingsView = {
+  sound: boolean;
+  chime: boolean;
+  rider: number;
+  acknowledge: number;
+  kitchen: number;
+  road: number;
+  updatedAt: string | null;
+  updatedBy: { name: string; code: string } | null;
+};
+
+export type SettingsView = {
+  settings: {
+    onlineHours: [string, string];
+    walkinHours: [string, string];
+    paused: boolean;
+    pausedUntil: string | null;
+    capacityBudget: number;
+    batchDistanceM: number;
+    trackingMode: "light" | "milestones";
+    cancellationLimit: number;
+    deliveryFee: number;
+    riderPay: number;
+    whatsappNumber: string;
+  };
+  alerts: AlertSettingsView;
+  areas: { id: string; name: string; inRange: boolean }[];
+};
+
+export type RefundChoice =
+  { kind: "full" } | { kind: "partial"; amount: number } | { kind: "none" };
+
+/** What arrives over the live connection (GET /live). */
+export type LiveMessage =
+  | { type: "hello" }
+  | { type: "order"; order: StaffOrder; version: number; chime?: boolean }
+  | { type: "alert"; alert: AlertView; version: number; beep?: boolean }
+  | { type: "rider"; rider: RiderPanel; version: number }
+  | { type: "catalog"; version: number }
+  | { type: "alert-settings"; alerts: AlertSettingsView };
+
 export function createApiClient({ baseUrl, getHeaders, onUnauthorized }: ApiClientOptions) {
   /** Headers for an image request, so staff photos (staff only) load too. */
   const imageHeaders = () => getHeaders?.() ?? {};
@@ -241,6 +400,76 @@ export function createApiClient({ baseUrl, getHeaders, onUnauthorized }: ApiClie
           sourceUrl: string | null;
         }[];
       }>("/staff/photos"),
+
+    /* ----- orders (staff) ----- */
+    board: () => request<{ orders: StaffOrder[]; latest: number }>("/orders/board"),
+    orderList: (q: Record<string, string>) =>
+      request<{ orders: OrderRow[]; count: number; totalValue: number; nextCursor: string | null }>(
+        `/orders?${new URLSearchParams(q).toString()}`,
+      ),
+    order: (id: string) => request<{ order: StaffOrder }>(`/orders/${id}`),
+    acknowledge: (id: string) => post<{ order: StaffOrder }>(`/orders/${id}/acknowledge`),
+    tickItem: (id: string, itemId: string, ticked: boolean) =>
+      request<{ order: StaffOrder }>(`/orders/${id}/items/${itemId}`, {
+        method: "PUT",
+        body: JSON.stringify({ ticked }),
+      }),
+    ready: (id: string) => post<{ order: StaffOrder }>(`/orders/${id}/ready`),
+    collected: (id: string) => post<{ order: StaffOrder }>(`/orders/${id}/collected`),
+    walkIn: (body: {
+      type: "eat_in" | "take_away";
+      label?: string;
+      items: { itemId: string; quantity: number; optionIds?: string[] }[];
+      payment: { method: "cash"; received: number } | { method: "card" | "transfer" };
+    }) => post<{ order: StaffOrder }>("/orders/walk-in", body),
+    cancelOrder: (id: string, reason: string, refund?: RefundChoice) =>
+      post<{ ok: true }>(`/orders/${id}/cancel`, { reason, confirm: true, refund }),
+    refundOrder: (id: string, refund: RefundChoice, reason: string) =>
+      post<{ ok: true }>(`/orders/${id}/refunds`, { refund, reason, confirm: true }),
+    itemUnavailable: (id: string, itemId: string) =>
+      post<{ ok: true }>(`/orders/${id}/item-unavailable`, { itemId }),
+    /** What changed since change number `since` (reconnecting, 14.4 decision 4). */
+    changes: (since: number) =>
+      request<{ orders: StaffOrder[]; alerts: AlertView[]; latest: number; reload: boolean }>(
+        `/changes?since=${since}`,
+      ),
+    /** The live connection's address (ws:// or wss://). */
+    liveUrl: () => new URL("/live", baseUrl).toString().replace(/^http/, "ws"),
+
+    /* ----- alerts, requests, riders ----- */
+    alerts: () => request<{ alerts: AlertView[] }>("/alerts"),
+    clearAlert: (id: string) => post<{ ok: true }>(`/alerts/${id}/clear`),
+    approveRequest: (id: string, refund?: RefundChoice) =>
+      post<{ ok: true }>(`/cancellation-requests/${id}/approve`, { confirm: true, refund }),
+    declineRequest: (id: string) => post<{ ok: true }>(`/cancellation-requests/${id}/decline`),
+    resolveHelp: (id: string, resolution: "manual_completion" | "kept_open") =>
+      post<{ ok: true }>(`/help-requests/${id}/resolve`, { resolution }),
+    riders: () => request<{ riders: RiderPanel[] }>("/riders"),
+    assign: (orderId: string, riderCode: string) =>
+      post<{ ok: true }>(`/orders/${orderId}/assign`, { riderCode }),
+
+    /* ----- settings and the menu ----- */
+    settings: () => request<SettingsView>("/settings"),
+    changeSettings: (changes: Partial<SettingsView["settings"]>) =>
+      request<{ settings: SettingsView["settings"] }>("/settings", {
+        method: "PATCH",
+        body: JSON.stringify(changes),
+      }),
+    saveAlertSettings: (a: Omit<AlertSettingsView, "updatedAt" | "updatedBy">) =>
+      request<{ alerts: AlertSettingsView; changed: boolean }>("/settings/alerts", {
+        method: "PUT",
+        body: JSON.stringify(a),
+      }),
+    setArea: (id: string, inRange: boolean) =>
+      request<{ area: { id: string; inRange: boolean } }>(`/settings/areas/${id}`, {
+        method: "PUT",
+        body: JSON.stringify({ inRange }),
+      }),
+    setAvailability: (itemId: string, available: boolean) =>
+      request<{ ok: true }>(`/menu/items/${itemId}/availability`, {
+        method: "PUT",
+        body: JSON.stringify({ available }),
+      }),
     /** KIT-17: kitchen staff and managers pick today's soup. */
     setSoupOfTheDay: (soupId: string) =>
       request<{ soupOfTheDay: Soup }>("/settings/soup-of-the-day", {

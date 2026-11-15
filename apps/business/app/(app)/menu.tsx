@@ -3,6 +3,7 @@ import { router } from "expo-router";
 import { useState } from "react";
 import { Pressable, Switch, View } from "react-native";
 import { CATEGORIES } from "../../src/data/seed";
+import { useOps } from "../../src/state/ops";
 import { useStore } from "../../src/state/store";
 import { useTheme } from "../../src/state/theme";
 import { Button, Card, Page, Section, T } from "../../src/ui/kit";
@@ -14,7 +15,8 @@ import { useToast } from "../../src/ui/toast";
 
 // Menu list (MGR-05, MGR-07): categories and items with prices and a one-tap sold-out switch.
 export default function Menu() {
-  const { s, set } = useStore();
+  const { s } = useStore();
+  const ops = useOps();
   const t = useTheme();
   const toast = useToast();
   const [photoFor, setPhotoFor] = useState<{ id: string; name: string } | null>(null);
@@ -77,11 +79,7 @@ export default function Menu() {
                   </T>
                   <Switch
                     value={!m.soldOut}
-                    onValueChange={(on) =>
-                      set((st) => ({
-                        menu: st.menu.map((x) => (x.id === m.id ? { ...x, soldOut: !on } : x)),
-                      }))
-                    }
+                    onValueChange={(on) => ops.soldOut(m.id, !on)}
                     accessibilityLabel={`${m.name} available`}
                     trackColor={{ true: t.success, false: t.line }}
                     thumbColor="#FFFFFF"

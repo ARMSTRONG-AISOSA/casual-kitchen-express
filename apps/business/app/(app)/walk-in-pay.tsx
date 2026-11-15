@@ -1,7 +1,8 @@
 import { naira } from "@cke/brand-tokens";
 import { router } from "expo-router";
 import { useState } from "react";
-import { draftTotal, placeWalkIn, useStore } from "../../src/state/store";
+import { useOps } from "../../src/state/ops";
+import { draftTotal, useStore } from "../../src/state/store";
 import {
   Button,
   Card,
@@ -17,7 +18,9 @@ import {
 
 // Take payment (KIT-14): cash with change due, or online, all simulated.
 export default function WalkInPay() {
-  const { s, set } = useStore();
+  const { s } = useStore();
+  const ops = useOps();
+  const [sending, setSending] = useState(false);
   const total = draftTotal(s);
   const [method, setMethod] = useState<"cash" | "online">("cash");
   const [online, setOnline] = useState<"card" | "transfer">("card");
@@ -34,15 +37,14 @@ export default function WalkInPay() {
       </Page>
     );
 
-  const confirm = () => {
-    set((st) =>
-      placeWalkIn(
-        st,
-        method === "cash" ? "cash" : online,
-        method === "cash" ? (received ?? total) : undefined,
-      ),
+  const confirm = async () => {
+    setSending(true);
+    const ok = await ops.placeWalkIn(
+      method === "cash" ? "cash" : online,
+      method === "cash" ? (received ?? total) : undefined,
     );
-    router.replace("/walk-in-sent");
+    setSending(false);
+    if (ok) router.replace("/walk-in-sent");
   };
 
   return (
@@ -100,10 +102,10 @@ export default function WalkInPay() {
         <DemoNote text="Demo payment. No money is taken." />
       </Card>
       <Button
-        label="Confirm"
+        label={sending ? "Sending…" : "Confirm"}
         style={{ marginTop: 18 }}
-        disabled={method === "cash" && (received === null || tooLow)}
-        onPress={confirm}
+        disabled={sending || (method === "cash" && (received === null || tooLow))}
+        onPress={() => void confirm()}
       />
     </Page>
   );

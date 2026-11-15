@@ -36,7 +36,8 @@ export const DEFAULTS = {
 /**
  * Alert timers (MGR-14, owner decision 15 November 2026): how many minutes an order can sit in a
  * stage before an alert opens, each with the range dispatch officers and managers can set in
- * Settings, Alerts.
+ * Settings, Alerts. The usual times are 10, 5, 15, and 30 minutes (owner, 15 November 2026: waiting
+ * for a rider was 5 and on the road 25, which flagged about 1 delivery in 5 each on the demo history).
  */
 export const ALERT_TIMERS = {
   rider: {
@@ -44,7 +45,7 @@ export const ALERT_TIMERS = {
     from: "after the food is ready",
     min: 5,
     max: 15,
-    usual: 5,
+    usual: 10,
   },
   acknowledge: {
     label: "Not acknowledged",
@@ -65,7 +66,7 @@ export const ALERT_TIMERS = {
     from: "after the rider picks it up",
     min: 10,
     max: 45,
-    usual: 25,
+    usual: 30,
   },
 } as const;
 export type AlertTimer = keyof typeof ALERT_TIMERS;
@@ -81,6 +82,8 @@ const timer = (k: AlertTimer) =>
 /** The Alerts section in Settings, saved together with one tap. */
 export const alertSettings = z.object({
   sound: z.boolean(),
+  /** The pleasant double chime when a new online order arrives (design.md 6.2, KIT-02). */
+  chime: z.boolean(),
   rider: timer("rider"),
   acknowledge: timer("acknowledge"),
   kitchen: timer("kitchen"),
@@ -93,6 +96,7 @@ export const minutes = (n: number) => `${n} minute${n === 1 ? "" : "s"}`;
 /** What a save changed, in words, for the audit log: "turned the beep off, waiting for a rider from 5 to 10 minutes". */
 export const alertChanges = (was: AlertSettings, now: AlertSettings) => [
   ...(was.sound !== now.sound ? [`turned the beep ${now.sound ? "on" : "off"}`] : []),
+  ...(was.chime !== now.chime ? [`turned the new-order chime ${now.chime ? "on" : "off"}`] : []),
   ...ALERT_TIMER_KEYS.filter((k) => was[k] !== now[k]).map(
     (k) => `${ALERT_TIMERS[k].label.toLowerCase()} from ${was[k]} to ${minutes(now[k])}`,
   ),
@@ -100,6 +104,7 @@ export const alertChanges = (was: AlertSettings, now: AlertSettings) => [
 
 export const ALERT_SETTINGS_USUAL: AlertSettings = {
   sound: true,
+  chime: true,
   rider: ALERT_TIMERS.rider.usual,
   acknowledge: ALERT_TIMERS.acknowledge.usual,
   kitchen: ALERT_TIMERS.kitchen.usual,

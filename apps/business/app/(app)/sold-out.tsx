@@ -1,5 +1,6 @@
 import { naira } from "@cke/brand-tokens";
 import { CATEGORIES } from "../../src/data/seed";
+import { useOps } from "../../src/state/ops";
 import { dishName, useStore } from "../../src/state/store";
 import { Card, Page, Section, SwitchRow } from "../../src/ui/kit";
 import { SoupOfTheDay } from "../../src/ui/soup";
@@ -8,7 +9,8 @@ import { useToast } from "../../src/ui/toast";
 // Sold-out list (KIT-08): one tap switches an item off, and another brings it back. Today's soup
 // is set here too (KIT-17).
 export default function SoldOut() {
-  const { s, set } = useStore();
+  const { s } = useStore();
+  const ops = useOps();
   const toast = useToast();
   return (
     <Page>
@@ -26,9 +28,7 @@ export default function SoldOut() {
                   hint={m.soldOut ? "Sold out today" : `Available, ${naira(m.price)}`}
                   value={!m.soldOut}
                   onChange={(on) => {
-                    set((st) => ({
-                      menu: st.menu.map((x) => (x.id === m.id ? { ...x, soldOut: !on } : x)),
-                    }));
+                    ops.soldOut(m.id, !on);
                     toast(
                       on
                         ? `${dishName(m, s.soupToday)} is back on`

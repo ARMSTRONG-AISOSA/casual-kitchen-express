@@ -112,6 +112,13 @@ export type State = {
   staffPhotos: Record<string, StaffPhoto>;
   walkInSeq: number;
   onlineSeq: number;
+  /**
+   * Live: orders, alerts, riders, and settings come from the API and the live connection, and
+   * every action goes to the API (build step 6). Off: the demo data in the app, as before.
+   */
+  live: boolean;
+  /** The delivery areas' database IDs, by name, for turning one in or out of range. */
+  areaIds: Record<string, string>;
 };
 
 export const initial = (): State => ({
@@ -152,6 +159,8 @@ export const initial = (): State => ({
   staffPhotos: {},
   walkInSeq: 7,
   onlineSeq: 2180,
+  live: false,
+  areaIds: {},
 });
 
 type Update = Partial<State> | ((s: State) => Partial<State>);
@@ -185,7 +194,9 @@ export const person = (s: State, id?: string) => s.people.find((p) => p.id === i
 export const me = (s: State) => person(s, s.userId ?? undefined);
 export const myRole = (s: State): Role => (me(s)?.role as Role) ?? "kitchen";
 export const nameOf = (s: State, id?: string) =>
-  id === "System" ? "System" : (person(s, id)?.name ?? id ?? "");
+  id === "System"
+    ? "System"
+    : (person(s, id)?.name ?? s.riders.find((r) => r.id === id)?.name ?? id ?? "");
 export const firstName = (s: State, id?: string) => nameOf(s, id).split(" ")[0];
 
 /* ---------- audit ---------- */

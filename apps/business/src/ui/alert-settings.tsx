@@ -9,7 +9,8 @@ import { Check } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import { AppState, View } from "react-native";
 import { alertSoundAllowed, prepareAlertSound } from "../alert-sound";
-import { actorLabel, clock, log, useStore } from "../state/store";
+import { useOps } from "../state/ops";
+import { actorLabel, clock, useStore } from "../state/store";
 import { useTheme } from "../state/theme";
 import { Button, Card, KV, Section, Sheet, SwitchRow, T } from "./kit";
 import { Slider } from "./slider";
@@ -25,7 +26,8 @@ const when = (ms: number) =>
   `${new Date(ms).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}, ${clock(ms)}`;
 
 export function AlertSettingsSection() {
-  const { s, set } = useStore();
+  const { s } = useStore();
+  const ops = useOps();
   const t = useTheme();
   const st = s.settings;
   const [draft, setDraft] = useState<AlertSettings>(st.alerts);
@@ -48,20 +50,18 @@ export function AlertSettingsSection() {
     return () => sub.remove();
   }, []);
 
-  const save = () => {
-    const was = st.alerts;
+  const [saving, setSaving] = useState(false);
+  const save = async () => {
     const now = draft;
-    set((x) => ({
-      settings: {
-        ...x.settings,
-        alerts: now,
-        alertsSavedAt: Date.now(),
-        alertsSavedBy: x.userId ?? undefined,
-      },
-      ...log(x, "setting", `Changed the alert settings: ${alertChanges(was, now).join(", ")}`),
-    }));
+    setSaving(true);
+    const ok = await ops.saveAlerts(
+      now,
+      `Changed the alert settings: ${alertChanges(st.alerts, now).join(", ")}`,
+    );
+    setSaving(false);
+    if (!ok) return;
     setSaved(now);
-    if (now.sound) void prepareAlertSound().then(setAllowed);
+    if (now.sound || now.chime) void prepareAlertSound().then(setAllowed);
   };
 
   return (
@@ -73,10 +73,16 @@ export function AlertSettingsSection() {
           value={draft.sound}
           onChange={(sound) => setDraft((d) => ({ ...d, sound }))}
         />
-        {draft.sound && !allowed ? (
+        <SwitchRow
+          label="Chime for new online orders"
+          hint="A pleasant double chime when a customer’s order arrives on the board, on the same screens."
+          value={draft.chime}
+          onChange={(chime) => setDraft((d) => ({ ...d, chime }))}
+        />
+        {(draft.sound || draft.chime) && !allowed ? (
           <T v="small" color={t.danger} style={{ marginTop: 8 }}>
-            Notifications are off for CKE Kitchen on this tablet, so it can’t beep. Turn them on in
-            the tablet’s Settings, Apps, CKE Kitchen, Notifications.
+            Notifications are off for CKE Kitchen on this tablet, so it can’t beep or chime. Turn
+            them on in the tablet’s Settings, Apps, CKE Kitchen, Notifications.
           </T>
         ) : null}
         <T v="small" muted style={{ marginTop: 12 }}>
@@ -104,15 +110,21 @@ export function AlertSettingsSection() {
             marginTop: 16,
           }}
         >
-          <Button label="Save alert settings" disabled={!dirty} onPress={save} />
+          <Button
+            label={saving ? "Saving…" : "Save alert settings"}
+            disabled={!dirty || saving}
+            onPress={() => void save()}
+          />
           {dirty ? (
             <Button label="Undo changes" variant="ghost" onPress={() => setDraft(st.alerts)} />
           ) : null}
-          {!same(draft, ALERT_SETTINGS_USUAL) ? (
+          {ALERT_TIMER_KEYS.some((k) => draft[k] !== ALERT_SETTINGS_USUAL[k]) ? (
             <Button
               label="Use the usual times"
               variant="ghost"
-              onPress={() => setDraft({ ...ALERT_SETTINGS_USUAL, sound: draft.sound })}
+              onPress={() =>
+                setDraft({ ...ALERT_SETTINGS_USUAL, sound: draft.sound, chime: draft.chime })
+              }
             />
           ) : null}
         </View>
@@ -146,6 +158,7 @@ export function AlertSettingsSection() {
         {saved ? (
           <>
             <KV k="Beep" v={saved.sound ? "On" : "Off"} strong />
+            <KV k="New-order chime" v={saved.chime ? "On" : "Off"} strong />
             {ALERT_TIMER_KEYS.map((k) => (
               <KV key={k} k={ALERT_TIMERS[k].label} v={`${saved[k]} min`} />
             ))}

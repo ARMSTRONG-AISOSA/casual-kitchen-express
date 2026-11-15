@@ -83,35 +83,54 @@ export default function Demo() {
           <Button label="Start tour" style={{ marginTop: 14 }} onPress={tour.start} />
         </Card>
       </Section>
-      <Section title="Practice orders">
-        <Card style={{ marginTop: 0 }}>
-          <Button label="New online order" onPress={newOnline} />
-          <T v="small" muted style={{ marginTop: 8 }}>
-            Adds one pretend customer order to the Board, so you can try handling it.
-          </T>
-          <SwitchRow
-            label="Auto-play"
-            hint="A simulated kitchen and riders move orders along"
-            value={auto}
-            onChange={setAuto}
-          />
-          <T v="label" style={{ marginTop: 12 }}>
-            Speed
-          </T>
-          <Chips style={{ marginTop: 8 }}>
-            {[1, 5, 20].map((n) => (
-              <Chip key={n} label={`${n}x`} selected={speed === n} onPress={() => setSpeed(n)} />
-            ))}
-          </Chips>
-        </Card>
-      </Section>
-      <Section title="Reset">
-        <Button label="Reset the demo data" variant="ghost" onPress={() => setConfirm(true)} />
-        <T v="small" muted style={{ marginTop: 8 }}>
-          Puts today’s orders, alerts, and settings back to the start, after you’ve tried things
-          out.
-        </T>
-      </Section>
+      {s.live ? (
+        <Section title="Practice orders">
+          <Card style={{ marginTop: 0 }}>
+            <T muted>
+              This tablet is on the live kitchen, so every order here is real. Practice orders,
+              auto-play, and Reset come back with the live simulator. To try an order now, place one
+              in the customer app.
+            </T>
+          </Card>
+        </Section>
+      ) : (
+        <>
+          <Section title="Practice orders">
+            <Card style={{ marginTop: 0 }}>
+              <Button label="New online order" onPress={newOnline} />
+              <T v="small" muted style={{ marginTop: 8 }}>
+                Adds one pretend customer order to the Board, so you can try handling it.
+              </T>
+              <SwitchRow
+                label="Auto-play"
+                hint="A simulated kitchen and riders move orders along"
+                value={auto}
+                onChange={setAuto}
+              />
+              <T v="label" style={{ marginTop: 12 }}>
+                Speed
+              </T>
+              <Chips style={{ marginTop: 8 }}>
+                {[1, 5, 20].map((n) => (
+                  <Chip
+                    key={n}
+                    label={`${n}x`}
+                    selected={speed === n}
+                    onPress={() => setSpeed(n)}
+                  />
+                ))}
+              </Chips>
+            </Card>
+          </Section>
+          <Section title="Reset">
+            <Button label="Reset the demo data" variant="ghost" onPress={() => setConfirm(true)} />
+            <T v="small" muted style={{ marginTop: 8 }}>
+              Puts today’s orders, alerts, and settings back to the start, after you’ve tried things
+              out.
+            </T>
+          </Section>
+        </>
+      )}
       <Sheet visible={confirm} onClose={() => setConfirm(false)} title="Reset the demo data?">
         <T muted>Today’s orders, alerts, cash-ups, payouts, and settings go back to the start.</T>
         <Button

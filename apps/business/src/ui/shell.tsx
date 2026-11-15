@@ -431,7 +431,7 @@ export function Shell({ children }: { children: ReactNode }) {
               <T v="title" style={{ flexShrink: 0 }} numberOfLines={1}>
                 {TITLES[screen] ?? "CKE"}
               </T>
-              {isManagerScreen ? (
+              {isManagerScreen && (!s.live || STILL_DEMO.has(screen)) ? (
                 <View style={[styles.demo, { backgroundColor: t.newBg }]}>
                   <Text style={[styles.demoText, { color: t.onNew }]}>Demo</Text>
                 </View>
@@ -558,6 +558,13 @@ export function NotForRole() {
     </View>
   );
 }
+
+/**
+ * Manager screens still on demo data when the app is live: reports, Finance, and rider pay come
+ * with build step 9, and Demo controls stay demo. Everything else shows live data, so its "Demo"
+ * badge goes (build step 6).
+ */
+const STILL_DEMO = new Set(["reports", "finance", "rider-pay", "cash-up", "demo"]);
 
 const styles = StyleSheet.create({
   rail: { borderRightWidth: 1 },

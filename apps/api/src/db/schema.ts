@@ -333,10 +333,12 @@ export const setting = pgTable(
     // Alerts (MGR-14): the beep, and the minutes an order can sit in each stage (ALERT_TIMERS in
     // @cke/validation holds the ranges). Saved together; when and by whom is kept for the screen.
     alertSound: boolean("alert_sound").notNull().default(true),
-    alertRiderMin: smallint("alert_rider_min").notNull().default(5),
+    // The chime for a new online order (design.md 6.2, KIT-02), saved with the Alerts section.
+    alertChime: boolean("alert_chime").notNull().default(true),
+    alertRiderMin: smallint("alert_rider_min").notNull().default(10),
     alertAcknowledgeMin: smallint("alert_acknowledge_min").notNull().default(5),
     alertKitchenMin: smallint("alert_kitchen_min").notNull().default(15),
-    alertRoadMin: smallint("alert_road_min").notNull().default(25),
+    alertRoadMin: smallint("alert_road_min").notNull().default(30),
     alertsUpdatedAt: at("alerts_updated_at"),
     alertsUpdatedBy: text("alerts_updated_by"),
     catalogVersion: integer("catalog_version").notNull().default(1),

@@ -15,20 +15,32 @@ const ORDER_WATCHERS = ["kitchen", "dispatch", "manager", "accounts"];
 /** Staff who see alerts (design 6.4). */
 const ALERT_WATCHERS = ["kitchen", "dispatch", "manager"];
 
-/** The messages for changed orders: staff, the customer, the rider queue, and the rider. */
+/**
+ * The messages for changed orders: staff, the customer, the rider queue, and the rider. With
+ * `newOnline`, the staff message carries `chime: true` when the new-order chime is on in
+ * Settings, Alerts, so the Business app plays it (design.md 6.2, KIT-02).
+ */
 export async function orderMessages(
   db: Db,
   secret: string,
   orderIds: string[],
+  { newOnline = false }: { newOnline?: boolean } = {},
 ): Promise<LiveMessage[]> {
   const ids = [...new Set(orderIds)];
   if (!ids.length) return [];
   const rows = await db.select().from(t.order).where(inArray(t.order.id, ids));
   const messages: LiveMessage[] = [];
+  const chime =
+    newOnline &&
+    !!(await db.select({ on: t.setting.alertChime }).from(t.setting).where(eq(t.setting.id, 1)))[0]
+      ?.on;
 
   // Staff: the board's shape, which has no customer phone or address.
   for (const order of await loadOrders(db, rows, false))
-    messages.push({ to: ORDER_WATCHERS, data: { type: "order", order, version: order.version } });
+    messages.push({
+      to: ORDER_WATCHERS,
+      data: { type: "order", order, version: order.version, ...(chime ? { chime: true } : {}) },
+    });
 
   // Each customer: only their own order.
   const online = rows.filter((o) => o.customerId);
