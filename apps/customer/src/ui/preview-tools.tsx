@@ -4,7 +4,11 @@ import { StyleSheet, View } from "react-native";
 import { DELIVERY_STEPS, PICKUP_STEPS } from "../data/order";
 import { firstTimeCustomer, makeLine, returningCustomer, useStore } from "../state/store";
 import { useTheme } from "../state/theme";
-import { Button, Chip, T } from "./kit";
+import { useState } from "react";
+import { api } from "../api";
+import { signInTestAccount } from "../state/session";
+import { useToast } from "./toast";
+import { Button, Chip, Field, T } from "./kit";
 
 /**
  * Development-only controls for previewing states that the kitchen, riders, and managers will
@@ -57,6 +61,7 @@ export function PreviewTools() {
       <T v="small" muted>
         Development builds only. In the real app the kitchen, riders, and managers drive these.
       </T>
+      {api && !s.signedIn ? <TestSignIn /> : null}
       {row(
         "Customer",
         <>
@@ -181,3 +186,30 @@ const styles = StyleSheet.create({
   box: { marginTop: 24, padding: 16, borderRadius: 16, borderWidth: 1.5, borderStyle: "dashed" },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 6 },
 });
+
+/** Signs in a customer test account (development builds only; real customers use Google). */
+function TestSignIn() {
+  const { set } = useStore();
+  const toast = useToast();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  return (
+    <View style={{ marginTop: 12 }}>
+      <T v="small" muted bold>
+        Test account
+      </T>
+      <Field label="Username" value={username} onChangeText={setUsername} autoCapitalize="none" />
+      <Field label="Password" value={password} onChangeText={setPassword} secureTextEntry />
+      <Button
+        label="Sign in with a test account"
+        small
+        disabled={!username || !password}
+        onPress={async () => {
+          const error = await signInTestAccount(set, username, password);
+          toast(error ?? "Signed in");
+        }}
+        style={{ marginTop: 8 }}
+      />
+    </View>
+  );
+}

@@ -14,6 +14,7 @@ import {
   WHATSAPP_URL,
 } from "../src/data/order";
 import type { Point } from "../src/data/geo";
+import { useCustomerOps } from "../src/state/live";
 import { useStore } from "../src/state/store";
 import { useTheme } from "../src/state/theme";
 import { Button, Checkbox, Notice, Option, QuietLink, Screen, T, TopBar } from "../src/ui/kit";
@@ -32,6 +33,9 @@ export default function TrackScreen() {
   const [sheet, setSheet] = useState<null | "cancel" | "request">(null);
   const [reason, setReason] = useState<string | null>(null);
   const [agree, setAgree] = useState(false);
+  const ops = useCustomerOps();
+  // The API refused a cancel: from now on this screen offers a request instead.
+  const [limitedNow, setLimitedNow] = useState(false);
 
   const o = s.order;
   if (!o) {
@@ -46,9 +50,13 @@ export default function TrackScreen() {
   const steps = o.mode === "delivery" ? DELIVERY_STEPS : PICKUP_STEPS;
   const st = o.stage;
   const done = st >= steps.length - 1;
-  const limited = s.recentCancels >= DEFAULTS.cancellationLimit;
-  const canCancel = !o.cancelled && !done && st <= 1 && !limited;
-  const canRequest = !o.cancelled && !done && !o.requested && st <= 3 && (st > 1 || limited);
+  const limited = limitedNow || s.recentCancels >= DEFAULTS.cancellationLimit;
+  // Live, the API says whether the kitchen has it yet; over the limit it asks for a request (4.6).
+  const canCancel = ops.live
+    ? !o.cancelled && !done && !!o.canCancel && !limited
+    : !o.cancelled && !done && st <= 1 && !limited;
+  const canRequest = !o.cancelled && !done && !o.requested && st <= 3 && (!canCancel || limited);
+  const code = ops.live ? (o.code ?? "") : DEMO_DELIVERY_CODE;
   const rider: Point | undefined =
     st >= 8 ? CUSTOMER_PIN : st === 7 ? [196, 110] : st === 6 ? [172, 124] : undefined;
 
@@ -58,8 +66,21 @@ export default function TrackScreen() {
     setSheet(kind);
   };
 
-  const confirm = () => {
+  const confirm = async () => {
     if (!reason || !agree) return;
+    if (ops.live) {
+      if (sheet === "cancel") {
+        const ok = await ops.cancel(reason);
+        if (!ok) {
+          // Over the limit, or the kitchen has just started it: a request is the way now.
+          setLimitedNow(true);
+          return;
+        }
+      } else if (await ops.request(reason)) toast("Request sent");
+      else return;
+      setSheet(null);
+      return;
+    }
     if (sheet === "cancel") {
       set((x) => ({
         order: x.order && { ...x.order, cancelled: true, refund: "pending" },
@@ -107,9 +128,9 @@ export default function TrackScreen() {
             v="display"
             center
             style={styles.digits}
-            accessibilityLabel={`Delivery code ${DEMO_DELIVERY_CODE.split("").join(" ")}`}
+            accessibilityLabel={`Delivery code ${code.split("").join(" ")}`}
           >
-            {DEMO_DELIVERY_CODE}
+            {code}
           </T>
         </View>
       ) : null}
@@ -161,11 +182,12 @@ export default function TrackScreen() {
               </View>
               <View style={{ flex: 1, paddingBottom: 14, opacity: faded ? 0.4 : 1 }}>
                 <T v={isNow ? "label" : "body"} muted={!reached}>
-                  {label}
+                  {/* Live, the rider's name isn't sent to customers yet; the demo names one. */}
+                  {ops.live && label.startsWith("Rider assigned") ? "Rider assigned" : label}
                 </T>
                 {reached ? (
                   <T v="small" muted>
-                    {clockTime(o.placedAt + after * 60_000)}
+                    {clockTime(stepTime(o, i, after))}
                   </T>
                 ) : null}
               </View>
@@ -230,7 +252,7 @@ export default function TrackScreen() {
         </T>
         <Button
           label={sheet === "request" ? "Send request" : "Cancel order"}
-          onPress={confirm}
+          onPress={() => void confirm()}
           disabled={!reason || !agree}
           style={{ marginTop: 14 }}
         />
@@ -260,3 +282,18 @@ const styles = StyleSheet.create({
   nowDot: { width: 10, height: 10, borderRadius: 5 },
   rail: { width: 2, flex: 1, minHeight: 14 },
 });
+
+/**
+ * When a step happened. Live, from the order's timeline; a step the order went straight past (for
+ * example Ready without a ticked item) takes the time of the step that came next. The demo counts
+ * mock minutes from when it was placed.
+ */
+function stepTime(
+  o: { placedAt: number; stepAt?: (number | undefined)[] },
+  i: number,
+  after: number,
+) {
+  const at = o.stepAt;
+  if (!at) return o.placedAt + after * 60_000;
+  return at[i] ?? at.slice(i + 1).find((x) => x !== undefined) ?? o.placedAt;
+}

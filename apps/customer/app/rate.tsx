@@ -2,6 +2,7 @@ import { router } from "expo-router";
 import { Star } from "lucide-react-native";
 import { useState } from "react";
 import { Pressable, View } from "react-native";
+import { useCustomerOps } from "../src/state/live";
 import { archiveOrder, useStore } from "../src/state/store";
 import { useTheme } from "../src/state/theme";
 import { Button, Notice, Screen, T, TopBar } from "../src/ui/kit";
@@ -9,6 +10,7 @@ import { Button, Notice, Screen, T, TopBar } from "../src/ui/kit";
 // One tap rates the order, and Reorder is offered straight away (CUS-18, CUS-12).
 export default function RateScreen() {
   const { s, set } = useStore();
+  const ops = useCustomerOps();
   const t = useTheme();
   const [rating, setRating] = useState(0);
   const again = () => {
@@ -31,7 +33,11 @@ export default function RateScreen() {
         {[1, 2, 3, 4, 5].map((n) => (
           <Pressable
             key={n}
-            onPress={() => setRating(n)}
+            onPress={() => {
+              setRating(n);
+              // One tap rates it: live, it's saved straight away (one rating per order).
+              if (!rating) void ops.rate(n);
+            }}
             accessibilityRole="radio"
             accessibilityLabel={`${n} star${n > 1 ? "s" : ""}`}
             accessibilityState={{ checked: rating === n }}

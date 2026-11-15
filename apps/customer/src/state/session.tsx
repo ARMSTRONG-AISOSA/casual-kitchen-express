@@ -90,6 +90,34 @@ export async function signInWithGoogle(set: Set, returnTo: string): Promise<stri
   }
 }
 
+/**
+ * Development builds only (Preview tools): signs in a test customer by username and password, so
+ * checkout, tracking, and orders can be tried on a test phone without anyone's Google account.
+ * Real customers sign in with Google only (12.2); release builds never show this.
+ */
+export async function signInTestAccount(
+  set: Set,
+  username: string,
+  password: string,
+): Promise<string | null> {
+  if (!__DEV__ || !authClient || !api) return "Only in development builds";
+  try {
+    const res = await authClient.signIn.username({ username: username.trim(), password });
+    if (res.error) return signInError(res.error);
+    await refreshCookie();
+    const me = await api.me();
+    if (me.role !== "customer") {
+      await authClient.signOut();
+      await refreshCookie();
+      return "That’s a staff account. Use a customer test account.";
+    }
+    enterAs(me, set);
+    return null;
+  } catch {
+    return signInError(null);
+  }
+}
+
 /** Picks up a saved session on open, so customers stay signed in (architecture.md 12.1). */
 export function SessionProvider({ children }: { children: ReactNode }) {
   const { set } = useStore();

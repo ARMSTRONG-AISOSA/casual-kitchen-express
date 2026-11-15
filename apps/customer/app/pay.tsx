@@ -1,13 +1,24 @@
 import { naira } from "@cke/brand-tokens";
+import { useState } from "react";
 import { View } from "react-native";
+import { useCustomerOps } from "../src/state/live";
 import { cartFood, placeOrder, showPaid, useStore } from "../src/state/store";
 import { Button, Card, DemoNote, Field, Line, Screen, T, TopBar } from "../src/ui/kit";
 
 // Demo payment (CUS-07). The card form never takes real details. No money moves.
 export default function PayScreen() {
   const { s, set } = useStore();
+  const ops = useCustomerOps();
   const total = cartFood(s.cart) + (s.mode === "delivery" ? s.fee : 0);
-  const confirm = () => {
+  const [sending, setSending] = useState(false);
+  const confirm = async () => {
+    if (ops.live) {
+      setSending(true);
+      const ok = await ops.placeOrder();
+      setSending(false);
+      if (ok) showPaid();
+      return;
+    }
     set((st) => placeOrder(st));
     showPaid();
   };
@@ -17,8 +28,8 @@ export default function PayScreen() {
       footer={
         <Button
           label={s.pay === "card" ? `Pay ${naira(total)}` : "I’ve sent the transfer"}
-          onPress={confirm}
-          disabled={!s.cart.length}
+          onPress={() => void confirm()}
+          disabled={!s.cart.length || sending}
         />
       }
     >

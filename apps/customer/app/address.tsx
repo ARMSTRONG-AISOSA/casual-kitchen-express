@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { AREAS } from "../src/data/menu";
+import { useCustomerOps } from "../src/state/live";
 import { inRange, type Point } from "../src/data/geo";
 import { useStore, type Address } from "../src/state/store";
 import { Button, Chip, Field, Notice, Screen, T, TopBar } from "../src/ui/kit";
@@ -12,6 +13,7 @@ import { useToast } from "../src/ui/toast";
 // `?example=outside` opens with a pin beyond Oluku Market, to show the out-of-range message.
 export default function AddressScreen() {
   const { s, set } = useStore();
+  const ops = useCustomerOps();
   const toast = useToast();
   const { example } = useLocalSearchParams<{ example?: string }>();
   const outside = example === "outside";
@@ -30,9 +32,11 @@ export default function AddressScreen() {
           label="Save address"
           disabled={!ok || !draft.landmark.trim() || !draft.phone.trim()}
           onPress={() => {
-            set({ address: draft, hasAddress: true });
-            toast("Address saved");
-            router.back();
+            void ops.saveAddress(draft).then((saved) => {
+              if (!saved) return;
+              toast("Address saved");
+              router.back();
+            });
           }}
         />
       }

@@ -42,6 +42,12 @@ export type Order = {
   cancelled?: boolean;
   refund?: "pending" | "completed";
   requested?: boolean;
+  /** From the API (build step 6c): the order's ID, the rider's code, and when each step happened. */
+  id?: string;
+  code?: string | null;
+  stepAt?: (number | undefined)[];
+  /** The kitchen hasn't acknowledged yet, so the customer can still cancel on their own (4.6). */
+  canCancel?: boolean;
 };
 export type PastOrder = {
   no: string;
@@ -82,6 +88,12 @@ export type State = {
   order: Order | null;
   history: PastOrder[];
   recentCancels: number;
+  /** Live: orders and addresses come from the API (build step 6c). Off: the demo data. */
+  live: boolean;
+  /** The saved address used for delivery, once it's in the address book (CUS-14). */
+  addressId?: string;
+  /** Live: the customer's other orders in progress (tracking follows `order`, CUS-08). */
+  others: Order[];
 };
 
 const firstTime = {
@@ -119,6 +131,8 @@ export const initialState: State = {
   pay: "card",
   order: null,
   recentCancels: 0,
+  live: false,
+  others: [],
   ...firstTime,
 };
 
@@ -297,13 +311,21 @@ export function showPaid() {
 export function archiveOrder(s: State): Partial<State> {
   const o = s.order;
   if (!o) return {};
+  // Only a finished order goes to history: one still in progress stays where it is.
+  const last = (o.mode === "delivery" ? 8 : 5) as number;
+  if (!o.cancelled && o.stage < last) return {};
+  // Live, the next order in progress takes over tracking, and a finished order that's already in
+  // history (it arrived over the live connection) isn't added twice.
+  const [next, ...rest] = s.others;
+  if (s.live && s.history.some((h) => h.no === o.no)) return { order: next ?? null, others: rest };
   const status = o.cancelled
     ? "Cancelled, refunded"
     : o.mode === "delivery"
       ? "Delivered"
       : "Collected";
   return {
-    order: null,
+    order: s.live ? (next ?? null) : null,
+    ...(s.live ? { others: rest } : {}),
     history: [
       { no: o.no, date: "Today", items: o.items, total: o.total, status, lines: o.lines },
       ...s.history,

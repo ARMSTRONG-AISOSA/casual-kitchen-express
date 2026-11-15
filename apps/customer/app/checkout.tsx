@@ -5,6 +5,7 @@ import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { cartCount, cartFood, placeOrder, showPaid, useStore } from "../src/state/store";
 import { api } from "../src/api";
+import { useCustomerOps } from "../src/state/live";
 import { signInWithGoogle } from "../src/state/session";
 import { useTheme } from "../src/state/theme";
 import {
@@ -26,6 +27,7 @@ import { useToast } from "../src/ui/toast";
 // and an optional gender on the same screen. Returning customers pay in one tap.
 export default function CheckoutScreen() {
   const { s, set } = useStore();
+  const ops = useCustomerOps();
   const t = useTheme();
   const toast = useToast();
   const [reactivate, setReactivate] = useState(false);
@@ -52,8 +54,16 @@ export default function CheckoutScreen() {
     toast("Signed in with Google");
   };
 
-  const pay = () => {
+  const [sending, setSending] = useState(false);
+  const pay = async () => {
     if (s.savedCard && s.pay === "card") {
+      if (ops.live) {
+        setSending(true);
+        const ok = await ops.placeOrder();
+        setSending(false);
+        if (ok) showPaid();
+        return;
+      }
       set((st) => placeOrder(st));
       showPaid();
     } else {
@@ -83,7 +93,11 @@ export default function CheckoutScreen() {
               {hint}
             </T>
           ) : null}
-          <Button label={`Pay ${naira(food + fee)}`} onPress={pay} disabled={!ready} />
+          <Button
+            label={sending ? "Placing your order…" : `Pay ${naira(food + fee)}`}
+            onPress={() => void pay()}
+            disabled={!ready || sending}
+          />
         </>
       }
     >

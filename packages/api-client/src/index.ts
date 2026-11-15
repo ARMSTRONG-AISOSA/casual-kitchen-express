@@ -316,6 +316,54 @@ export type RiderLiveMessage =
   | { type: "delivery"; delivery: RiderDelivery; removed: boolean; version?: number }
   | { type: "catalog"; version: number };
 
+/* ---------- customers (build step 6c) ---------- */
+
+/** A customer's own order (CUS-08, CUS-10): what they see on tracking and in their orders. */
+export type MyOrder = {
+  id: string;
+  number: string;
+  type: "delivery" | "pickup";
+  status: OrderStatus;
+  exception: StaffOrder["exception"];
+  foodTotal: number;
+  deliveryFee: number;
+  total: number;
+  paymentMethod: "card" | "transfer" | "cash";
+  placedAt: string;
+  items: { id: string; name: string; unitPrice: number; quantity: number; options: string[] }[];
+  address: {
+    label: string;
+    street: string | null;
+    landmark: string | null;
+    neighbourhood: string;
+  } | null;
+  events: { status: OrderStatus; at: string }[];
+  /** The 4-digit code for the rider, while a delivery is on its way (4.4). */
+  deliveryCode: string | null;
+  refunds: {
+    amount: number;
+    kind: "full" | "partial";
+    status: "pending" | "completed";
+    at: string | null;
+  }[];
+  cancellationRequest: { status: "pending" | "approved" | "declined" } | null;
+  canCancel: boolean;
+  version: number;
+};
+
+export type MyAddress = {
+  id: string;
+  label: string;
+  street: string | null;
+  landmark: string | null;
+  neighbourhoodId: string;
+  neighbourhood: string;
+  contactPhone: string;
+  lat: number;
+  lng: number;
+  isDefault: boolean;
+};
+
 export function createApiClient({ baseUrl, getHeaders, onUnauthorized }: ApiClientOptions) {
   /** Headers for an image request, so staff photos (staff only) load too. */
   const imageHeaders = () => getHeaders?.() ?? {};
@@ -500,6 +548,39 @@ export function createApiClient({ baseUrl, getHeaders, onUnauthorized }: ApiClie
     /** The live connection's address (ws:// or wss://). */
     liveUrl: () => new URL("/live", baseUrl).toString().replace(/^http/, "ws"),
 
+    /* ----- customers ----- */
+    myOrders: (tab: "progress" | "history") =>
+      request<{ orders: MyOrder[]; latest: number }>(`/me/orders?tab=${tab}`),
+    myOrder: (id: string) => request<{ order: MyOrder }>(`/me/orders/${id}`),
+    placeOrder: (body: {
+      type: "delivery" | "pickup";
+      addressId?: string;
+      payment: "card" | "transfer";
+      items: { itemId: string; optionId?: string; quantity: number }[];
+    }) => post<{ order: MyOrder }>("/me/orders", body),
+    /** Before the kitchen acknowledges (4.6). Over the limit, the API says to request instead. */
+    cancelMine: (id: string, reason: string) =>
+      post<{ order: MyOrder }>(`/me/orders/${id}/cancel`, { reason, confirm: true }),
+    requestCancel: (id: string, reason: string) =>
+      post<{ order: MyOrder }>(`/me/orders/${id}/cancellation-request`, { reason, confirm: true }),
+    rate: (id: string, stars: number) =>
+      post<{ rating: { stars: number } }>(`/me/orders/${id}/rating`, { stars }),
+    addresses: () => request<{ addresses: MyAddress[] }>("/me/addresses"),
+    addAddress: (a: {
+      label: string;
+      street?: string;
+      landmark?: string;
+      neighbourhoodId: string;
+      contactPhone: string;
+      lat: number;
+      lng: number;
+      isDefault?: boolean;
+    }) => post<{ addresses: MyAddress[]; id: string }>("/me/addresses", a),
+    editAddress: (id: string, a: Partial<Omit<MyAddress, "id" | "neighbourhood">>) =>
+      request<{ addresses: MyAddress[] }>(`/me/addresses/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(a),
+      }),
     /* ----- riders ----- */
     riderOnline: (online: boolean) =>
       request<{ online: boolean }>("/rider/online", {

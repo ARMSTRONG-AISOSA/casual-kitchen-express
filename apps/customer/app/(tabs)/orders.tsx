@@ -17,7 +17,9 @@ export default function OrdersScreen() {
   const steps = o ? (o.mode === "delivery" ? DELIVERY_STEPS : PICKUP_STEPS) : [];
   const finished = !!o && (o.cancelled || o.stage >= steps.length - 1);
   const live = !!o && !finished;
-  const past: PastOrder[] = finished && o ? (archiveOrder(s).history ?? []) : s.history;
+  const past: PastOrder[] = finished && o ? (archiveOrder(s).history ?? s.history) : s.history;
+  // Every order still going: the one on tracking first, then the others (live).
+  const going = [...(live && o ? [o] : []), ...s.others];
 
   const reorder = (p: PastOrder) => {
     set((x) => ({ ...(finished ? archiveOrder(x) : {}), cart: p.lines.map((l) => ({ ...l })) }));
@@ -45,31 +47,45 @@ export default function OrdersScreen() {
       </View>
 
       {tab === "progress" ? (
-        live && o ? (
-          <Pressable
-            onPress={() => router.push("/track")}
-            accessibilityRole="button"
-            accessibilityHint="Opens tracking"
-          >
-            <Card>
-              <Row style={{ justifyContent: "space-between", alignItems: "flex-start" }}>
-                <View style={{ flex: 1 }}>
-                  <T v="label">Order {o.no}</T>
-                  <T v="small" muted numberOfLines={2}>
-                    {o.items}
-                  </T>
-                  <T v="small" muted>
-                    {naira(o.total)}
-                  </T>
-                </View>
-                <View style={[styles.pill, { backgroundColor: t.chip }]}>
-                  <T v="small" bold>
-                    {steps[o.stage]?.[0] ?? ""}
-                  </T>
-                </View>
-              </Row>
-            </Card>
-          </Pressable>
+        going.length ? (
+          going.map((x) => (
+            <Pressable
+              key={x.no}
+              onPress={() => {
+                // Tracking follows the order tapped; the one it was showing waits in the list.
+                if (x !== o)
+                  set((st) => ({
+                    order: x,
+                    others: [
+                      ...(live && st.order ? [st.order] : []),
+                      ...st.others.filter((y) => y.no !== x.no),
+                    ],
+                  }));
+                router.push("/track");
+              }}
+              accessibilityRole="button"
+              accessibilityHint="Opens tracking"
+            >
+              <Card>
+                <Row style={{ justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <View style={{ flex: 1 }}>
+                    <T v="label">Order {x.no}</T>
+                    <T v="small" muted numberOfLines={2}>
+                      {x.items}
+                    </T>
+                    <T v="small" muted>
+                      {naira(x.total)}
+                    </T>
+                  </View>
+                  <View style={[styles.pill, { backgroundColor: t.chip }]}>
+                    <T v="small" bold>
+                      {(x.mode === "delivery" ? DELIVERY_STEPS : PICKUP_STEPS)[x.stage]?.[0] ?? ""}
+                    </T>
+                  </View>
+                </Row>
+              </Card>
+            </Pressable>
+          ))
         ) : (
           <>
             <T muted style={{ marginTop: 18 }}>

@@ -1,6 +1,6 @@
 # CKE ARCHITECTURE
 
-**Document Status:** Draft v0.47. Records the functions, features, and decisions for the apps and the website. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day with the backend foundation in progress), and again on 14 November 2026 after sign-in was built.  
+**Document Status:** Draft v0.48. Records the functions, features, and decisions for the apps and the website. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day with the backend foundation in progress), and again on 14 November 2026 after sign-in was built.  
 **Related documents:** `Casual-Kitchen-Express.md` (business and brand, surface level), `design.md` (UI/UX decisions and page flows), and `list-of-areas.md` (delivery areas).
 
 ---
@@ -1085,6 +1085,8 @@ The website uses **no packages**. It is plain HTML, CSS, and JavaScript.
 
 **Step 6b, the rider app on live data (15 November 2026):** after sign-in (and the first-time password) the app loads the rider’s deliveries, earnings, and queue, keeps one WebSocket to `GET /live`, and re-reads `GET /rider/queue` a moment after any queue message, because the server decides what fits (the count, the load, and the batch distance; one small call keeps the rule in one place). A new order that fits, or one dispatch assigns, vibrates the phone (RID-14). Going online, accept (another rider winning shows Order taken), picked up, the delivery code (checked by the API, 5 wrong tries), Need help, release (before pickup), and changing the stop order go to the API. Earnings show `GET /rider/earnings`: the period’s deliveries and pay, owed by day, today’s deliveries, and paid weeks. The demo code hint shows only in the demo.
 
+**Step 6c, the customer app on live data (15 November 2026):** once signed in, the app loads the orders in progress, the order history, and the address book, keeps one WebSocket to `GET /live` (each change to the customer’s own orders arrives there, so tracking moves on by itself), and reloads on return from the background. Checkout sends the cart as menu item and option IDs and the API prices it; tracking shows the real 4-digit code and each step’s real time (a step the order went straight past takes the next step’s time); the customer’s own cancel (before the kitchen acknowledges, refunded in full), cancellation requests, ratings, and the delivery address (saved to the address book as the default) go to the API. Several orders can be in progress at once: tracking follows one, In progress lists them all, and a finished order is filed into history only once. Until the real map (step 6d), a saved address uses its area’s approximate centre for the pin. Development builds have a Test account sign-in in Preview tools (username and password, for testing without anyone’s Google account); real customers sign in with Google only, and release builds never show it.
+
 **Backend development (12 November 2026):** the API runs against Postgres 17.10 in Docker on the laptop (`apps/api/docker-compose.yml`, listening on 127.0.0.1 only). Locally, the Worker reaches it through Hyperdrive’s `localConnectionString` in `wrangler.jsonc`, the same code path as production. `apps/api/README.md` lists the commands (start, migrate, seed, test).
 
 ### 16.1 To verify at build
@@ -1225,6 +1227,7 @@ A seed script fills the database with **three months** of history (owner decisio
 
 | Version | Change |
 |---|---|
+| 0.48 | Build step 6c on 15 November 2026: the customer app on live data (16, the step 6c note), with several orders in progress at once and a development-only test sign-in. |
 | 0.47 | Build step 6b on 15 November 2026: the rider app on live data (16, the step 6b note). |
 | 0.46 | Build step 6a on 15 November 2026: the Business app on live data (16, the step 6a note); the rider on the staff order view; the new-order chime moved to its own Android channel `orders-v2` (the test tablet’s first channel was made before the tone was in the app). |
 | 0.45 | Owner decisions on 15 November 2026 (evening): the usual alert times are 10 minutes waiting for a rider and 30 on the road (were 5 and 25; MGR-14, 9 notes, 18.3 re-measured); the new-order chime built (KIT-02), with its own switch in Settings, Alerts, and a `chime` flag on new online orders' live messages. |
