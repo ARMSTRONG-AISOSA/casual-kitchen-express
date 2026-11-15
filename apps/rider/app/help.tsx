@@ -3,6 +3,7 @@ import { TriangleAlert } from "lucide-react-native";
 import { useState } from "react";
 import { View } from "react-native";
 import { HELP_REASONS } from "../src/data/orders";
+import { useRiderOps } from "../src/state/live";
 import { alertRider, useStore } from "../src/state/store";
 import { Button, Screen, StateBanner, T, TopBar } from "../src/ui/kit";
 
@@ -10,6 +11,7 @@ import { Button, Screen, StateBanner, T, TopBar } from "../src/ui/kit";
 // call the customer or approve a manual completion. Release order hands the order back to the queue (RID-12).
 export default function Help() {
   const { s } = useStore();
+  const ops = useRiderOps();
   const [sent, setSent] = useState(false);
   if (sent) {
     return (
@@ -43,7 +45,8 @@ export default function Help() {
             key={r}
             label={r}
             variant="alt"
-            onPress={() => {
+            onPress={async () => {
+              if (!(await ops.help(r))) return;
               setSent(true);
               alertRider(s);
             }}

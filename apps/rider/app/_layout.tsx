@@ -10,6 +10,7 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SessionProvider } from "../src/state/session";
 import { StoreProvider } from "../src/state/store";
+import { RiderLive } from "../src/state/live";
 import { useTheme } from "../src/state/theme";
 import { ToastProvider } from "../src/ui/toast";
 
@@ -44,6 +45,7 @@ export default function RootLayout() {
     <StoreProvider>
       <SessionProvider>
         <ToastProvider>
+          <RiderLive />
           <Shell />
         </ToastProvider>
       </SessionProvider>

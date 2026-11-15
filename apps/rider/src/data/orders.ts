@@ -15,6 +15,12 @@ export type QueueOrder = {
   km: number;
   readyMins: number;
   items: Item[];
+  /** From the API (build step 6b): the order's database ID, its load, and how many items. */
+  id?: string;
+  load?: number;
+  itemCount?: number;
+  /** Assigned by dispatch rather than taken from the queue (DSP-05). */
+  assigned?: boolean;
 };
 
 export const KITCHEN = "CKE kitchen, Ugbowo";
@@ -76,7 +82,7 @@ export const QUEUE: QueueOrder[] = [
   },
 ];
 
-export const orderLoad = (o: QueueOrder) => o.items.reduce((a, i) => a + i.load, 0);
+export const orderLoad = (o: QueueOrder) => o.load ?? o.items.reduce((a, i) => a + i.load, 0);
 
 export const km = (n: number) => `${n.toFixed(1)} km`;
 

@@ -252,6 +252,70 @@ export type LiveMessage =
   | { type: "catalog"; version: number }
   | { type: "alert-settings"; alerts: AlertSettingsView };
 
+/* ---------- riders (build step 6b) ---------- */
+
+/** A card in the rider's queue: only orders that fit what they carry (RID-03). */
+export type QueueCard = {
+  orderId: string;
+  number: string;
+  neighbourhood: string;
+  distanceM: number;
+  load: number;
+  readyAt: string | null;
+};
+
+/** One of the rider's stops (RID-06, RID-23). */
+export type RiderDelivery = {
+  orderId: string;
+  number: string;
+  status: OrderStatus;
+  stop: number;
+  picked: boolean;
+  assignedByDispatch: boolean;
+  customerFirstName: string;
+  phone: string | null;
+  address: {
+    label: string;
+    street: string | null;
+    landmark: string | null;
+    neighbourhood: string;
+    lat: number;
+    lng: number;
+  } | null;
+  items: number;
+  load: number;
+  pickup: string;
+};
+
+export type RiderEarnings = {
+  today: { n: number; pay: number };
+  week: { n: number; pay: number };
+  month: { n: number; pay: number };
+  allTime: { n: number; pay: number };
+  owed: { total: number; days: { day: string; n: number; pay: number }[] };
+  todaysDeliveries: { number: string; deliveredAt: string; pay: number }[];
+  payouts: {
+    periodStart: string;
+    periodEnd: string;
+    deliveries: number;
+    amount: number;
+    status: "owed" | "paid";
+    paidAt: string | null;
+  }[];
+};
+
+/** What a rider receives over the live connection. */
+export type RiderLiveMessage =
+  | { type: "hello" }
+  | {
+      type: "queue";
+      orderId: string;
+      item: (QueueCard & { lat: number; lng: number }) | null;
+      version: number;
+    }
+  | { type: "delivery"; delivery: RiderDelivery; removed: boolean; version?: number }
+  | { type: "catalog"; version: number };
+
 export function createApiClient({ baseUrl, getHeaders, onUnauthorized }: ApiClientOptions) {
   /** Headers for an image request, so staff photos (staff only) load too. */
   const imageHeaders = () => getHeaders?.() ?? {};
@@ -436,6 +500,47 @@ export function createApiClient({ baseUrl, getHeaders, onUnauthorized }: ApiClie
     /** The live connection's address (ws:// or wss://). */
     liveUrl: () => new URL("/live", baseUrl).toString().replace(/^http/, "ws"),
 
+    /* ----- riders ----- */
+    riderOnline: (online: boolean) =>
+      request<{ online: boolean }>("/rider/online", {
+        method: "PUT",
+        body: JSON.stringify({ online }),
+      }),
+    riderQueue: () =>
+      request<{
+        online: boolean;
+        carrying: number;
+        load: number;
+        budget: number;
+        orders: QueueCard[];
+        hidden: number;
+        latest: number;
+      }>("/rider/queue"),
+    acceptOrder: (orderId: string) =>
+      post<{ deliveries: RiderDelivery[] }>(`/rider/queue/${orderId}/accept`),
+    riderDeliveries: () =>
+      request<{ deliveries: RiderDelivery[]; latest: number }>("/rider/deliveries"),
+    reorderDeliveries: (orderIds: string[]) =>
+      request<{ deliveries: RiderDelivery[] }>("/rider/deliveries/order", {
+        method: "PUT",
+        body: JSON.stringify({ orderIds }),
+      }),
+    pickedUp: (orderId: string) =>
+      post<{ deliveries: RiderDelivery[] }>(`/rider/deliveries/${orderId}/picked-up`),
+    arriving: (orderId: string) =>
+      post<{ deliveries: RiderDelivery[] }>(`/rider/deliveries/${orderId}/arriving`),
+    /** The customer's 4-digit code. A wrong code is refused with how many tries are left. */
+    deliver: (orderId: string, code: string) =>
+      post<{ deliveries: RiderDelivery[] }>(`/rider/deliveries/${orderId}/deliver`, { code }),
+    riderHelp: (orderId: string, reason: "customer_unreachable" | "code_problem" | "other") =>
+      post<{ ok: true }>(`/rider/deliveries/${orderId}/help`, { reason }),
+    release: (orderId: string) =>
+      post<{ deliveries: RiderDelivery[] }>(`/rider/deliveries/${orderId}/release`),
+    riderEarnings: () => request<RiderEarnings>("/rider/earnings"),
+    riderChanges: (since: number) =>
+      request<{ queue: QueueCard[]; deliveries: RiderDelivery[]; latest: number }>(
+        `/changes?since=${since}`,
+      ),
     /* ----- alerts, requests, riders ----- */
     alerts: () => request<{ alerts: AlertView[] }>("/alerts"),
     clearAlert: (id: string) => post<{ ok: true }>(`/alerts/${id}/clear`),

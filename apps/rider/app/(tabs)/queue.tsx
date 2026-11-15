@@ -2,6 +2,7 @@ import { router } from "expo-router";
 import { toDeliveries } from "../../src/nav";
 import { Pressable, StyleSheet, View } from "react-native";
 import { km, orderLoad, readyText } from "../../src/data/orders";
+import { useRiderOps } from "../../src/state/live";
 import { MAX_ORDERS, fits, usedLoad, useStore } from "../../src/state/store";
 import { useTheme } from "../../src/state/theme";
 import { Button, NewOrderBanner, Screen, StateBanner, T, TopBar } from "../../src/ui/kit";
@@ -9,13 +10,14 @@ import { Button, NewOrderBanner, Screen, StateBanner, T, TopBar } from "../../sr
 // The queue shows only orders that fit what the rider already carries (RID-03, RID-05).
 export default function Queue() {
   const { s, set } = useStore();
+  const ops = useRiderOps();
   const t = useTheme();
   if (!s.online) {
     return (
       <Screen
         tabs
         header={<TopBar title="Queue" />}
-        footer={<Button label="Go online" onPress={() => set({ online: true })} />}
+        footer={<Button label="Go online" onPress={() => void ops.setOnline(true)} />}
       >
         <StateBanner kind="off" label="You’re offline" />
         <T style={{ marginTop: 14 }}>Go online to see orders that are ready.</T>
@@ -23,7 +25,8 @@ export default function Queue() {
     );
   }
   const list = s.queue.filter((o) => fits(s, o));
-  const hidden = s.queue.length - list.length;
+  // Live, the server already left out what won’t fit and says how many (section 6).
+  const hidden = s.live ? s.hidden : s.queue.length - list.length;
   return (
     <Screen tabs header={<TopBar title="Queue" />}>
       {s.newOrder && list.length ? <NewOrderBanner label="New order ready" /> : null}

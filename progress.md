@@ -27,7 +27,7 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and thr
 | File | What it is | Authority |
 |---|---|---|
 | `progress.md` | This file: status, rules, next steps, log | Start here |
-| `docs/architecture.md` (v0.46) | Functions, 129 feature IDs (CUS, RID, KIT, MGR, DSP, ACC, WEB), order lifecycle, data model, the API routes built so far, decisions, free-tier limits, **locked versions (section 15)**, build order (16), **16.1 to verify at build**, seed data | Wins on anything technical |
+| `docs/architecture.md` (v0.47) | Functions, 129 feature IDs (CUS, RID, KIT, MGR, DSP, ACC, WEB), order lifecycle, data model, the API routes built so far, decisions, free-tier limits, **locked versions (section 15)**, build order (16), **16.1 to verify at build**, seed data | Wins on anything technical |
 | `docs/design.md` (v0.37) | UI rules per app, screens, page flows, colours, components | Wins on anything visual or UX |
 | `docs/Casual-Kitchen-Express.md` (v1.10) | Brand and business, surface level only | Wins on brand (name, colours, logo, tone, menu, packaging) |
 | `docs/list-of-areas.md` | Delivery areas, boundary, landmarks, neighbourhood list | Areas still to confirm on a map |
@@ -189,7 +189,7 @@ The order below follows `architecture.md` 16, adjusted by the owner’s frontend
 | 4b | Sign-in and roles: Better Auth in the Worker (usernames for staff, Google for managers and customers), sessions in all three apps, a role check on every route (3.0), first-sign-in password change, manager password reset, deactivation signs a person out, the tablet’s 8:30 pm sign-out, Your profile and Sign out, the show-password eye. The early 16.1 checks (PBKDF2 timing, Durable Object alarms). | **Done** (`c694fb1` and the 14 November commit) |
 | 4c | **Orders backend:** menu management (items, prices, sold out, options), orders and status events (online and walk-in), simulated payments, refunds with the tick and refunder, cancellation requests, alerts, deliveries, the rider queue (first to accept wins), delivery codes, Durable Objects for live updates, and “only what changed” on reconnect (14.4). Split into five parts: (1) menu management and the core orders, (2) cancellations and refunds, (3) the rider queue and deliveries, (4) alerts, (5) the live connection; plus the address book and settings that checkout needs. | **Done** (15 November 2026) |
 | 5 | **Seed script:** three months of demo history (18.3), with its own checks | **Done** (15 November 2026) |
-| 6 | **Connect the screens to the API** in all three apps, replacing the demo data: (a) the Business app, (b) the rider app, (c) the customer app, (d) the real map (MapLibre) with the delivery boundary, push notifications (Expo and Firebase), and background location for riders | **6a done** (15 November 2026); 6b next |
+| 6 | **Connect the screens to the API** in all three apps, replacing the demo data: (a) the Business app, (b) the rider app, (c) the customer app, (d) the real map (MapLibre) with the delivery boundary, push notifications (Expo and Firebase), and background location for riders | **6a and 6b done** (15 November 2026); 6c next |
 | 7 | Capacity rules, batching, and the demo simulator (18.4) | To do |
 | 8 | Website: turn `design/prototypes/cke-website.html` into the static GitHub Pages site | To do |
 | 9 | Reports on real data (pre-computed summaries), rider payouts, Finance, polish, the remaining 16.1 checks (battery, performance, contrast), Neon at deploy, signed release APKs (arm64-v8a and armeabi-v7a) on GitHub Releases | To do |
@@ -1179,3 +1179,17 @@ Append a new dated entry after each work session. Never edit or delete earlier e
 
 **Next step:**
 - Step 6b: the rider app on live data (then 6c, the customer app, and 6d, the map, push, and background location).
+
+---
+
+## [2026-11-15] Step 6b: the rider app on live data
+
+**What was done:**
+- **Live sync and actions** (`apps/rider/src/state/live.tsx`): after sign-in the app loads the rider’s deliveries, earnings, and queue; keeps one WebSocket to `/live`; re-reads the queue a moment after any queue message (the server decides what fits); vibrates for a new order that fits or one dispatch assigns; closes in the background and catches up on return. Going online, accept, picked up, the delivery code, Need help, release, and the stop order go to the API, and the screen moves on only when the API agrees. Earnings show the real figures (period totals, owed by day, today’s deliveries, paid weeks). The demo code hint now shows only in the demo.
+- **Client:** typed rider calls and the rider live messages in `@cke/api-client`.
+- **Tested on the tablet against the real database:** Home showed Musa online and carrying the order dispatch assigned; a ready order appeared in the queue within 3 seconds; accepting made it stop 2; Picked up moved both orders to picked up; a wrong code showed the API’s “That code isn’t right. Check it with the customer.”; the customer’s real code (read from their own order view) delivered O-3225 and stored ₦1,000 rider pay; Need help (customer unreachable) opened a help request and flagged a delivery issue, which reached the kitchen’s Alerts live (“Musa needs help with O-3227: the customer can’t be reached.”, view only) and dispatch’s, where Approve completion recorded D-001 and delivered the order; the rider’s drop-off cleared on its own; Earnings showed today’s 2 deliveries (₦2,000) and owed by day from the seeded week. This also covers the help-request action left untested in 6a.
+- **Checks:** typecheck and lint clean.
+
+**Files created/updated:** `packages/api-client/src/index.ts`; `apps/rider/src/state/live.tsx` (new), `src/state/store.tsx`, `src/data/orders.ts`, `app/_layout.tsx`, `app/(tabs)/index.tsx`, `app/(tabs)/queue.tsx`, `app/(tabs)/earnings.tsx`, `app/order/[no].tsx`, `app/pickup.tsx`, `app/code.tsx`, `app/help.tsx`, `app/release.tsx`, `app/deliveries.tsx`; `docs/architecture.md` v0.47, `progress.md`.
+
+**Next step:** step 6c, the customer app on live data.

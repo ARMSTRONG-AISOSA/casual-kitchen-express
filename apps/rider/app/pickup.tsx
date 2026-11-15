@@ -1,6 +1,7 @@
 import { useKeepAwake } from "expo-keep-awake";
 import { router } from "expo-router";
-import { pickUpAll, useStore } from "../src/state/store";
+import { useRiderOps } from "../src/state/live";
+import { useStore } from "../src/state/store";
 import { Button, Card, KV, Screen, T, TopBar } from "../src/ui/kit";
 import { useToast } from "../src/ui/toast";
 
@@ -8,11 +9,12 @@ import { useToast } from "../src/ui/toast";
 // The screen stays awake here and on code entry only (RID-15).
 export default function Pickup() {
   useKeepAwake();
-  const { s, set } = useStore();
+  const { s } = useStore();
+  const ops = useRiderOps();
   const toast = useToast();
   const bags = s.carrying.filter((o) => !o.picked);
-  const done = () => {
-    set((st) => pickUpAll(st));
+  const done = async () => {
+    if (!(await ops.pickUpAll())) return;
     toast("Picked up");
     router.replace("/drop-off");
   };
@@ -21,7 +23,7 @@ export default function Pickup() {
       header={<TopBar title="Pick up" back />}
       footer={
         <>
-          <Button label="Picked up" onPress={done} disabled={!bags.length} />
+          <Button label="Picked up" onPress={() => void done()} disabled={!bags.length} />
           <Button label="Need help" variant="alt" onPress={() => router.push("/help")} />
         </>
       }
@@ -34,8 +36,14 @@ export default function Pickup() {
       {bags.map((o) => (
         <Card key={o.no} strong>
           <T v="big">{o.no}</T>
-          <KV k="Food" v={o.items.map((i) => i.name).join(", ")} />
-          <KV k="Bags" v={o.items.some((i) => i.load === 3) ? 2 : 1} />
+          {o.items.length ? (
+            <>
+              <KV k="Food" v={o.items.map((i) => i.name).join(", ")} />
+              <KV k="Bags" v={o.items.some((i) => i.load === 3) ? 2 : 1} />
+            </>
+          ) : (
+            <KV k="Items" v={o.itemCount ?? 0} />
+          )}
         </Card>
       ))}
     </Screen>

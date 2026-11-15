@@ -4,6 +4,7 @@ import { router } from "expo-router";
 import { useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { DEMO_DELIVERY_CODE } from "../src/data/orders";
+import { useRiderOps } from "../src/state/live";
 import { completeNext, useStore } from "../src/state/store";
 import { useTheme } from "../src/state/theme";
 import { Button, Screen, StateBanner, T, TopBar } from "../src/ui/kit";
@@ -18,8 +19,13 @@ export default function Code() {
   const { s, set } = useStore();
   const t = useTheme();
   const [code, setCode] = useState("");
+  const ops = useRiderOps();
+  const [checking, setChecking] = useState(false);
+  // Live: the API's sentence for a wrong code ("That code isn’t right. 4 tries left.").
+  const [wrong, setWrong] = useState("");
   const o = s.carrying[0];
-  const locked = s.codeTries >= MAX_TRIES;
+  // Live, the API decides when it’s locked (5 wrong codes) and says so; the demo allows 3.
+  const locked = ops.live ? /too many/i.test(wrong) : s.codeTries >= MAX_TRIES;
 
   // The ref always holds the latest digits, so quick taps never drop one.
   const entered = useRef("");
@@ -32,6 +38,21 @@ export default function Code() {
       return;
     }
     entered.current = "";
+    if (ops.live) {
+      // Live: the API checks the customer's code (4.4) and counts wrong tries.
+      setCode(next);
+      setChecking(true);
+      void ops.deliver(next).then((r) => {
+        setChecking(false);
+        if (r.ok) router.replace({ pathname: "/delivered", params: { no: o?.no ?? "" } });
+        else {
+          setCode("");
+          setWrong(r.message);
+          set((st) => ({ codeTries: st.codeTries + 1 }));
+        }
+      });
+      return;
+    }
     if (next === DEMO_DELIVERY_CODE) {
       setCode(next);
       set((st) => completeNext(st));
@@ -62,10 +83,11 @@ export default function Code() {
         />
       ) : (
         <>
-          {s.codeTries > 0 ? (
+          {checking ? <T muted>Checking the code…</T> : null}
+          {s.codeTries > 0 && !checking ? (
             <StateBanner
               kind="alert"
-              label="That code doesn’t match. Check with the customer and try again."
+              label={wrong || "That code doesn’t match. Check with the customer and try again."}
             />
           ) : null}
           <View style={styles.pad}>
@@ -88,9 +110,12 @@ export default function Code() {
           </View>
         </>
       )}
-      <T v="small" muted style={{ marginTop: 12 }}>
-        Demo code: {DEMO_DELIVERY_CODE}
-      </T>
+      {/* Live, the customer has the real code in their app (4.4); only the demo has a fixed one. */}
+      {!ops.live ? (
+        <T v="small" muted style={{ marginTop: 12 }}>
+          Demo code: {DEMO_DELIVERY_CODE}
+        </T>
+      ) : null}
     </Screen>
   );
 }

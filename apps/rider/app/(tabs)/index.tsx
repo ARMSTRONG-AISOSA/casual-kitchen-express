@@ -1,19 +1,21 @@
 import { naira } from "@cke/brand-tokens";
 import { toDeliveries } from "../../src/nav";
 import { useRider } from "../../src/state/session";
+import { useRiderOps } from "../../src/state/live";
 import { MAX_ORDERS, alertRider, useStore } from "../../src/state/store";
 import { Button, Card, KV, Screen, StateBanner, T, TopBar } from "../../src/ui/kit";
 import { useToast } from "../../src/ui/toast";
 
 // Home: one big switch to go online, and today's summary (RID-02, RID-13).
 export default function Home() {
-  const { s, set } = useStore();
+  const { s } = useStore();
+  const ops = useRiderOps();
   const rider = useRider();
   const toast = useToast();
   const today = s.delivered.length;
-  const toggle = () => {
+  const toggle = async () => {
     const online = !s.online;
-    set({ online, newOrder: online && s.queue.length > 0 });
+    if (!(await ops.setOnline(online))) return;
     toast(online ? "You’re online" : "You’re offline");
     if (online && s.queue.length) alertRider(s);
   };
@@ -26,11 +28,11 @@ export default function Home() {
           <Button
             label="Go offline"
             variant="alt"
-            onPress={toggle}
+            onPress={() => void toggle()}
             disabled={s.carrying.length > 0}
           />
         ) : (
-          <Button label="Go online" onPress={toggle} />
+          <Button label="Go online" onPress={() => void toggle()} />
         )
       }
     >

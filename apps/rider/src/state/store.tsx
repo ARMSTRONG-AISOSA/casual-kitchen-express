@@ -1,4 +1,4 @@
-import type { Me } from "@cke/api-client";
+import type { Me, RiderEarnings } from "@cke/api-client";
 import { DEFAULTS } from "@cke/validation";
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 import { Vibration } from "react-native";
@@ -31,6 +31,14 @@ export type State = {
   /** Preview only: another rider wins the next accept. */
   raceLost: boolean;
   newOrder: boolean;
+  /**
+   * Live: the queue, deliveries, and earnings come from the API and the live connection, and
+   * every action goes to the API (build step 6b). Off: the demo data in the app.
+   */
+  live: boolean;
+  /** Orders in the queue that don't fit what the rider carries (shown as a count). */
+  hidden: number;
+  earnings: RiderEarnings | null;
 };
 
 export const MAX_ORDERS = 3;
@@ -51,6 +59,9 @@ export const initial = (): State => ({
   codeTries: 0,
   raceLost: false,
   newOrder: true,
+  live: false,
+  hidden: 0,
+  earnings: null,
 });
 
 type Update = Partial<State> | ((s: State) => Partial<State>);

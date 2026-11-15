@@ -2,7 +2,8 @@ import { router } from "expo-router";
 import { MapPin } from "lucide-react-native";
 import { StyleSheet, View } from "react-native";
 import { KITCHEN, km } from "../src/data/orders";
-import { deliverFirst, useStore } from "../src/state/store";
+import { useRiderOps } from "../src/state/live";
+import { useStore } from "../src/state/store";
 import { useTheme } from "../src/state/theme";
 import { Button, Card, Screen, T, TopBar } from "../src/ui/kit";
 import { toQueue, toTabs } from "../src/nav";
@@ -10,7 +11,8 @@ import { toQueue, toTabs } from "../src/nav";
 // My deliveries (RID-06): only the next stop has a big button. Later stops are listed below in
 // the suggested order, nearest first, and the rider can change it.
 export default function Deliveries() {
-  const { s, set } = useStore();
+  const { s } = useStore();
+  const ops = useRiderOps();
   const t = useTheme();
   const [next, ...later] = s.carrying;
   const back = toTabs;
@@ -77,7 +79,7 @@ export default function Deliveries() {
                 <Button
                   label="Deliver this next"
                   variant="alt"
-                  onPress={() => set((st) => deliverFirst(st, o.no))}
+                  onPress={() => void ops.deliverFirst(o.no)}
                   style={{ marginTop: 10 }}
                 />
               ) : null}
