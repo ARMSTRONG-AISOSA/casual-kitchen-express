@@ -1,6 +1,6 @@
 # CKE ARCHITECTURE
 
-**Document Status:** Draft v0.39. Records the functions, features, and decisions for the apps and the website. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day with the backend foundation in progress), and again on 14 November 2026 after sign-in was built.  
+**Document Status:** Draft v0.41. Records the functions, features, and decisions for the apps and the website. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day with the backend foundation in progress), and again on 14 November 2026 after sign-in was built.  
 **Related documents:** `Casual-Kitchen-Express.md` (business and brand, surface level), `design.md` (UI/UX decisions and page flows), and `list-of-areas.md` (delivery areas).
 
 ---
@@ -145,6 +145,7 @@ Placed, Confirmed, Acknowledged, Preparing, then **Ready for collection** (notif
 - A 4-digit code is generated when the order is placed and shown on the customer's tracking screen.
 - The code is stored hashed, and wrong attempts are rate-limited.
 - The rider enters the code to close the delivery. If the code cannot be used, the rider taps "Need help" and a dispatch officer or a manager can approve a manual completion, which is recorded in the audit log.
+- **Built (15 November 2026):** the code is worked out from the order’s ID with a keyed hash (HMAC-SHA-256 with the API’s secret), so the tracking screen can show it whenever the customer opens it, and only a SHA-256 hash of it is stored on the order to check what the rider enters. A database copy alone doesn’t reveal any code.
 
 ### 4.5 Who did what
 
@@ -216,7 +217,7 @@ Kitchen staff enter walk-in orders at the counter. They are kept separate from o
 - **Customer details:** none are collected. A walk-in order has no account, no address, and no delivery code. An optional name or label can be added so staff can call the order out.
 - **Payment at the counter (simulated):** either **cash** or **online** (card or bank transfer) at the point of placing the order. For cash, the staff member records the amount received and the app shows the change due. For an online payment, a simulated confirmation is shown. No real money moves.
 - **No delivery:** walk-in orders have no delivery fee, no rider, and no rider pay.
-- **Statuses:** Placed (paid), then Preparing, then Ready (the number is called out), then Collected.
+- **Statuses:** Placed (paid), then Preparing, then Ready (the number is called out), then Collected. As built (15 November 2026), a walk-in sits in the board’s New column until someone taps it, like an online order (Acknowledged), which matches the board’s “Tap to acknowledge” on walk-in tickets; the first tick then moves it to Preparing.
 - **Hours:** walk-in orders can be entered from 8:00 am until the walk-in closing time of 8:30 pm.
 - **On the kitchen board:** walk-in tickets sit in the same columns as online orders, with a "Walk-in" badge. The board can be filtered to All, Online, or Walk-in.
 - **In reports:** the dashboard, the order list, and the reports split by channel. Sales also split by payment method (cash, card, transfer). Customer reports cover online orders only, because walk-ins have no account.
@@ -516,6 +517,17 @@ Entities and key fields, as a starting point for the Drizzle schema. Better Auth
 
 **API routes so far** (`apps/api/README.md` has the commands): `GET /health`; `GET /bootstrap` (menu, soups, areas, and customer-facing settings, with an ETag and 304s); `POST /soups` and `DELETE /soups/:id` (managers); `PUT /settings/soup-of-the-day` (kitchen staff and managers); `GET /media/:id` (an image from R2, cached for a year because an ID never changes what it points to, 8.3); `GET /media/credits` (the credits of the menu and soup photos in use, so a replaced or removed photo drops out); `PUT /photos/:kind/:id` and `DELETE /photos/:kind/:id` (add, replace, or remove a dish, soup, or staff photo with its credit; the API checks it is WebP within the size and dimension limits, and deletes the old photo); `GET /staff/photos` (staff photos, signed-in staff only). **Sign-in (built 14 November 2026):** Better Auth at `/api/auth/*` (username sign-in for staff; Google for customers and managers through the browser-based flow, on once `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set, with the redirect address `<API address>/api/auth/callback/google`; a manager added by Google email is linked at their first Google sign-in), `GET /me` (the signed-in person: role, staff code or customer ID, photo, their own job title, phone, home address, gender, and Google email, and whether they must change their password; a customer’s CustomerProfile row, with the next customer ID from C-00001, is made at their first visit), `PATCH /me` (a customer’s name and gender), `PUT /me/photo` and `DELETE /me/photo` (a customer’s own profile photo: WebP, up to 512 px and 80 KB, replacing deletes the old one; served only to that customer and to managers and dispatch officers), `POST /me/password`, and the managers’ People routes: `GET /people` (with each person’s username or Google email; the placeholder address of username staff is never shown), `POST /people` (a temporary password shown once), `PATCH /people/:code`, `POST /people/:code/reset-password`, `/deactivate`, and `/reactivate`. Every change route checks the role (3.0) on the route itself, not through wildcard middleware; staff who must change a temporary password can do only that; a deactivated person is signed out straight away; staff photo files (`GET /media/:id`) need a staff session, while menu and soup photos stay public. Sign-in is rate-limited to 5 tries a minute per address through a Durable Object (`AuthRateLimiter`). The temporary `ALLOW_UNSIGNED_WRITES` guard is gone. The demo staff are in the database (`npm run db:seed-people`) with the demo password `cke-demo-2026`; managers get usernames (`owner.m`, `ivie.m`) only on the laptop with `SEED_MANAGER_PASSWORDS=1` (the API tests sign in as the owner), because on a deployed database they sign in with Google only. The owner’s account comes from `OWNER_GOOGLE_EMAIL` and `OWNER_NAME` (3); a configured owner keeps their own name, details, and photo when the seeds are run again. The soup rotation is the first feature the apps read from the API; both apps fall back to their demo data when no API address is set.
 
+**Orders, part 1 (built 15 November 2026, build step 4c):**
+- **Menu management:** `GET /menu` (kitchen staff and managers: every item with its station, archived ones too), `POST /menu/items`, `PATCH /menu/items/:id` (sending `options` replaces the item’s choices; the first is the default when none is marked; price changes are audit-logged), `DELETE /menu/items/:id` (archives), `PUT /menu/items/:id/availability` (sold out or back on: kitchen staff and managers, KIT-08), `POST /menu/categories`, `PATCH /menu/categories/:id`. Every change raises the catalog version (14.4, decision 1).
+- **Checkout:** `POST /me/orders` prices the order on the server from the current menu (never from the app), checks today’s online hours (with overrides), the pause, and the delivery address (the customer’s own, an in-range area, and inside the boundary polygon once it is drawn, 16.1 item 12), stores the delivery fee, takes the demo payment, and confirms the order straight away (Placed by the customer, Confirmed by the system). Items with choices take the default when none is sent (CUS-03); a soup dish takes today’s soup and its name. A sold-out or archived item is refused. An address outside the range answers `outsideRange: true` so the app can offer pickup (CUS-23).
+- **Customer’s orders:** `GET /me/orders?tab=progress|history` (history 30 at a time, older pages with `before`), `GET /me/orders/:id` (tracking, with the delivery code while a delivery is on its way and `canCancel` before the kitchen acknowledges). No staff names or codes are shown to customers.
+- **Walk-ins:** `POST /orders/walk-in` (kitchen staff and managers, within the walk-in hours): eat in or take away, an optional name, cash (the amount received can’t be less than the total; the change due is stored) or card or transfer.
+- **Kitchen steps:** `POST /orders/:id/acknowledge`, `PUT /orders/:id/items/:itemId` (tick or untick a line; the first tick moves the order to Preparing), `POST /orders/:id/ready` (Ready for a delivery, Ready for collection otherwise), `POST /orders/:id/collected`. Each is recorded against the person signed in (4.5), and the status check is part of the update, so two taps at once can’t both succeed.
+- **Lists:** `GET /orders/board` (every order still in the kitchen, with its lines, and the latest change number), `GET /orders` (dispatch, accounts, managers: any date range, channel, statuses, payment method, staff member, order number or customer ID, sorted by time or amount, 150 at a time with a cursor, with the count and total value), `GET /orders/:id` (the full order with its timeline, payment, and customer card). The customer’s phone and address are shown only to dispatch officers and managers.
+- **Reconnecting:** `GET /changes?since=N` returns only the orders changed since change number N (a customer only their own) and the number to send next time, or `reload: true` when more than 300 changed (14.4, decision 4).
+- Order numbers: O- numbers continue from the highest online number, and W- numbers start at W-001 each day (4.8); two orders at the same moment can’t share a number (the unique index refuses one, and it takes the next).
+- **Still to come in 4c:** cancellations and refunds (4.6), the rider queue and deliveries (accept with one winner, assign, pick up, the code, help requests, rider pay), alerts, and the live connection (10).
+
 | Entity | Key fields |
 |---|---|
 | User | id, email, password or sign-in method, role, status, created at |
@@ -656,6 +668,41 @@ Entities and key fields, as a starting point for the Drizzle schema. Better Auth
 - **Locale:** English, Naira (₦) formatting, West Africa Time.
 - **Android version:** Android 10 and above (section 17.1).
 - **Reliability:** order and payment data must never be lost, and order states change only through the backend.
+
+### 13.1 Memory and CPU checks (decided)
+
+**Rule (owner, 15 November 2026, changed the same day):** Claude checks the apps’ memory use and looks for memory leaks **only when the owner asks, or after asking the owner and getting a yes**. Never on its own. At the moments below, Claude offers a check and waits for the answer. Added after the Business app slowed the tablet down because every screen visited stayed open (15 November 2026; the fix and figures are in `progress.md`).
+
+**When to offer a check (asking first):**
+- After each build step that adds or changes screens, lists, images, live data (WebSockets), timers, or navigation.
+- Before committing a change to navigation, live updates, or anything with a timer or subscription.
+- When the owner says an app feels slow.
+- Before each release build, on the release build itself (development builds use far more memory and some CPU).
+
+**How (on the tablet, with `adb`):**
+1. Start the app fresh and note its memory (`adb shell dumpsys meminfo <package>`, TOTAL PSS) and the tablet’s free memory (`MemAvailable` in `/proc/meminfo`).
+2. Repeat the app’s main flows several times (for example the managers’ tour, opening and closing orders, tracking and back, the rider’s Queue and My deliveries).
+3. Measure again after each round. The first round may grow while screens and photos load for the first time; later rounds should level off (a rough guide: under about 15 MB per round once warm). Memory that climbs by about the same amount every round is a leak.
+4. Count the back presses needed to leave the app: it should be the screens actually open, not every screen visited.
+5. Check the processor at rest (`adb shell top -p <pid>`): an idle release build should be near 0%. Anything that keeps working while nothing changes on screen (a timer, polling, an animation) is a fault.
+6. Read the code for the usual causes: navigation that stacks main screens (main screens and tabs must clear the screens on top first), timers or listeners without clean-up, long lists drawn in full, and full-size images in small places.
+
+**Results:** each check is written in the progress log with the figures, and anything found is fixed or recorded as an open item.
+
+**Ways to keep memory and CPU low (Proposals, 15 November 2026, for the owner to choose):**
+
+| # | Proposal | Why |
+|---|---|---|
+| 1 | **Virtualised lists:** draw long lists (Orders up to 150 rows, People, Menu, Order history, the rider’s Earnings, report tables) with React Native’s built-in `FlatList`, which only draws the rows on screen. No new package. | Today every list is drawn in full inside a ScrollView, so a long list keeps every row and photo in memory. |
+| 2 | **Small photo versions:** keep a second, small copy of each photo (about 160 px) for lists and thumbnails, and load the 512 px copy only on a detail screen. Made on the phone at upload, like the current compression. | A 512 px photo shown in a small circle (about 88 pixels on this tablet) uses about 30 times the memory it needs. |
+| 3 | **Image cache limits:** `expo-image` with a disk cache for photos and a capped memory cache, cleared when Android reports low memory. | Photos stay fast without filling memory. |
+| 4 | **Fewer redraws:** split the Business app’s single app-wide state so a change (a new order, the clock) redraws only the screens that use it, and memoise ticket and order cards. | Every change currently redraws the whole open screen and the side rail, which costs CPU on busy days. |
+| 5 | **Pause in the background:** close the live connection and stop timers when an app goes to the background (Android `AppState`), and catch up with one “what changed” call when it returns (14.4, choice 4). | No CPU, data, or battery use while nobody is looking. |
+| 6 | **No polling, ever:** live data only through the WebSocket (10), and Durable Objects hibernate when idle. | Polling is the main cause of idle CPU and of request counts (14.2). |
+| 7 | **Only today in memory:** keep today’s live orders in memory and fetch past days per view, letting them go when the screen closes (TanStack Query `gcTime`). | Memory stays flat however long the history grows. |
+| 8 | **Hidden tabs frozen:** turn on `freezeOnBlur` for tabs, so a tab not on screen doesn’t redraw. | Live updates don’t redraw screens nobody can see. |
+| 9 | **Release build settings:** Hermes (the default), R8 code shrinking, and resource shrinking for release APKs, still arm64-v8a only (17.2). | Smaller app, less memory, faster start. |
+| 10 | **Light animations:** native-driver animations only, and none that loop forever. | A looping animation keeps the CPU busy on every screen. |
 
 ---
 
@@ -1161,6 +1208,8 @@ At build time, a seed script fills the database with up to **two months** of his
 
 | Version | Change |
 |---|---|
+| 0.41 | The memory check rule changed (owner): checks only when the owner asks or agrees, never on Claude’s own (13.1). Orders backend, part 1, built on 15 November 2026: menu management, checkout, the customer’s orders, walk-ins, the kitchen’s steps, the board, the order list, and reconnecting with only what changed (9 notes). The delivery code is worked out with a keyed hash and only its hash stored (4.4). Walk-ins are acknowledged on the board like online orders (4.8). |
+| 0.40 | Owner decision on 15 November 2026: Claude checks memory use and memory leaks on its own at intervals as the apps grow (13.1), with ten Proposals for keeping memory and CPU low. |
 | 0.39 | Owner decision on 15 November 2026: a tour guide for managers (MGR-39), started only from Demo controls, one straight tour of the manager’s 14 menu items, each step opening its screen. |
 | 0.38 | Owner decisions on 14 November 2026: ammycan6@gmail.com is the owner, as staff ID M-001, set up from configuration (`OWNER_GOOGLE_EMAIL`, `OWNER_NAME`), which closes the 0.37 gap (3, 9 notes). Customer profiles built: the CustomerProfile row and customer ID at the first visit, name and gender saved, and the profile photo with on-phone compression, private to the customer, managers, and dispatch (3.1, 8.1, 9 notes). |
 | 0.37 | Review on 14 November 2026 after Google sign-in was tested on the tablet: 16.1 items 1 and 5 marked done (5 except the privacy link and publishing); the signing row no longer ties Google sign-in to the key; the accounts note and the status lines are current; `GET /people` hides the placeholder address of username staff; a gap recorded: the owner’s Google email isn’t configured for the deployed database yet (3). |

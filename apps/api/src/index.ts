@@ -3,8 +3,11 @@ import type { Actor } from "./auth/actor";
 import { createAuth } from "./auth/auth";
 import { connect, type Db } from "./db/client";
 import { bootstrap } from "./routes/bootstrap";
+import { changes } from "./routes/changes";
 import { me } from "./routes/me";
 import { media } from "./routes/media";
+import { menu } from "./routes/menu";
+import { myOrders, orders } from "./routes/orders";
 import { people } from "./routes/people";
 import { photos } from "./routes/photos";
 import { soupOfTheDay, soups } from "./routes/soups";
@@ -37,8 +40,12 @@ app.on(["GET", "POST"], "/api/auth/*", (c) =>
 );
 
 app.route("/bootstrap", bootstrap);
+app.route("/changes", changes);
+app.route("/me/orders", myOrders);
 app.route("/me", me);
 app.route("/media", media);
+app.route("/menu", menu);
+app.route("/orders", orders);
 app.route("/people", people);
 app.route("/photos", photos);
 app.route("/soups", soups);

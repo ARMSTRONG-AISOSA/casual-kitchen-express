@@ -27,7 +27,7 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and two
 | File | What it is | Authority |
 |---|---|---|
 | `progress.md` | This file: status, rules, next steps, log | Start here |
-| `docs/architecture.md` (v0.39) | Functions, 129 feature IDs (CUS, RID, KIT, MGR, DSP, ACC, WEB), order lifecycle, data model, the API routes built so far, decisions, free-tier limits, **locked versions (section 15)**, build order (16), **16.1 to verify at build**, seed data | Wins on anything technical |
+| `docs/architecture.md` (v0.41) | Functions, 129 feature IDs (CUS, RID, KIT, MGR, DSP, ACC, WEB), order lifecycle, data model, the API routes built so far, decisions, free-tier limits, **locked versions (section 15)**, build order (16), **16.1 to verify at build**, seed data | Wins on anything technical |
 | `docs/design.md` (v0.33) | UI rules per app, screens, page flows, colours, components | Wins on anything visual or UX |
 | `docs/Casual-Kitchen-Express.md` (v1.10) | Brand and business, surface level only | Wins on brand (name, colours, logo, tone, menu, packaging) |
 | `docs/list-of-areas.md` | Delivery areas, boundary, landmarks, neighbourhood list | Areas still to confirm on a map |
@@ -119,7 +119,7 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and two
 | Design plan | Philosophy per app (customer expressive, kitchen practical, rider functional and black-and-white), screens, and flows |
 | Areas | Scouted area list, with the boundary at Oluku Market (the road there is reported clear) |
 | Prototypes | 22 customer screens, 16 rider screens, 19 kitchen and manager screens, and 5 website pages, all automatically click-tested |
-| Repository | npm workspaces and Turborepo monorepo with the three apps, the API Worker, shared packages, and a placeholder website. Typecheck and lint pass (11 of 11 tasks), Prettier is clean, and 14 of 14 API tests pass. Local commits only, not pushed (the latest is in the log). |
+| Repository | npm workspaces and Turborepo monorepo with the three apps, the API Worker, shared packages, and a placeholder website. Typecheck and lint pass (11 of 11 tasks), Prettier is clean, and 22 of 22 API tests pass. Local commits only, not pushed (the latest is in the log). |
 | Android | JDK 17 and the Android SDK installed. arm64-v8a debug builds of all three apps on the owner’s tablet. Rebuilt on 14 November 2026: the Business app (sign-in libraries), the rider app (56 minutes), and the customer app (24 minutes, with sign-in libraries and expo-image). |
 | Customer app | Every screen built on demo data. Reads the menu, soups, today’s soup, and photos from the API (with a 304 when nothing changed), and shows Photo credits. Continue with Google (checkout and Profile) signs in for real (tested 14 November 2026; a staff Google account is refused), and photos use expo-image. Profile is real: the customer ID, name, and gender come from the API and save, the profile photo is taken or chosen, cropped, compressed on the phone, and uploaded (a Profile photo section and a camera badge on the photo), and a Sign out section sits between Theme and Help. Ordering, addresses, and the map are still demo stand-ins. |
 | Rider app | Every screen built on demo data. Real sign-in (username and password, with a show-password eye), the new-password screen, staying signed in (even when it opens without signal), Sign out, and the Me tab’s details from the API. Deliveries are still demo data. |
@@ -181,7 +181,7 @@ The order below follows `architecture.md` 16, adjusted by the owner’s frontend
 | 3b | Business and Kitchen app screens on demo data, all four staff roles | **Done** (`e2fe3c5`, `d4d2032`) |
 | 4a | Backend foundation: local database, schema, migrations, base, staff, and photo seeds, bootstrap with versions, soup rotation, photo upload and credits | **Done** (`5c088de`, `9a916f6`) |
 | 4b | Sign-in and roles: Better Auth in the Worker (usernames for staff, Google for managers and customers), sessions in all three apps, a role check on every route (3.0), first-sign-in password change, manager password reset, deactivation signs a person out, the tablet’s 8:30 pm sign-out, Your profile and Sign out, the show-password eye. The early 16.1 checks (PBKDF2 timing, Durable Object alarms). | **Done** (`c694fb1` and the 14 November commit) |
-| 4c | **Orders backend:** menu management (items, prices, sold out, options), orders and status events (online and walk-in), simulated payments, refunds with the tick and refunder, cancellation requests, alerts, deliveries, the rider queue (first to accept wins), delivery codes, Durable Objects for live updates, and “only what changed” on reconnect (14.4) | **Next** |
+| 4c | **Orders backend:** menu management (items, prices, sold out, options), orders and status events (online and walk-in), simulated payments, refunds with the tick and refunder, cancellation requests, alerts, deliveries, the rider queue (first to accept wins), delivery codes, Durable Objects for live updates, and “only what changed” on reconnect (14.4). Split into five parts: (1) menu management and the core orders, (2) cancellations and refunds, (3) the rider queue and deliveries, (4) alerts, (5) the live connection. | **In progress:** part 1 done (15 November 2026) |
 | 5 | **Seed script:** two months of demo history (18.3), with its own checks | To do |
 | 6 | **Connect the screens to the API** in all three apps, replacing the demo data; the real map (MapLibre) with the delivery boundary, push notifications (Expo and Firebase), and background location for riders | To do |
 | 7 | Capacity rules, batching, and the demo simulator (18.4) | To do |
@@ -1011,4 +1011,33 @@ Append a new dated entry after each work session. Never edit or delete earlier e
 
 **Next step:**
 - The owner checks the whole Demo screen, then commit this fix. Then the API call-reduction review (architecture.md 14.4) and step 4c, the orders backend.
+- Done: the owner was satisfied; committed as `ee6a888`.
+
+---
+
+## [2026-11-15] Memory check rule, ways to keep memory and CPU low, and the orders backend (part 1)
+
+**What was done:**
+- **Memory check rule (owner decision, changed the same day: checks only when the owner asks or agrees, never on Claude’s own; Claude offers a check at these moments):** Claude checks memory use, leaks, and idle CPU after build steps that touch screens, lists, images, live data, timers, or navigation; before committing such changes; when an app feels slow; and on release builds. The method (fresh-start memory, repeated flows, back-press count, idle CPU, code reading) is in `architecture.md` 13.1, and the results go in this log.
+- **Ten Proposals to keep memory and CPU low** (`architecture.md` 13.1), for the owner to choose: virtualised lists (`FlatList`; today every list is drawn in full), small photo versions for lists, image cache limits, fewer redraws in the Business app, pausing in the background, no polling, only today in memory, frozen hidden tabs, release build settings (R8 and resource shrinking), and light animations. Measured: the Business app idles at about 5% CPU on Demo controls in the development build.
+- **Call-reduction plan for orders (14.4), gone over with the owner:** the four decided choices apply as follows. The menu and settings keep their version and 304s (menu edits raise the version). The live connection (part 5) will send the changed order itself, role-filtered, so watching apps make no calls; messages sent from a Durable Object are free. Reconnecting is one call to `GET /changes?since=N`. Writes return the updated order, screens get one call each, and lists are paged 150 at a time.
+- **Orders backend, part 1** (step 4c), with new routes listed in `architecture.md` 9 and `apps/api/README.md`: menu management (MGR-05, MGR-07, MGR-08, KIT-08), checkout priced on the server with the hours, pause, and range checks and the demo payment (CUS-05, CUS-07, CUS-23), the customer’s orders and tracking with the delivery code (CUS-08, CUS-10, CUS-13), walk-ins with cash and change (KIT-13, KIT-14), the kitchen’s steps recorded against the person signed in (KIT-03 to KIT-07, 4.5), the board, the order list for any dates (filters, sort, cursor, count and value), the order detail with its timeline, and `GET /changes`. Customer phones and addresses are only shown to dispatch and managers.
+- Built details recorded in the architecture: the delivery code is worked out from the order’s ID with a keyed hash and only its hash is stored (4.4); walk-ins are acknowledged on the board like online orders, which matches the board’s “Tap to acknowledge” on walk-in tickets (4.8).
+- Tests: a new `test/orders.test.ts` (8 tests: menu add, edit with the audit log, sold out, archive; checkout pricing and the code; outside the range and pickup with today’s soup; the kitchen’s steps and who did them; privacy; walk-in cash and change, the order list and search; changes since a number; opening hours). It opens the hours for the test and restores them, and removes its test customer, addresses, area, item, and orders (checked in the database afterwards). 22 of 22 API tests pass; the API typechecks; Prettier clean.
+- Committed earlier this session: `ee6a888` (customer and rider pile-up fix).
+
+**Files created/updated:**
+- `apps/api/src/orders/clock.ts`, `code.ts`, `lines.ts`, `store.ts`, `view.ts` (new); `src/routes/menu.ts`, `orders.ts`, `changes.ts` (new); `src/index.ts`; `test/orders.test.ts` (new); `README.md`
+- `docs/architecture.md` (v0.40: 13.1; v0.41: 4.4, 4.8, 9 notes), `progress.md`
+- Claude’s memory: the memory-check rule
+
+**Decisions locked in:**
+- Memory, leak, and CPU checks only when the owner asks or agrees; Claude offers them at the moments in 13.1 (owner, 15 November 2026).
+
+**Open questions / not yet decided:**
+- The ten memory and CPU Proposals in `architecture.md` 13.1 (owner to choose).
+- Walk-ins acknowledged on the board like online orders (as built, matching the board): for the owner to confirm.
+
+**Next step:**
+- The owner reviews part 1, then commit. Then 4c part 2: cancellations and refunds (4.6).
 

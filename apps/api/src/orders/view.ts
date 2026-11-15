@@ -1,0 +1,209 @@
+import { asc, eq, inArray } from "drizzle-orm";
+import type { Db } from "../db/client";
+import * as t from "../db/schema";
+import { deliveryCode } from "./code";
+
+type OrderRow = typeof t.order.$inferSelect;
+
+/** Finished orders: nothing more happens to them except refunds (4.6). */
+export const FINISHED = ["delivered", "collected", "cancelled"] as const;
+
+/** Customers can cancel on their own only before the kitchen acknowledges (4.6). */
+export const CUSTOMER_CAN_CANCEL = ["placed", "confirmed"] as const;
+
+const itemView = (i: typeof t.orderItem.$inferSelect) => ({
+  id: i.id,
+  name: i.name,
+  unitPrice: i.unitPrice,
+  quantity: i.quantity,
+  options: i.options,
+  notes: i.notes,
+  station: i.station,
+  ticked: i.ticked,
+});
+
+/**
+ * Loads orders with their lines, timelines, payments, and customer cards in a few queries
+ * (one call per screen, 14.4). `full` adds the timeline, payment, and customer card that the
+ * order detail needs; the board only needs the lines.
+ */
+export async function loadOrders(db: Db, rows: OrderRow[], full: boolean) {
+  if (!rows.length) return [];
+  const ids = rows.map((o) => o.id);
+  const items = await db
+    .select()
+    .from(t.orderItem)
+    .where(inArray(t.orderItem.orderId, ids))
+    .orderBy(asc(t.orderItem.station), asc(t.orderItem.name));
+  const events = full
+    ? await db
+        .select({
+          orderId: t.orderStatusEvent.orderId,
+          status: t.orderStatusEvent.status,
+          at: t.orderStatusEvent.at,
+          actorKind: t.orderStatusEvent.actorKind,
+          actorId: t.orderStatusEvent.actorId,
+          staffCode: t.staffProfile.code,
+          staffName: t.staffProfile.fullName,
+        })
+        .from(t.orderStatusEvent)
+        .leftJoin(t.staffProfile, eq(t.staffProfile.userId, t.orderStatusEvent.actorId))
+        .where(inArray(t.orderStatusEvent.orderId, ids))
+        .orderBy(asc(t.orderStatusEvent.at))
+    : [];
+  const payments = full
+    ? await db.select().from(t.payment).where(inArray(t.payment.orderId, ids))
+    : [];
+  const customerIds = [...new Set(rows.map((o) => o.customerId).filter((x): x is string => !!x))];
+  const customers = customerIds.length
+    ? await db
+        .select({
+          userId: t.customerProfile.userId,
+          code: t.customerProfile.code,
+          name: t.customerProfile.name,
+        })
+        .from(t.customerProfile)
+        .where(inArray(t.customerProfile.userId, customerIds))
+    : [];
+  const addressIds = [...new Set(rows.map((o) => o.addressId).filter((x): x is string => !!x))];
+  const addresses =
+    full && addressIds.length
+      ? await db
+          .select({
+            id: t.address.id,
+            label: t.address.label,
+            street: t.address.street,
+            landmark: t.address.landmark,
+            phone: t.address.contactPhone,
+            lat: t.address.lat,
+            lng: t.address.lng,
+            neighbourhood: t.neighbourhood.name,
+          })
+          .from(t.address)
+          .innerJoin(t.neighbourhood, eq(t.neighbourhood.id, t.address.neighbourhoodId))
+          .where(inArray(t.address.id, addressIds))
+      : [];
+  const enteredIds = [...new Set(rows.map((o) => o.enteredBy).filter((x): x is string => !!x))];
+  const enterers = enteredIds.length
+    ? await db
+        .select({
+          userId: t.staffProfile.userId,
+          code: t.staffProfile.code,
+          name: t.staffProfile.fullName,
+        })
+        .from(t.staffProfile)
+        .where(inArray(t.staffProfile.userId, enteredIds))
+    : [];
+
+  return rows.map((o) => {
+    const own = items.filter((i) => i.orderId === o.id);
+    const customer = customers.find((c) => c.userId === o.customerId);
+    const address = addresses.find((a) => a.id === o.addressId);
+    const pay = payments.find((p) => p.orderId === o.id);
+    const by = enterers.find((e) => e.userId === o.enteredBy);
+    return {
+      id: o.id,
+      number: o.number,
+      businessDate: o.businessDate,
+      channel: o.channel,
+      type: o.type,
+      status: o.status,
+      exception: o.exception,
+      foodTotal: o.foodTotal,
+      deliveryFee: o.deliveryFee,
+      total: o.total,
+      paymentMethod: o.paymentMethod,
+      label: o.label,
+      placedAt: o.placedAt,
+      readyAt: o.readyAt,
+      load: own.reduce((sum, i) => sum + i.load * i.quantity, 0),
+      items: own.map(itemView),
+      customer: customer
+        ? {
+            code: customer.code,
+            name: customer.name,
+            ...(address
+              ? {
+                  phone: address.phone,
+                  address: {
+                    label: address.label,
+                    street: address.street,
+                    landmark: address.landmark,
+                    neighbourhood: address.neighbourhood,
+                    lat: address.lat,
+                    lng: address.lng,
+                  },
+                }
+              : {}),
+          }
+        : null,
+      enteredBy: by ? { code: by.code, name: by.name } : null,
+      ...(full
+        ? {
+            payment: pay
+              ? {
+                  method: pay.method,
+                  amount: pay.amount,
+                  cashReceived: pay.cashReceived,
+                  changeDue: pay.changeDue,
+                  demoRef: pay.demoRef,
+                }
+              : null,
+            events: events
+              .filter((e) => e.orderId === o.id)
+              .map((e) => ({
+                status: e.status,
+                at: e.at,
+                by:
+                  e.actorKind === "staff"
+                    ? { kind: "staff" as const, code: e.staffCode, name: e.staffName }
+                    : { kind: e.actorKind },
+              })),
+          }
+        : {}),
+      version: o.version,
+    };
+  });
+}
+
+/** One order with everything, for the order detail screen. */
+export async function orderDetail(db: Db, orderId: string) {
+  const [o] = await db.select().from(t.order).where(eq(t.order.id, orderId));
+  return o ? (await loadOrders(db, [o], true))[0]! : null;
+}
+
+/**
+ * What a customer sees of their own orders (CUS-08, CUS-10, CUS-13): the lines, totals, timeline,
+ * and the delivery code while a delivery is on its way. No staff names or codes. A page of
+ * orders loads in a few queries, not a few per order.
+ */
+export async function customerViews(db: Db, secret: string, rows: OrderRow[]) {
+  const full = await loadOrders(db, rows, true);
+  return Promise.all(
+    rows.map(async (o, i) => {
+      const f = full[i]!;
+      const live = !(FINISHED as readonly string[]).includes(o.status);
+      return {
+        id: o.id,
+        number: o.number,
+        type: o.type,
+        status: o.status,
+        exception: o.exception,
+        foodTotal: o.foodTotal,
+        deliveryFee: o.deliveryFee,
+        total: o.total,
+        paymentMethod: o.paymentMethod,
+        placedAt: o.placedAt,
+        items: f.items.map(({ station: _s, ticked: _t, ...item }) => item),
+        address: f.customer && "address" in f.customer ? f.customer.address : null,
+        events: f.events!.map((e) => ({ status: e.status, at: e.at })),
+        deliveryCode: o.type === "delivery" && live ? await deliveryCode(secret, o.id) : null,
+        canCancel: (CUSTOMER_CAN_CANCEL as readonly string[]).includes(o.status),
+        version: o.version,
+      };
+    }),
+  );
+}
+
+export const customerView = async (db: Db, secret: string, o: OrderRow) =>
+  (await customerViews(db, secret, [o]))[0]!;

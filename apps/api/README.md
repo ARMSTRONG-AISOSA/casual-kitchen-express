@@ -16,7 +16,7 @@ Run these from the repository root:
 | 3b. Add the demo staff (on the laptop, with manager usernames)                             | `SEED_MANAGER_PASSWORDS=1 npm run db:seed-people --workspace @cke/api` | `10 staff ready. Demo password for usernames: cke-demo-2026 (managers included: owner.m, ivie.m). The owner (M-001) signs in with the configured Google email.` |
 | 3c. Add the menu and staff photos (about 5 minutes)                                        | `npm run db:seed-media --workspace @cke/api`  | `23 menu and 10 staff photos stored, …`            |
 | Run the API for the tablet                                                                 | `npm run dev:lan --workspace @cke/api`        | `Ready on http://0.0.0.0:8787`                     |
-| 4. Run the tests (stop `dev:lan` first: the two share local state and the tests can stall) | `npm run test --workspace @cke/api`           | `Tests 14 passed (14)`                               |
+| 4. Run the tests (stop `dev:lan` first: the two share local state and the tests can stall) | `npm run test --workspace @cke/api`           | `Tests 22 passed (22)`                               |
 | Stop the database (data is kept)                                                           | `npm run db:down --workspace @cke/api`        | `Container cke-db-1 Removed`                       |
 
 The local password (`cke-local-only`) only works on this laptop: the database listens on
@@ -39,6 +39,12 @@ check the new file in `drizzle/`, then run step 2 again.
 | `GET /me`, `POST /me/password`                                      | The signed-in person, and changing your own password (needed after a temporary password)                                                      |
 | `PATCH /me`, `PUT /me/photo`, `DELETE /me/photo` | Customers: their name and gender, and their private profile photo (WebP, 512 px, 80 KB) |
 | `/people`                                                           | Managers: list (username or Google email), add (temporary password shown once), edit, reset password, deactivate, reactivate                  |
+| `GET /menu`, `/menu/items`, `/menu/categories` | Menu management (MGR-05, MGR-07, MGR-08): managers add, edit (prices are audit-logged), and archive items, their choices, and categories. `PUT /menu/items/:id/availability` marks an item sold out or back on (kitchen staff and managers, KIT-08). Every change raises the menu version. |
+| `POST /me/orders`, `GET /me/orders`, `GET /me/orders/:id` | Customers: checkout (priced on the server; hours, pause, and delivery range checked; demo payment), In progress and Order history, and tracking with the delivery code |
+| `POST /orders/walk-in` | Kitchen staff and managers: a counter order paid by cash (change due) or online (KIT-13, KIT-14) |
+| `POST /orders/:id/acknowledge`, `PUT /orders/:id/items/:itemId`, `POST /orders/:id/ready`, `POST /orders/:id/collected` | The kitchen's steps, each recorded against the person signed in; the first tick starts Preparing |
+| `GET /orders/board`, `GET /orders`, `GET /orders/:id` | The kitchen board; the order list for any dates (filters, sort, 150 at a time with a cursor, count and value); the order detail with its timeline. Customer phone and address only for dispatch and managers. |
+| `GET /changes?since=N` | Only the orders changed since change number N, for reconnecting (`architecture.md` 14.4, decision 4) |
 
 Every change needs a signed-in person with the right role (`docs/architecture.md` 3.0). Sign-in
 needs `BETTER_AUTH_SECRET` in `apps/api/.dev.vars` (copy `.dev.vars.example` and make your own with
