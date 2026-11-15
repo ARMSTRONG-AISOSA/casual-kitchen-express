@@ -2,6 +2,7 @@ import { eq, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { requireRole, type Actor } from "../auth/actor";
+import { catalogMessage, send } from "../live/publish";
 import type { Db } from "../db/client";
 import * as t from "../db/schema";
 import { webpSize } from "../media/webp";
@@ -191,6 +192,7 @@ export const photos = new Hono<Ctx>()
       return c.json({ error: "That item doesn’t exist" }, 404);
     }
     if (result.oldPath) await c.env.MEDIA.delete(result.oldPath); // a few milliseconds
+    if (rules.catalog) send(c, await catalogMessage(c.get("db")));
     return c.json({ photoId: result.id });
   })
   .delete("/:kind/:id", requireRole("manager"), async (c) => {
@@ -217,5 +219,6 @@ export const photos = new Hono<Ctx>()
     });
     if (!result) return c.json({ error: "That item doesn’t exist" }, 404);
     if (result.oldPath) await c.env.MEDIA.delete(result.oldPath); // a few milliseconds
+    if (rules.catalog) send(c, await catalogMessage(c.get("db")));
     return c.json({ photoId: null });
   });

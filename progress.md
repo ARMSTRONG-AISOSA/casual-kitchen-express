@@ -27,7 +27,7 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and two
 | File | What it is | Authority |
 |---|---|---|
 | `progress.md` | This file: status, rules, next steps, log | Start here |
-| `docs/architecture.md` (v0.41) | Functions, 129 feature IDs (CUS, RID, KIT, MGR, DSP, ACC, WEB), order lifecycle, data model, the API routes built so far, decisions, free-tier limits, **locked versions (section 15)**, build order (16), **16.1 to verify at build**, seed data | Wins on anything technical |
+| `docs/architecture.md` (v0.42) | Functions, 129 feature IDs (CUS, RID, KIT, MGR, DSP, ACC, WEB), order lifecycle, data model, the API routes built so far, decisions, free-tier limits, **locked versions (section 15)**, build order (16), **16.1 to verify at build**, seed data | Wins on anything technical |
 | `docs/design.md` (v0.33) | UI rules per app, screens, page flows, colours, components | Wins on anything visual or UX |
 | `docs/Casual-Kitchen-Express.md` (v1.10) | Brand and business, surface level only | Wins on brand (name, colours, logo, tone, menu, packaging) |
 | `docs/list-of-areas.md` | Delivery areas, boundary, landmarks, neighbourhood list | Areas still to confirm on a map |
@@ -119,12 +119,12 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and two
 | Design plan | Philosophy per app (customer expressive, kitchen practical, rider functional and black-and-white), screens, and flows |
 | Areas | Scouted area list, with the boundary at Oluku Market (the road there is reported clear) |
 | Prototypes | 22 customer screens, 16 rider screens, 19 kitchen and manager screens, and 5 website pages, all automatically click-tested |
-| Repository | npm workspaces and Turborepo monorepo with the three apps, the API Worker, shared packages, and a placeholder website. Typecheck and lint pass (11 of 11 tasks), Prettier is clean, and 22 of 22 API tests pass. Local commits only, not pushed (the latest is in the log). |
+| Repository | npm workspaces and Turborepo monorepo with the three apps, the API Worker, shared packages, and a placeholder website. Typecheck and lint pass (11 of 11 tasks), Prettier is clean, and 34 of 34 API tests pass. Local commits only, not pushed (the latest is in the log). |
 | Android | JDK 17 and the Android SDK installed. arm64-v8a debug builds of all three apps on the owner’s tablet. Rebuilt on 14 November 2026: the Business app (sign-in libraries), the rider app (56 minutes), and the customer app (24 minutes, with sign-in libraries and expo-image). |
 | Customer app | Every screen built on demo data. Reads the menu, soups, today’s soup, and photos from the API (with a 304 when nothing changed), and shows Photo credits. Continue with Google (checkout and Profile) signs in for real (tested 14 November 2026; a staff Google account is refused), and photos use expo-image. Profile is real: the customer ID, name, and gender come from the API and save, the profile photo is taken or chosen, cropped, compressed on the phone, and uploaded (a Profile photo section and a camera badge on the photo), and a Sign out section sits between Theme and Help. Ordering, addresses, and the map are still demo stand-ins. |
 | Rider app | Every screen built on demo data. Real sign-in (username and password, with a show-password eye), the new-password screen, staying signed in (even when it opens without signal), Sign out, and the Me tab’s details from the API. Deliveries are still demo data. |
 | Business and Kitchen app | Every screen for all four staff roles built on demo data. Real sign-in (usernames for staff with a show-password eye, Continue with Google for managers, tested 14 November 2026), Your profile with Sign out from the photo in the top bar, the managers’ tour guide on Demo controls (MGR-39, tested in landscape and portrait 15 November 2026), People connected to the API, and the tablet sign-out. Connected to the API for: the soup of the day and the soup rotation, photo upload for dishes, soups, and staff (crop, compression, credits; replacing deletes the old photo), and staff photos. Refund confirmation ticks with the refunder recorded, the Refunds report, View profile, and Back to Orders work on demo data. |
-| API and database | Postgres 17.10 in Docker (local). 30-table schema and four migrations (`0000` to `0003`). Seeds: the menu (22 items, options), 3 soups, 10 areas, settings, 10 staff, and 33 photos (23 menu, 10 staff) in local R2. Routes: health, bootstrap (ETag and 304), soups, soup of the day, photos (upload, replace, remove), media (image and credits), staff photos, sign-in (Better Auth: usernames and Google), `/me` (with the customer’s profile, name, gender, and private photo), and People. The owner is M-001 from `OWNER_GOOGLE_EMAIL`. Every change route checks the role. Hono 4.13.16. |
+| API and database | Postgres 17.10 in Docker (local). 30-table schema and four migrations (`0000` to `0003`). Seeds: the menu (22 items, options), 3 soups, 10 areas, settings, 10 staff, and 33 photos (23 menu, 10 staff) in local R2. Routes: health, bootstrap (ETag and 304), soups, soup of the day, photos (upload, replace, remove), media (image and credits), staff photos, sign-in (Better Auth: usernames and Google), `/me` (with the customer’s profile, name, gender, and private photo), and People. **The orders backend (step 4c, 15 November 2026):** menu management, checkout, the customer’s orders and tracking, walk-ins, the kitchen’s steps, the board, the order list, cancelling and refunds, ratings, the rider queue and deliveries, alerts, settings, the address book, `GET /changes`, and the live connection (`GET /live`, the `LiveHub` Durable Object, with the alert check on its alarm). The owner is M-001 from `OWNER_GOOGLE_EMAIL`. Every change route checks the role. Hono 4.13.16. |
 | Photos | All 23 starting menu photos are in: 19 freely licensed from Wikimedia Commons and Flickr, and 4 made by the owner with Google Gemini (credited “Casual Kitchen Express (made with Gemini)”). 10 staff headshots made with Gemini, with no credit. None are flagged as demo (`docs/photo-credits.md`). |
 
 ---
@@ -134,7 +134,7 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and two
 **Owner actions, in the order they will be needed**
 1. **Cloudflare account: done (14 November 2026).** Wrangler is logged in on the laptop (`npx wrangler whoami` shows the account). The early 16.1 checks are done (items 2 and 3). The workers.dev subdomain is `casualkitchenexpress`, and staff passwords use 30,000 iterations (owner, 14 November 2026).
 2. **Google sign-in: done (14 November 2026).** Project `cke-project-514706` (no card), Google Auth Platform set up (External, in testing), and one **Web application** client “CKE API” with the redirect addresses `http://localhost:8787/api/auth/callback/google` and `https://cke-api.casualkitchenexpress.workers.dev/api/auth/callback/google`. The client ID and secret are in `apps/api/.dev.vars` (not committed); the downloaded JSON is in the owner’s Downloads folder, keep it private. Still to do with the website (step 8): the privacy policy link, then publishing the consent screen. While it is in testing, add any Google account that will test the apps under **Audience → Test users** if Google blocks it.
-3. **Delivery boundary:** draw the polygon from map pins (Uselu to Oluku Market) and confirm the spellings of area names (`list-of-areas.md` section 9). Needed when addresses are connected (step 6).
+3. **Delivery boundary and the kitchen’s pin:** draw the polygon from map pins (Uselu to Oluku Market), drop the kitchen’s exact pin (the API uses an approximate point in Ugbowo for the queue’s distances until then), and confirm the spellings of area names (`list-of-areas.md` section 9). Needed when addresses are connected (step 6).
 4. **Firebase project for push notifications** (step 6): steps to follow.
 5. **Neon account** at deploy time (decided): steps to follow.
 6. **Pushing to GitHub:** `origin` is https://github.com/ARMSTRONG-AISOSA/casual-kitchen-express.git (empty). Nothing is pushed until the owner says so.
@@ -150,6 +150,9 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and two
 - **Demo sign-in hints in development builds:** the Business app’s sign-in screen lists the demo accounts and the demo password only in development builds (`__DEV__`); release builds don’t show them. The rider app’s sign-in screen fills in `musa.a` and the demo password, in development builds only. Decide before release whether the public demo keeps shared demo staff accounts at all.
 
 **Known gaps and notes (no decision needed unless the owner wants one)**
+- **Alert wait times (owner may adjust):** waiting for a rider 5 minutes after Ready; not acknowledged 5 minutes after placing; in the kitchen 30 minutes after acknowledging; on the road 45 minutes after pickup (`architecture.md` 9 notes). Not set in the documents before; starting values.
+- **Walk-ins acknowledged on the board** like online orders (as built, matching the board’s “Tap to acknowledge”): for the owner to confirm.
+- **Memory and CPU Proposals** (`architecture.md` 13.1): left for later (owner, 15 November 2026).
 - ~~**Hono security advisories**~~ **Done 14 November 2026:** upgraded to Hono 4.13.16 (owner approved it a day early). `npm audit` is down to 14 moderate findings, all in development tools.
 - **“Other area in range”** is a choice in the customer app’s area picker, but not a seeded area in the database. Settle how it is stored when addresses are connected (step 6).
 - **This laptop’s connection and Node.js:** Node gives each IPv4 or IPv6 connection attempt only 250 ms. The laptop has no IPv6 and Cloudflare takes longer than that over IPv4 here, so Node tools (Wrangler login and deploy) time out with `ETIMEDOUT` while curl works. Fix: run them with `NODE_OPTIONS="--network-family-autoselection-attempt-timeout=2000"` (tested 14 November 2026), or add that export to `~/.bashrc` to make it permanent. The laptop also uses the router’s DNS (192.168.0.1), which timed out on some names during setup.
@@ -169,7 +172,7 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and two
 
 ## 8. Where we are and what is left
 
-**Rough progress:** planning, brand, design, and prototypes are complete. The app screens are built on demo data (about 90% of the screens; the map, real sign-in, and push are stand-ins). The backend is about 25% done: the foundation, catalog, photos, and sign-in with roles work, but orders, real-time, and the seed history don’t exist yet. Counting everything to a released APK, the project is roughly **40% done**. The largest remaining parts are the orders backend (4c) and connecting every screen to it (6).
+**Rough progress:** planning, brand, design, and prototypes are complete. The app screens are built on demo data (about 90% of the screens; the map and push are stand-ins; sign-in is real). The backend is about 70% done: the foundation, catalog, photos, sign-in with roles, the whole order lifecycle (orders, cancelling and refunds, riders and deliveries, alerts, settings, addresses), and the live connection work; the seed history, push notifications, and the report summaries are left. Counting everything to a released APK, the project is roughly **50% done**. The largest remaining part is connecting every screen to the API (6).
 
 The order below follows `architecture.md` 16, adjusted by the owner’s frontend-first decision (12 November 2026).
 
@@ -181,8 +184,8 @@ The order below follows `architecture.md` 16, adjusted by the owner’s frontend
 | 3b | Business and Kitchen app screens on demo data, all four staff roles | **Done** (`e2fe3c5`, `d4d2032`) |
 | 4a | Backend foundation: local database, schema, migrations, base, staff, and photo seeds, bootstrap with versions, soup rotation, photo upload and credits | **Done** (`5c088de`, `9a916f6`) |
 | 4b | Sign-in and roles: Better Auth in the Worker (usernames for staff, Google for managers and customers), sessions in all three apps, a role check on every route (3.0), first-sign-in password change, manager password reset, deactivation signs a person out, the tablet’s 8:30 pm sign-out, Your profile and Sign out, the show-password eye. The early 16.1 checks (PBKDF2 timing, Durable Object alarms). | **Done** (`c694fb1` and the 14 November commit) |
-| 4c | **Orders backend:** menu management (items, prices, sold out, options), orders and status events (online and walk-in), simulated payments, refunds with the tick and refunder, cancellation requests, alerts, deliveries, the rider queue (first to accept wins), delivery codes, Durable Objects for live updates, and “only what changed” on reconnect (14.4). Split into five parts: (1) menu management and the core orders, (2) cancellations and refunds, (3) the rider queue and deliveries, (4) alerts, (5) the live connection. | **In progress:** part 1 done (15 November 2026) |
-| 5 | **Seed script:** two months of demo history (18.3), with its own checks | To do |
+| 4c | **Orders backend:** menu management (items, prices, sold out, options), orders and status events (online and walk-in), simulated payments, refunds with the tick and refunder, cancellation requests, alerts, deliveries, the rider queue (first to accept wins), delivery codes, Durable Objects for live updates, and “only what changed” on reconnect (14.4). Split into five parts: (1) menu management and the core orders, (2) cancellations and refunds, (3) the rider queue and deliveries, (4) alerts, (5) the live connection; plus the address book and settings that checkout needs. | **Done** (15 November 2026) |
+| 5 | **Seed script:** two months of demo history (18.3), with its own checks | **Next** |
 | 6 | **Connect the screens to the API** in all three apps, replacing the demo data; the real map (MapLibre) with the delivery boundary, push notifications (Expo and Firebase), and background location for riders | To do |
 | 7 | Capacity rules, batching, and the demo simulator (18.4) | To do |
 | 8 | Website: turn `design/prototypes/cke-website.html` into the static GitHub Pages site | To do |
@@ -1040,4 +1043,36 @@ Append a new dated entry after each work session. Never edit or delete earlier e
 
 **Next step:**
 - The owner reviews part 1, then commit. Then 4c part 2: cancellations and refunds (4.6).
+- Done: committed as `2cc25e9`; parts 2 to 5 followed the same day (next entry).
+
+---
+
+## [2026-11-15] Memory rule changed, and the orders backend finished (parts 2 to 5, live connection)
+
+**What was done:**
+- **Memory rule changed (owner):** memory, leak, and CPU checks happen only when the owner asks, or after Claude asks and the owner agrees; never on Claude’s own. Claude offers a check at the moments in `architecture.md` 13.1. The ten memory and CPU Proposals are left for later. Claude’s memory updated.
+- Committed part 1 as `2cc25e9`.
+- **The call-reduction plan for orders, implemented** (`architecture.md` 14.4, “Applied to orders”): the live connection carries the changed records themselves (watching costs no calls), catalog nudges after menu and setting changes, one reconnect call, writes return the updated order, paged lists.
+- **Live connection (part 5):** the `LiveHub` Durable Object with `GET /live` (WebSockets with hibernation; pings answered without waking it). Connections are tagged by role and person, so staff, each customer, online riders, and the carrying rider each get only their own messages. A deactivated person’s connection closes. Every write in the API now sends its change.
+- **Alert check without waking the database:** first written as a Cron Trigger every minute, then changed before committing, because a per-minute check would keep Neon’s free database awake all day (about 100 compute hours a month are free). It now runs from the hub’s alarm (the decided “Durable Object alarms for per-order timers”), only while orders are in progress.
+- **Cancelling and refunds (part 2)**, **riders and deliveries (part 3)**, **alerts (part 4)**: the routes are listed in `architecture.md` 9 notes and `apps/api/README.md`. Every refund needs the tick and records the person’s name, role, and staff ID; two riders accepting at once get one winner; the delivery code allows 5 tries; rider pay is stored on delivery; dispatch can assign and approve manual completions.
+- **Also needed at this phase, built:** the customer’s address book (checkout needs an address) and settings (pause, hours and overrides, areas, rider capacity, tracking mode, the cancellation limit; pricing, pay, and the WhatsApp number for managers), and ratings.
+- **Starting values chosen (for the owner to adjust):** alert wait times (5 minutes for a rider, 5 to acknowledge, 30 in the kitchen, 45 on the road), and an approximate kitchen pin in Ugbowo for queue distances.
+- Fixed while testing: removing the default address didn’t make the next address the default (the route read the row after changing it).
+- Tests: a new `test/lifecycle.test.ts` (12 tests: address book; customer cancel; request approved by dispatch with the tick; decline and partial refund; unavailable item and kitchen walk-in cancel; queue, race, offline block, release; pick up, wrong and right code, rider pay, rating; dispatch assign, help, manual completion, the rider’s reconnect call; live messages to kitchen, customer, and riders, the alarm running, the catalog nudge; the timed alert check; settings permissions and the audited fee change; repeat cancellations). A shared `test/cleanup.ts` removes test orders and what points to them. The rider tests use Musa (`musa.a`) and Femi, because Chidi’s account (R-002) is set to change his password at next sign-in (left as it is). 34 of 34 API tests pass; afterwards the database had no test orders, alerts, deliveries, refunds, or users, riders were offline, and the settings were as before.
+- The laptop API (`dev:lan`) was restarted with the live hub.
+
+**Files created/updated:**
+- `apps/api/src/live/hub.ts`, `src/live/publish.ts`, `src/orders/riders.ts`, `src/orders/alerts.ts`, `src/orders/cancel.ts` (new); `src/routes/live.ts`, `cancellations.ts`, `rider.ts`, `alerts.ts`, `addresses.ts`, `settings.ts` (new); `src/routes/orders.ts`, `menu.ts`, `soups.ts`, `photos.ts`, `people.ts`, `changes.ts`, `src/orders/view.ts`, `src/index.ts`; `wrangler.jsonc` (LiveHub, migration v2), `worker-configuration.d.ts`; `test/lifecycle.test.ts`, `test/cleanup.ts` (new), `test/orders.test.ts`; `README.md`
+- `docs/architecture.md` (v0.42), `progress.md`; Claude’s memory
+
+**Decisions locked in:**
+- Memory, leak, and CPU checks only with the owner’s permission (owner, 15 November 2026).
+
+**Open questions / not yet decided:**
+- Alert wait times and the kitchen’s pin (starting values; section 7).
+- Walk-ins acknowledged on the board like online orders: for the owner to confirm.
+
+**Next step:**
+- The owner reviews, then commit. Then step 5, the seed script (two months of demo history, 18.3), or step 6, connecting the app screens to the API (with the live connection and push).
 

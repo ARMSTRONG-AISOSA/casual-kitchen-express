@@ -54,6 +54,32 @@ export async function loadOrders(db: Db, rows: OrderRow[], full: boolean) {
   const payments = full
     ? await db.select().from(t.payment).where(inArray(t.payment.orderId, ids))
     : [];
+  // Refunds with who made them (name, role, staff ID: MGR-15), and cancellation requests (4.6).
+  const refunds = full
+    ? await db
+        .select({
+          orderId: t.refund.orderId,
+          amount: t.refund.amount,
+          kind: t.refund.kind,
+          status: t.refund.status,
+          reason: t.refund.reason,
+          at: t.refund.completedAt,
+          byCode: t.staffProfile.code,
+          byName: t.staffProfile.fullName,
+          byRole: t.staffProfile.role,
+        })
+        .from(t.refund)
+        .leftJoin(t.staffProfile, eq(t.staffProfile.userId, t.refund.decidedBy))
+        .where(inArray(t.refund.orderId, ids))
+        .orderBy(asc(t.refund.requestedAt))
+    : [];
+  const requests = full
+    ? await db
+        .select()
+        .from(t.cancellationRequest)
+        .where(inArray(t.cancellationRequest.orderId, ids))
+        .orderBy(asc(t.cancellationRequest.requestedAt))
+    : [];
   const customerIds = [...new Set(rows.map((o) => o.customerId).filter((x): x is string => !!x))];
   const customers = customerIds.length
     ? await db
@@ -149,6 +175,27 @@ export async function loadOrders(db: Db, rows: OrderRow[], full: boolean) {
                   demoRef: pay.demoRef,
                 }
               : null,
+            refunds: refunds
+              .filter((r) => r.orderId === o.id)
+              .map((r) => ({
+                amount: r.amount,
+                kind: r.kind,
+                status: r.status,
+                reason: r.reason,
+                at: r.at,
+                by: r.byCode ? { code: r.byCode, name: r.byName, role: r.byRole } : null,
+              })),
+            cancellationRequest: (() => {
+              const req = requests.filter((r) => r.orderId === o.id).at(-1);
+              return req
+                ? {
+                    id: req.id,
+                    status: req.status,
+                    reason: req.reason,
+                    requestedAt: req.requestedAt,
+                  }
+                : null;
+            })(),
             events: events
               .filter((e) => e.orderId === o.id)
               .map((e) => ({
@@ -198,6 +245,16 @@ export async function customerViews(db: Db, secret: string, rows: OrderRow[]) {
         address: f.customer && "address" in f.customer ? f.customer.address : null,
         events: f.events!.map((e) => ({ status: e.status, at: e.at })),
         deliveryCode: o.type === "delivery" && live ? await deliveryCode(secret, o.id) : null,
+        // Refund status without staff details, and the request's state (4.6).
+        refunds: f.refunds!.map((r) => ({
+          amount: r.amount,
+          kind: r.kind,
+          status: r.status,
+          at: r.at,
+        })),
+        cancellationRequest: f.cancellationRequest
+          ? { status: f.cancellationRequest.status }
+          : null,
         canCancel: (CUSTOMER_CAN_CANCEL as readonly string[]).includes(o.status),
         version: o.version,
       };

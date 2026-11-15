@@ -5,6 +5,7 @@ import { z } from "zod";
 import { requireRole, type Actor } from "../auth/actor";
 import type { Db } from "../db/client";
 import * as t from "../db/schema";
+import { catalogMessage, send } from "../live/publish";
 import type { Tx } from "../orders/store";
 
 type Ctx = { Bindings: Env; Variables: { db: Db; actor: Actor } };
@@ -133,6 +134,7 @@ export const menu = new Hono<Ctx>()
         });
         return made!;
       });
+      send(c, await catalogMessage(c.get("db")));
       return c.json({ category }, 201);
     },
   )
@@ -163,6 +165,7 @@ export const menu = new Hono<Ctx>()
         return made;
       });
       if (!category) return c.json({ error: "That category doesn’t exist" }, 404);
+      send(c, await catalogMessage(c.get("db")));
       return c.json({ category });
     },
   )
@@ -196,6 +199,7 @@ export const menu = new Hono<Ctx>()
       return itemView(tx, made!.id);
     });
     if (!result) return c.json({ error: "Choose a category" }, 400);
+    send(c, await catalogMessage(c.get("db")));
     return c.json({ item: result }, 201);
   })
 
@@ -230,6 +234,7 @@ export const menu = new Hono<Ctx>()
         return itemView(tx, id);
       });
       if (!result) return c.json({ error: "That item doesn’t exist" }, 404);
+      send(c, await catalogMessage(c.get("db")));
       return c.json({ item: result });
     },
   )
@@ -262,6 +267,7 @@ export const menu = new Hono<Ctx>()
         return item;
       });
       if (!result) return c.json({ error: "That item isn’t on the menu" }, 404);
+      send(c, await catalogMessage(c.get("db")));
       return c.json({ item: result });
     },
   )
@@ -292,6 +298,7 @@ export const menu = new Hono<Ctx>()
         return true;
       });
       if (!ok) return c.json({ error: "That item isn’t on the menu" }, 404);
+      send(c, await catalogMessage(c.get("db")));
       return c.json({ ok: true });
     },
   );

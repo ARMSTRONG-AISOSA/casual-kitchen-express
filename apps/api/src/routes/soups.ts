@@ -6,6 +6,7 @@ import { z } from "zod";
 import type { Db } from "../db/client";
 import * as t from "../db/schema";
 import { requireRole, type Actor } from "../auth/actor";
+import { catalogMessage, send } from "../live/publish";
 
 type Ctx = { Bindings: Env; Variables: { db: Db; actor: Actor } };
 type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
@@ -75,6 +76,7 @@ export const soups = new Hono<Ctx>()
         return { soup: soup!, soups: await activeSoups(tx) };
       });
       if ("conflict" in result) return c.json(bad(result.conflict!), 409);
+      send(c, await catalogMessage(c.get("db")));
       return c.json(result, 201);
     },
   )
@@ -114,6 +116,7 @@ export const soups = new Hono<Ctx>()
           return { soups: await activeSoups(tx) };
         });
       if ("status" in result) return c.json(bad(result.error), result.status);
+      send(c, await catalogMessage(c.get("db")));
       return c.json(result);
     },
   );
@@ -144,6 +147,7 @@ export const soupOfTheDay = new Hono<Ctx>().put(
       return { soupOfTheDay: { id: soup.id, name: soup.name } };
     });
     if (!("soupOfTheDay" in result)) return c.json(bad(result.error), 404);
+    send(c, await catalogMessage(c.get("db")));
     return c.json(result);
   },
 );

@@ -9,6 +9,7 @@ import * as t from "../db/schema";
 import { clockLabel, isOpen, todaysHours, watNow } from "../orders/clock";
 import { codeHash, deliveryCode } from "../orders/code";
 import { orderLines, priceLines } from "../orders/lines";
+import { orderMessages, send } from "../live/publish";
 import { advance, insertOrder, touch, type Status } from "../orders/store";
 import { customerView, customerViews, FINISHED, loadOrders, orderDetail } from "../orders/view";
 
@@ -37,7 +38,7 @@ export async function latestChange(db: Db) {
 }
 
 /** Whether a point lies inside the delivery boundary polygon, [lng, lat] corners (4.7). */
-function insideBoundary(polygon: [number, number][], lng: number, lat: number) {
+export function insideBoundary(polygon: [number, number][], lng: number, lat: number) {
   let inside = false;
   for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
     const [xi, yi] = polygon[i]!;
@@ -145,6 +146,7 @@ export const orders = new Hono<Ctx>()
         { status: "confirmed", actorKind: "staff", actorId: actor.id },
       ],
     );
+    send(c, await orderMessages(db, c.env.BETTER_AUTH_SECRET, [o.id]));
     return c.json({ order: await orderDetail(db, o.id) }, 201);
   })
 
@@ -287,6 +289,7 @@ export const orders = new Hono<Ctx>()
         }),
       );
       if (!o) return c.json({ error: "That order has already moved on" }, 409);
+      send(c, await orderMessages(db, c.env.BETTER_AUTH_SECRET, [id]));
       return c.json({ order: forRole((await orderDetail(db, id))!, c.get("actor").role) });
     },
   )
@@ -320,6 +323,7 @@ export const orders = new Hono<Ctx>()
         return null;
       });
       if (result) return c.json({ error: result.error }, result.status);
+      send(c, await orderMessages(db, c.env.BETTER_AUTH_SECRET, [id]));
       return c.json({ order: forRole((await orderDetail(db, id))!, actor.role) });
     },
   )
@@ -352,6 +356,7 @@ export const orders = new Hono<Ctx>()
       });
       if (!o)
         return c.json({ error: "Acknowledge the order first, or it has already moved on" }, 409);
+      send(c, await orderMessages(db, c.env.BETTER_AUTH_SECRET, [id]));
       return c.json({ order: forRole((await orderDetail(db, id))!, actor.role) });
     },
   )
@@ -371,6 +376,7 @@ export const orders = new Hono<Ctx>()
         }),
       );
       if (!o) return c.json({ error: "That order isn’t waiting to be collected" }, 409);
+      send(c, await orderMessages(db, c.env.BETTER_AUTH_SECRET, [id]));
       return c.json({ order: forRole((await orderDetail(db, id))!, actor.role) });
     },
   );
@@ -475,6 +481,7 @@ export const myOrders = new Hono<Ctx>()
             }
           : {},
     );
+    send(c, await orderMessages(db, c.env.BETTER_AUTH_SECRET, [o.id]));
     return c.json({ order: await customerView(db, c.env.BETTER_AUTH_SECRET, o) }, 201);
   })
 

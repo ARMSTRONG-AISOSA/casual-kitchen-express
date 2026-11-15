@@ -2,18 +2,25 @@ import { Hono } from "hono";
 import type { Actor } from "./auth/actor";
 import { createAuth } from "./auth/auth";
 import { connect, type Db } from "./db/client";
+import { addresses } from "./routes/addresses";
+import { alerts } from "./routes/alerts";
 import { bootstrap } from "./routes/bootstrap";
+import { cancellationRequests, myOrderActions, orderActions } from "./routes/cancellations";
 import { changes } from "./routes/changes";
+import { live } from "./routes/live";
 import { me } from "./routes/me";
 import { media } from "./routes/media";
 import { menu } from "./routes/menu";
 import { myOrders, orders } from "./routes/orders";
 import { people } from "./routes/people";
 import { photos } from "./routes/photos";
+import { assign, helpRequests, rider, riders } from "./routes/rider";
+import { settings } from "./routes/settings";
 import { soupOfTheDay, soups } from "./routes/soups";
 import { staff } from "./routes/staff";
 
 export { AuthRateLimiter } from "./auth/rate-limit";
+export { LiveHub } from "./live/hub";
 
 // `Env` (the Worker's bindings) is generated into worker-configuration.d.ts by `npm run types`.
 const app = new Hono<{ Bindings: Env; Variables: { db: Db; actor: Actor } }>();
@@ -39,17 +46,28 @@ app.on(["GET", "POST"], "/api/auth/*", (c) =>
   createAuth(c.env, c.get("db"), new URL(c.req.url).origin).handler(c.req.raw),
 );
 
+app.route("/alerts", alerts);
 app.route("/bootstrap", bootstrap);
+app.route("/cancellation-requests", cancellationRequests);
 app.route("/changes", changes);
+app.route("/help-requests", helpRequests);
+app.route("/live", live);
+app.route("/me/addresses", addresses);
 app.route("/me/orders", myOrders);
+app.route("/me/orders", myOrderActions);
 app.route("/me", me);
 app.route("/media", media);
 app.route("/menu", menu);
 app.route("/orders", orders);
+app.route("/orders", orderActions);
+app.route("/orders", assign);
 app.route("/people", people);
 app.route("/photos", photos);
+app.route("/rider", rider);
+app.route("/riders", riders);
 app.route("/soups", soups);
 app.route("/staff", staff);
 app.route("/settings/soup-of-the-day", soupOfTheDay);
+app.route("/settings", settings);
 
 export default app;

@@ -17,12 +17,18 @@
   ],
   // Image files (architecture.md 8.2). Locally, wrangler keeps the bucket in .wrangler/state.
   "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "cke-media" }],
-  // Sign-in rate limiting (architecture.md 12.2). More Durable Objects (live orders) and Cron
-  // Triggers are added as their features are built. The free plan only has SQLite-backed classes.
+  // Sign-in rate limiting (architecture.md 12.2) and the live connection every app keeps open
+  // (LiveHub, architecture.md 10). The free plan only has SQLite-backed classes.
   "durable_objects": {
-    "bindings": [{ "name": "AUTH_RATE_LIMITER", "class_name": "AuthRateLimiter" }],
+    "bindings": [
+      { "name": "AUTH_RATE_LIMITER", "class_name": "AuthRateLimiter" },
+      { "name": "LIVE_HUB", "class_name": "LiveHub" },
+    ],
   },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["AuthRateLimiter"] }],
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["AuthRateLimiter"] },
+    { "tag": "v2", "new_sqlite_classes": ["LiveHub"] },
+  ],
   // BETTER_AUTH_SECRET is a secret: in .dev.vars on the laptop, and set with
   // `wrangler secret put BETTER_AUTH_SECRET` on the deployed Worker. Never in this file.
 }

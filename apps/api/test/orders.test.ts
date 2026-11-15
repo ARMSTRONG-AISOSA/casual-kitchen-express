@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { hashPassword } from "../src/auth/password";
 import { connect } from "../src/db/client";
 import * as t from "../src/db/schema";
+import { deleteOrders } from "./cleanup";
 import { DEMO_PASSWORD, signIn } from "./session";
 
 // Orders (architecture.md 4, 4.5, 4.6, 4.8, 14.4) and menu management (MGR-05, MGR-07, KIT-08).
@@ -60,7 +61,7 @@ async function cleanUp() {
     .from(t.order)
     .where(eq(t.order.customerId, USER_ID));
   const ids = [...new Set([...mine.map((o) => o.id), ...made])];
-  if (ids.length) await db.delete(t.order).where(inArray(t.order.id, ids)); // lines, payments, events cascade
+  await deleteOrders(db, ids);
   await db.delete(t.address).where(eq(t.address.userId, USER_ID));
   await db.delete(t.neighbourhood).where(eq(t.neighbourhood.name, "Test area outside range"));
   await db.delete(t.customerProfile).where(eq(t.customerProfile.userId, USER_ID));

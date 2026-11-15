@@ -5,6 +5,7 @@ import { asc, eq, like, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { requireRole, type Actor } from "../auth/actor";
+import { liveHub } from "../live/publish";
 import { hashPassword } from "../auth/password";
 import type { Db } from "../db/client";
 import { STAFF_EMAIL_DOMAIN } from "../auth/staff-email";
@@ -313,6 +314,12 @@ export const people = new Hono<Ctx>()
         target: `staff:${code}`,
       });
     });
+    // Their live connection closes too, so a deactivated person stops seeing updates (3.1).
+    c.executionCtx.waitUntil(
+      liveHub(c.env)
+        .closeUser(found.user.id)
+        .catch(() => undefined),
+    );
     return c.json({ ok: true });
   })
   /** POST /people/:code/reactivate: they can sign in again. */
