@@ -27,6 +27,7 @@ import {
   StatusPill,
   T,
 } from "../../../src/ui/kit";
+import { NEW_PICK, RefundPicker, refundFor, type RefundPick } from "../../../src/ui/refund";
 import { useToast } from "../../../src/ui/toast";
 
 const STATIONS: Station[] = ["Rice", "Soups and swallows", "Snacks and drinks"];
@@ -46,6 +47,8 @@ export default function Ticket() {
   const [cancel, setCancel] = useState(false);
   const [reason, setReason] = useState<string | null>(null);
   const [sure, setSure] = useState(false);
+  // The walk-in's refund: full by default, or a typed partial amount (MGR-15).
+  const [pick, setPick] = useState<RefundPick>(NEW_PICK);
   const o = findOrder(s, no);
   if (!o)
     return (
@@ -54,6 +57,8 @@ export default function Ticket() {
       </Page>
     );
   const collectable = o.status === "ready" && o.type !== "delivery";
+  const paid = orderTotal(o);
+  const { amount } = refundFor(pick, paid, paid - (o.refunded ?? 0));
 
   return (
     <Page>
@@ -142,14 +147,23 @@ export default function Ticket() {
           <Button
             label="Cancel order"
             variant="ghost"
-            onPress={() => (setCancel(true), setSure(false))}
+            onPress={() => (setCancel(true), setSure(false), setPick(NEW_PICK))}
           />
         ) : null}
       </View>
       <Sheet visible={cancel} onClose={() => setCancel(false)} title={`Cancel ${o.no}?`}>
         <T muted>
-          The payment is refunded (simulated) and the cancellation is recorded against you.
+          The payment is refunded (simulated), in full or in part, and the cancellation is recorded
+          against you.
         </T>
+        <View style={{ marginTop: 12 }}>
+          <RefundPicker
+            paid={paid}
+            left={paid - (o.refunded ?? 0)}
+            value={pick}
+            onChange={(v) => (setPick(v), setSure(false))}
+          />
+        </View>
         <Chips style={{ marginTop: 12 }}>
           {REASONS.map((r) => (
             <Chip key={r} label={r} selected={reason === r} onPress={() => setReason(r)} />
@@ -158,7 +172,11 @@ export default function Ticket() {
         <ConfirmTick
           checked={sure}
           onChange={setSure}
-          label={`I’m sure I want to refund ${naira(orderTotal(o))} for ${o.no}`}
+          label={
+            amount
+              ? `I’m sure I want to refund ${naira(amount)} for ${o.no}`
+              : "Enter the amount to refund first"
+          }
         />
         <T v="small" muted style={{ marginTop: 6 }}>
           Recorded as {actorLabel(s)}, with the time.
@@ -166,12 +184,12 @@ export default function Ticket() {
         <Button
           label="Cancel and refund"
           variant="danger"
-          disabled={!reason || !sure}
+          disabled={!reason || !sure || !amount}
           style={{ marginTop: 16 }}
           onPress={() => {
-            set((x) => cancelOrder(x, o.no, reason ?? ""));
+            set((x) => cancelOrder(x, o.no, reason ?? "", amount ?? undefined));
             setCancel(false);
-            toast(`${o.no} cancelled and refunded`);
+            toast(`${o.no} cancelled and ${naira(amount ?? 0)} refunded`);
             router.back();
           }}
         />

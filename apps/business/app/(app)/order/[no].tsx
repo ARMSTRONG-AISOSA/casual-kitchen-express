@@ -31,6 +31,7 @@ import {
   StatusPill,
   T,
 } from "../../../src/ui/kit";
+import { NEW_PICK, RefundPicker, refundFor, type RefundPick } from "../../../src/ui/refund";
 import { useToast } from "../../../src/ui/toast";
 
 const REFUND_REASONS = [
@@ -48,7 +49,7 @@ export default function OrderDetail() {
   const toast = useToast();
   const role = myRole(s);
   const [refund, setRefund] = useState(false);
-  const [kind, setKind] = useState<"full" | "partial">("full");
+  const [pick, setPick] = useState<RefundPick>(NEW_PICK);
   const [reason, setReason] = useState<string | null>(null);
   const [sure, setSure] = useState(false);
   const o = findOrder(s, no);
@@ -76,7 +77,9 @@ export default function OrderDetail() {
   };
 
   const refunds = s.refunds.filter((r) => r.orderNo === o.no);
-  const amount = kind === "full" ? orderTotal(o) : Math.round(o.food / 2);
+  const paid = orderTotal(o);
+  const left = paid - (o.refunded ?? 0);
+  const { amount } = refundFor(pick, paid, left);
 
   return (
     <Page>
@@ -185,28 +188,22 @@ export default function OrderDetail() {
         </Card>
       </Section>
 
-      {role === "manager" && o.status !== "cancelled" && !o.refunded ? (
+      {role === "manager" && o.status !== "cancelled" && left > 0 ? (
         <Button
           label="Refund"
           variant="ghost"
           style={{ marginTop: 18 }}
-          onPress={() => (setRefund(true), setSure(false), setReason(null))}
+          onPress={() => (setRefund(true), setSure(false), setReason(null), setPick(NEW_PICK))}
         />
       ) : null}
 
       <Sheet visible={refund} onClose={() => setRefund(false)} title={`Refund ${o.no}`}>
-        <Chips>
-          <Chip
-            label={`Full, ${naira(orderTotal(o))}`}
-            selected={kind === "full"}
-            onPress={() => setKind("full")}
-          />
-          <Chip
-            label={`Partial, ${naira(Math.round(o.food / 2))}`}
-            selected={kind === "partial"}
-            onPress={() => setKind("partial")}
-          />
-        </Chips>
+        <RefundPicker
+          paid={paid}
+          left={left}
+          value={pick}
+          onChange={(v) => (setPick(v), setSure(false))}
+        />
         <Chips style={{ marginTop: 10 }}>
           {REFUND_REASONS.map((r) => (
             <Chip key={r} label={r} selected={reason === r} onPress={() => setReason(r)} />
@@ -215,23 +212,28 @@ export default function OrderDetail() {
         <ConfirmTick
           checked={sure}
           onChange={setSure}
-          label={`I’m sure I want to refund ${naira(amount)} for ${o.no}`}
+          label={
+            amount
+              ? `I’m sure I want to refund ${naira(amount)} for ${o.no}`
+              : "Enter the amount to refund first"
+          }
         />
         <T v="small" muted style={{ marginTop: 6 }}>
           Recorded as {actorLabel(s)}, with the time.
         </T>
         <Button
           label="Confirm refund"
-          disabled={!reason || !sure}
+          disabled={!reason || !sure || !amount}
           style={{ marginTop: 16 }}
           onPress={() => {
+            if (!amount) return;
             set((st) =>
-              kind === "full"
+              pick.kind === "full"
                 ? cancelOrder(st, o.no, reason ?? "")
                 : partialRefund(st, o.no, amount, reason ?? ""),
             );
             setRefund(false);
-            toast(`Refund of ${naira(amount)} pending`);
+            toast(`Refund of ${naira(amount)} recorded`);
           }}
         />
         <DemoNote text="Demo refund. No money is moved." />

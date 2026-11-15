@@ -69,3 +69,18 @@ export const newPassword = z
   .string()
   .min(8, "Use at least 8 characters")
   .max(128, "Keep it under 128 characters");
+
+/**
+ * Partial refunds (MGR-15, owner decision 15 November 2026): the amount is typed in, and can never
+ * be more than 99% of what the customer paid. A full refund is chosen separately.
+ */
+export const PARTIAL_REFUND_MAX_SHARE = 0.99;
+export const maxPartialRefund = (paid: number) => Math.floor(paid * PARTIAL_REFUND_MAX_SHARE);
+
+/** How a refund is chosen: everything, a typed partial amount, or (managers, after pickup) none. */
+export const refundChoice = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("full") }),
+  z.object({ kind: z.literal("partial"), amount: z.number().int().min(1, "Enter an amount") }),
+  z.object({ kind: z.literal("none") }),
+]);
+export type RefundChoice = z.infer<typeof refundChoice>;

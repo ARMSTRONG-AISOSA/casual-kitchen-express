@@ -15,8 +15,9 @@ Run these from the repository root:
 | 3. Add the menu, soups, areas, and settings                                                | `npm run db:seed-base --workspace @cke/api`   | `Catalog ready: 22 menu items, 3 soups, 10 areas.` |
 | 3b. Add the demo staff (on the laptop, with manager usernames)                             | `SEED_MANAGER_PASSWORDS=1 npm run db:seed-people --workspace @cke/api` | `10 staff ready. Demo password for usernames: cke-demo-2026 (managers included: owner.m, ivie.m). The owner (M-001) signs in with the configured Google email.` |
 | 3c. Add the menu and staff photos (about 5 minutes)                                        | `npm run db:seed-media --workspace @cke/api`  | `23 menu and 10 staff photos stored, …`            |
+| 3d. Add three months of demo history (about 5 seconds; wipes and regenerates the old demo history; refuses if real online orders exist) | `npm run db:seed-history --workspace @cke/api` | `Demo history: … (90 days)` … `Checks passed.` |
 | Run the API for the tablet                                                                 | `npm run dev:lan --workspace @cke/api`        | `Ready on http://0.0.0.0:8787`                     |
-| 4. Run the tests (stop `dev:lan` first: the two share local state and the tests can stall) | `npm run test --workspace @cke/api`           | `Tests 34 passed (34)`                               |
+| 4. Run the tests (stop `dev:lan` first: the two share local state and the tests can stall) | `npm run test --workspace @cke/api`           | `Tests 35 passed (35)`                               |
 | Stop the database (data is kept)                                                           | `npm run db:down --workspace @cke/api`        | `Container cke-db-1 Removed`                       |
 
 The local password (`cke-local-only`) only works on this laptop: the database listens on

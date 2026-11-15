@@ -18,7 +18,7 @@ A fast-casual, home-style Nigerian food business in Ugbowo, Benin City, near the
 | Rider app | CKE riders | Queue, pickup, delivery with a 4-digit code, earnings |
 | Website | Visitors | Promotes the business and mainly the customer app, hosts the download |
 
-Everything is **simulated**: payments, refunds, delivery, rider payouts, and two months of seeded history.
+Everything is **simulated**: payments, refunds, delivery, rider payouts, and three months of seeded history.
 
 ---
 
@@ -27,8 +27,8 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and two
 | File | What it is | Authority |
 |---|---|---|
 | `progress.md` | This file: status, rules, next steps, log | Start here |
-| `docs/architecture.md` (v0.42) | Functions, 129 feature IDs (CUS, RID, KIT, MGR, DSP, ACC, WEB), order lifecycle, data model, the API routes built so far, decisions, free-tier limits, **locked versions (section 15)**, build order (16), **16.1 to verify at build**, seed data | Wins on anything technical |
-| `docs/design.md` (v0.33) | UI rules per app, screens, page flows, colours, components | Wins on anything visual or UX |
+| `docs/architecture.md` (v0.43) | Functions, 129 feature IDs (CUS, RID, KIT, MGR, DSP, ACC, WEB), order lifecycle, data model, the API routes built so far, decisions, free-tier limits, **locked versions (section 15)**, build order (16), **16.1 to verify at build**, seed data | Wins on anything technical |
+| `docs/design.md` (v0.34) | UI rules per app, screens, page flows, colours, components | Wins on anything visual or UX |
 | `docs/Casual-Kitchen-Express.md` (v1.10) | Brand and business, surface level only | Wins on brand (name, colours, logo, tone, menu, packaging) |
 | `docs/list-of-areas.md` | Delivery areas, boundary, landmarks, neighbourhood list | Areas still to confirm on a map |
 | `docs/photo-credits.md` | Every starting menu photo’s author, licence, and source, and the staff photos | The record the brand document asks for |
@@ -100,10 +100,11 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and two
 - **Soup of the day:** kitchen staff pick it each morning on Sold out (managers on Sold out or Menu), and the customer app shows it; only today’s soup can be ordered.
 - **Finance:** the person on the counter counts the cash at close, and an account officer or any manager (including the owner) signs it off; whoever signs off or closes a month is recorded by name, staff ID, and time. A closed month is locked, and later corrections are adjustments.
 - **Refunds:** every refund (a manager’s refund, an approved cancellation request, a walk-in cancelled on its ticket) needs an “I’m sure I want to refund ₦… for …” tick and records the name, role, staff ID, and time of whoever made it (MGR-15).
+- **Partial refunds:** everyone who can make a refund can make it partial. The amount is typed in (never fixed) and can never be more than 99% of what the customer paid; a full refund is a separate choice (owner, 15 November 2026).
 - **Photos:** compressed on the device before upload (dishes and soups 4:3, at most 1200 px and 250 KB; staff square, 512 px and 80 KB). Dish and soup photos carry a credit; staff photos carry none. Replacing a photo deletes the old one everywhere (MGR-06).
 - **Order numbers:** online numbers run continuously from O-0001 on the first seeded day, and walk-in numbers restart at W-001 each day.
 - **Manager order list:** today, yesterday, or any date range back to the first order, with search by order number or customer ID and paging for long ranges.
-- **Seed data:** 60 days of history at about 40 online and 13 walk-in orders on a weekday and 25 and 8 at weekends, respecting the hours (`architecture.md`, 18.3).
+- **Seed data:** three months (90 days ending yesterday) of history at about 40 online and 13 walk-in orders on a weekday and 25 and 8 at weekends, respecting the hours; it is what the app is deployed and pitched with (owner, 15 November 2026; `architecture.md`, 18.3).
 
 ---
 
@@ -119,7 +120,7 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and two
 | Design plan | Philosophy per app (customer expressive, kitchen practical, rider functional and black-and-white), screens, and flows |
 | Areas | Scouted area list, with the boundary at Oluku Market (the road there is reported clear) |
 | Prototypes | 22 customer screens, 16 rider screens, 19 kitchen and manager screens, and 5 website pages, all automatically click-tested |
-| Repository | npm workspaces and Turborepo monorepo with the three apps, the API Worker, shared packages, and a placeholder website. Typecheck and lint pass (11 of 11 tasks), Prettier is clean, and 34 of 34 API tests pass. Local commits only, not pushed (the latest is in the log). |
+| Repository | npm workspaces and Turborepo monorepo with the three apps, the API Worker, shared packages, and a placeholder website. Typecheck and lint pass (11 of 11 tasks), Prettier is clean, and 35 of 35 API tests pass. Local commits only, not pushed (the latest is in the log). |
 | Android | JDK 17 and the Android SDK installed. arm64-v8a debug builds of all three apps on the owner’s tablet. Rebuilt on 14 November 2026: the Business app (sign-in libraries), the rider app (56 minutes), and the customer app (24 minutes, with sign-in libraries and expo-image). |
 | Customer app | Every screen built on demo data. Reads the menu, soups, today’s soup, and photos from the API (with a 304 when nothing changed), and shows Photo credits. Continue with Google (checkout and Profile) signs in for real (tested 14 November 2026; a staff Google account is refused), and photos use expo-image. Profile is real: the customer ID, name, and gender come from the API and save, the profile photo is taken or chosen, cropped, compressed on the phone, and uploaded (a Profile photo section and a camera badge on the photo), and a Sign out section sits between Theme and Help. Ordering, addresses, and the map are still demo stand-ins. |
 | Rider app | Every screen built on demo data. Real sign-in (username and password, with a show-password eye), the new-password screen, staying signed in (even when it opens without signal), Sign out, and the Me tab’s details from the API. Deliveries are still demo data. |
@@ -151,7 +152,7 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and two
 
 **Known gaps and notes (no decision needed unless the owner wants one)**
 - **Alert wait times (owner may adjust):** waiting for a rider 5 minutes after Ready; not acknowledged 5 minutes after placing; in the kitchen 30 minutes after acknowledging; on the road 45 minutes after pickup (`architecture.md` 9 notes). Not set in the documents before; starting values.
-- **Walk-ins acknowledged on the board** like online orders (as built, matching the board’s “Tap to acknowledge”): for the owner to confirm.
+- **A 90-day report period (Proposal):** with three months of history, a “90 days” quick choice beside 7, 30, and 60 days would show it all in one tap (the custom range already can). The report periods are Decided, so this waits for the owner.
 - **Memory and CPU Proposals** (`architecture.md` 13.1): left for later (owner, 15 November 2026).
 - ~~**Hono security advisories**~~ **Done 14 November 2026:** upgraded to Hono 4.13.16 (owner approved it a day early). `npm audit` is down to 14 moderate findings, all in development tools.
 - **“Other area in range”** is a choice in the customer app’s area picker, but not a seeded area in the database. Settle how it is stored when addresses are connected (step 6).
@@ -185,8 +186,8 @@ The order below follows `architecture.md` 16, adjusted by the owner’s frontend
 | 4a | Backend foundation: local database, schema, migrations, base, staff, and photo seeds, bootstrap with versions, soup rotation, photo upload and credits | **Done** (`5c088de`, `9a916f6`) |
 | 4b | Sign-in and roles: Better Auth in the Worker (usernames for staff, Google for managers and customers), sessions in all three apps, a role check on every route (3.0), first-sign-in password change, manager password reset, deactivation signs a person out, the tablet’s 8:30 pm sign-out, Your profile and Sign out, the show-password eye. The early 16.1 checks (PBKDF2 timing, Durable Object alarms). | **Done** (`c694fb1` and the 14 November commit) |
 | 4c | **Orders backend:** menu management (items, prices, sold out, options), orders and status events (online and walk-in), simulated payments, refunds with the tick and refunder, cancellation requests, alerts, deliveries, the rider queue (first to accept wins), delivery codes, Durable Objects for live updates, and “only what changed” on reconnect (14.4). Split into five parts: (1) menu management and the core orders, (2) cancellations and refunds, (3) the rider queue and deliveries, (4) alerts, (5) the live connection; plus the address book and settings that checkout needs. | **Done** (15 November 2026) |
-| 5 | **Seed script:** two months of demo history (18.3), with its own checks | **Next** |
-| 6 | **Connect the screens to the API** in all three apps, replacing the demo data; the real map (MapLibre) with the delivery boundary, push notifications (Expo and Firebase), and background location for riders | To do |
+| 5 | **Seed script:** three months of demo history (18.3), with its own checks | **Done** (15 November 2026) |
+| 6 | **Connect the screens to the API** in all three apps, replacing the demo data (**Next**); the real map (MapLibre) with the delivery boundary, push notifications (Expo and Firebase), and background location for riders | To do |
 | 7 | Capacity rules, batching, and the demo simulator (18.4) | To do |
 | 8 | Website: turn `design/prototypes/cke-website.html` into the static GitHub Pages site | To do |
 | 9 | Reports on real data (pre-computed summaries), rider payouts, Finance, polish, the remaining 16.1 checks (battery, performance, contrast), Neon at deploy, signed release APKs (arm64-v8a and armeabi-v7a) on GitHub Releases | To do |
@@ -1075,4 +1076,38 @@ Append a new dated entry after each work session. Never edit or delete earlier e
 
 **Next step:**
 - The owner reviews, then commit. Then step 5, the seed script (two months of demo history, 18.3), or step 6, connecting the app screens to the API (with the live connection and push).
+
+---
+
+## [2026-11-15] Partial refunds typed in (99% rule), walk-ins confirmed, and three months of demo history
+
+**What was done:**
+- **Partial refunds (owner decision):** everyone who can make a refund can make it partial, the amount is typed into a field instead of being fixed, and it can never be more than 99% of what the customer paid (or more than what’s left). One shared rule (`maxPartialRefund` and `refundChoice` in `packages/validation`) is used by the API and the app.
+  - **API:** `POST /orders/:id/refunds`, `POST /orders/:id/cancel`, and `POST /cancellation-requests/:id/approve` take `refund: { kind: "full" }` or `{ kind: "partial", amount }` (and `none` only for a manager cancelling after pickup). A new test checks dispatch, kitchen staff, and managers giving partial refunds and the 99% cap for each (35 of 35 API tests pass).
+  - **Business app:** a shared refund box (`src/ui/refund.tsx`): Full refund (one tap) or Partial refund with an Amount field (number keypad) and “Up to ₦… (99% of the ₦… paid)”; an amount over the limit shows a red line and keeps the confirmation locked; the “I’m sure…” tick shows the amount typed. Used on the order (managers), when approving a cancellation request (Alerts), and when cancelling a walk-in (the ticket). Refunds add up, and the order’s Refund stays available while something is left.
+  - **Tested on the tablet:** O-2179 ₦5,800: ₦5,800 typed showed “That’s more than 99% of the ₦5,800 paid. The most is ₦5,742.” with the tick locked, then ₦2,000 refunded and shown with “Omoregie Armstrong, Manager (M-001)”; W-006 cancelled with ₦3,000 of ₦4,300 refunded; Ada’s request on O-2176 approved with ₦1,200 of ₦2,700. The demo data was reset afterwards. Polished while testing: the grey limit line hides while the red message shows.
+- **Walk-ins in New until tapped:** confirmed by the owner (Decided, `architecture.md` 4.8).
+- **Alert wait times:** explained to the owner (what each one is for and what changing it does); still for the owner to decide.
+- **Step 5, three months of demo history (owner decision, was two months):** `scripts/seed-history.ts` (`npm run db:seed-history`). The result on the laptop, 17 August to 14 November 2026: 3,217 online orders (O-0001 to O-3217, 2,725 deliveries, 200 cancelled), 1,037 walk-ins (17 cancelled), 250 customers with 335 addresses, 1,349 ratings (4.5 on average), 2,557 deliveries (124 assigned by dispatch, about 2% to 4% batched), 249 refunds (67 partial), ₦29.1 million in sales, 51 payouts (3 owed), 90 cash-ups (yesterday’s left to sign off), August to October closed, one adjustment, and 591 audit entries; about 32 MB. Its own checks all pass, and it saves nothing if one fails.
+  - Tuned for realism before keeping it, because this is the data the app is pitched with: the first version had dispatch assigning 57% of deliveries and some orders waiting 47 minutes for a rider. Fixed by handing orders to riders in the order they’re ready, batching by group, a 2.5 minutes a kilometre ride speed, a less spiky lunch peak, and Uyi leaving only last week. Now riders take orders in about 6½ minutes on average (three quarters within 9), order to door is about 40 minutes, and dispatch assigns about 5%. The most loyal customer was ordering four times a day; now the most loyal order 60 to 70 times in three months, and 60% of customers reorder.
+  - Batching came out at about 2% to 4% rather than the 15% first estimated, because the 6-point load budget (decided) rarely fits two typical orders of 4 to 5 points. Recorded honestly in 18.3.
+  - The self-checks caught a rider carrying four orders at once in an early version; fixed before anything was saved.
+- **Documents:** `architecture.md` v0.43 (18.3 rewritten for three months with the measured figures; the decision row; MGR-15, 4.6, and 9 notes for partial refunds; 4.8 walk-ins decided; 16.1 item 11 done), `design.md` v0.34 (the refund box in 6.5, 7.2, and 7.3), `apps/api/README.md` (step 3d, 35 tests), this file.
+
+**Files created/updated:**
+- `packages/validation/src/index.ts`; `apps/api/src/orders/cancel.ts`, `src/routes/cancellations.ts`, `scripts/seed-history.ts` (new), `package.json`, `test/lifecycle.test.ts`, `README.md`
+- `apps/business/src/ui/refund.tsx` (new), `src/state/store.tsx`, `app/(app)/order/[no].tsx`, `app/(app)/alerts.tsx`, `app/(app)/ticket/[no].tsx`
+- `docs/architecture.md`, `docs/design.md`, `progress.md`
+
+**Decisions locked in:**
+- Partial refunds: typed, at most 99% of what was paid, for everyone who refunds (owner, 15 November 2026).
+- Walk-ins wait in New until tapped (owner, 15 November 2026).
+- Three months of demo history (owner, 15 November 2026).
+
+**Open questions / not yet decided:**
+- Alert wait times (explained; owner to decide).
+- A “90 days” report period (Proposal; section 7).
+
+**Next step:**
+- The owner tests the refund box on the tablet. Then commit, and step 6: connecting the app screens to the API.
 

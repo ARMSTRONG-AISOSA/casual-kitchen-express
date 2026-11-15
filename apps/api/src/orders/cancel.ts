@@ -1,3 +1,4 @@
+import { maxPartialRefund, type RefundChoice } from "@cke/validation";
 import { and, eq, gt, sql } from "drizzle-orm";
 import type { Db } from "../db/client";
 import * as t from "../db/schema";
@@ -134,4 +135,28 @@ export async function recentCancellations(db: Tx | Db, customerId: string) {
       ),
     )) as [{ n: number }];
   return r.n;
+}
+
+/**
+ * Works out a refund from the person's choice (MGR-15): a full refund is what's left to refund;
+ * a partial one is the typed amount, never more than 99% of what the customer paid
+ * (owner decision, 15 November 2026) and never more than what's left. "None" is only for a
+ * manager cancelling after pickup (4.6).
+ */
+export function refundAmount(
+  choice: RefundChoice,
+  paid: number,
+  left: number,
+  allowNone: boolean,
+): { amount: number } | { error: string } {
+  if (choice.kind === "full") return { amount: left };
+  if (choice.kind === "none")
+    return allowNone ? { amount: 0 } : { error: "Choose a full or partial refund" };
+  const cap = maxPartialRefund(paid);
+  if (choice.amount > cap)
+    return {
+      error: `A partial refund can be up to ${naira(cap)} (99% of the ${naira(paid)} paid)`,
+    };
+  if (choice.amount > left) return { error: `The most that can be refunded is ${naira(left)}` };
+  return { amount: choice.amount };
 }

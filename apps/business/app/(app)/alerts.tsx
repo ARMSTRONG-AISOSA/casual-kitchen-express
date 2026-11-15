@@ -14,6 +14,7 @@ import {
   useStore,
 } from "../../src/state/store";
 import { Button, Card, ConfirmTick, Page, Row, Sheet, StatusPill, T } from "../../src/ui/kit";
+import { NEW_PICK, RefundPicker, refundFor, type RefundPick } from "../../src/ui/refund";
 import { useToast } from "../../src/ui/toast";
 
 // Alerts (MGR-14): orders no rider has accepted, rider help requests, and cancellation requests.
@@ -27,6 +28,11 @@ export default function Alerts() {
   const [approving, setApproving] = useState<Alert | null>(null);
   const [sure, setSure] = useState(false);
   const ao = approving ? findOrder(s, approving.orderNo) : undefined;
+  // The refund for an approved request: full by default, or a typed partial amount (MGR-15).
+  const [pick, setPick] = useState<RefundPick>(NEW_PICK);
+  const paid = ao ? orderTotal(ao) : 0;
+  const left = ao ? paid - (ao.refunded ?? 0) : 0;
+  const { amount } = refundFor(pick, paid, left);
 
   return (
     <Page>
@@ -112,7 +118,7 @@ export default function Alerts() {
                     <Button
                       label="Approve"
                       small
-                      onPress={() => (setApproving(a), setSure(false))}
+                      onPress={() => (setApproving(a), setSure(false), setPick(NEW_PICK))}
                     />
                     <Button
                       label="Decline"
@@ -147,29 +153,46 @@ export default function Alerts() {
         onClose={() => setApproving(null)}
         title={`Approve cancelling ${approving?.orderNo ?? ""}?`}
       >
-        <T muted>The order is cancelled and the customer gets a full refund (simulated).</T>
+        <T muted>
+          The order is cancelled and the customer is refunded (simulated). Choose a full refund, or
+          type a partial amount.
+        </T>
         {ao ? (
-          <ConfirmTick
-            checked={sure}
-            onChange={setSure}
-            label={`I’m sure I want to refund ${naira(orderTotal(ao))} for ${ao.no}`}
-          />
+          <>
+            <View style={{ marginTop: 12 }}>
+              <RefundPicker
+                paid={paid}
+                left={left}
+                value={pick}
+                onChange={(v) => (setPick(v), setSure(false))}
+              />
+            </View>
+            <ConfirmTick
+              checked={sure}
+              onChange={setSure}
+              label={
+                amount
+                  ? `I’m sure I want to refund ${naira(amount)} for ${ao.no}`
+                  : "Enter the amount to refund first"
+              }
+            />
+          </>
         ) : null}
         <T v="small" muted style={{ marginTop: 6 }}>
           Recorded as {actorLabel(s)}, with the time.
         </T>
         <Button
           label="Approve and refund"
-          disabled={!sure}
+          disabled={!sure || !amount}
           style={{ marginTop: 16 }}
           onPress={() => {
             const a = approving!;
             set((st) => ({
-              ...cancelOrder(st, a.orderNo, "Customer request approved"),
+              ...cancelOrder(st, a.orderNo, "Customer request approved", amount ?? undefined),
               ...clearAlert(st, a.id),
             }));
             setApproving(null);
-            toast(`${a.orderNo} cancelled and refunded`);
+            toast(`${a.orderNo} cancelled and ${naira(amount ?? 0)} refunded`);
           }}
         />
         <Button

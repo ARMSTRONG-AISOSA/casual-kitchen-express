@@ -1,6 +1,6 @@
 # CKE DESIGN
 
-**Document Status:** Draft v0.33. Records UI and UX decisions, design choices, page flows, and design libraries. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day).  
+**Document Status:** Draft v0.34. Records UI and UX decisions, design choices, page flows, and design libraries. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day).  
 **Related documents:** `Casual-Kitchen-Express.md` (business and brand, surface level), `architecture.md` (functions, features, data, technical decisions), and `list-of-areas.md` (delivery areas).
 
 ---
@@ -433,7 +433,7 @@ The top bar shows the screen title, the Demo chip on manager screens, the signed
 6. **On shift:** each person signs in on the tablet with their own username and password at the start of their shift. The top bar always shows who is signed in, with their name and photo, and "Switch person" hands over to the next person. Every action is recorded against whoever is signed in (`architecture.md`, 4.5). The tablet signs out automatically at 8:30 pm, the walk-in closing time, but only once every order placed before 8:30 pm is collected, delivered, or cancelled, so nobody is signed out in the middle of an order. Managers can turn this off in Settings (decided 14 November 2026).
 7. **Take a walk-in order:** tap "New walk-in order", then tap item tiles to add items. Choose Eat in or Take away, and add a name if wanted. Tap Charge, then choose **Cash** or **Online**. For cash, tap **Exact**, or type the amount received into the **Other amount** box (decided 12 November 2026). An amount below the total says so and can’t be confirmed. The app shows the change due. For online, confirm the simulated payment. The order number (for example W-006) is shown to call out, and the ticket appears on the board with a Walk-in badge, recorded against the signed-in person.
 8. **Walk-in ticket:** it moves through Preparing and Ready like an online ticket. Ready shows the number to call out, and Collected clears it when the customer takes the order. There is no rider step.
-9. **Cancel a walk-in order:** before it is ready, open the ticket, tap Cancel, choose a reason, tick “I’m sure I want to refund ₦… for …” (the sheet says who it will be recorded as), and confirm. The payment is refunded (simulated), and the refund is recorded with the name, role, and staff ID of the signed-in person and the time.
+9. **Cancel a walk-in order:** before it is ready, open the ticket, tap Cancel, choose **Full refund** or **Partial refund** (type the amount, up to 99% of what was paid; see the refund box in 7.3), choose a reason, tick “I’m sure I want to refund ₦… for …” (the sheet says who it will be recorded as), and confirm. The payment is refunded (simulated), and the refund is recorded with the name, role, and staff ID of the signed-in person and the time.
 10. **Soup of the day:** each morning, open Sold out and tap today’s soup at the top. The customer app shows it straight away, and only that soup can be ordered.
 11. **Cash-up at close:** at the end of the day (before the 8:30 pm sign-out), the person on the counter opens Cash-up, counts the drawer, enters the amount, and taps Save. The app shows the cash expected from the day’s walk-in cash payments and the difference. The account officer or a manager signs it off later in Finance.
 
@@ -455,7 +455,7 @@ Same philosophy as the kitchen: practical first, polished second. Larger control
 | Menu list | Categories and items with availability and prices, and **Soup of the day** at the top: one tap picks today’s soup, and the customer app shows it straight away (kitchen staff set it on Sold out). Below the soups, **Soups in the rotation** lists each soup with Remove, and an **Add a soup** box adds a new one. Each item and soup shows a small photo; tapping it opens the photo dialog (7.3, Image upload). |
 | Item editor | Name, description, price, image, options, load value, station |
 | Orders | All orders for Today, Yesterday, or any date range back to the first order. Search by order number or customer ID, filter by channel (All, Online, Walk-in), status, staff member, and payment method, and sort by time placed or amount. Shows the count and total value, and loads long ranges 150 rows at a time. |
-| Order detail | The full timeline with timestamps and staff IDs, payment, and Refund (managers only). Online orders show a **Customer** card: name, customer ID, phone, and delivery address (label, neighbourhood, landmark), with **Call** and **WhatsApp** buttons. Waiting orders show **Assign to a rider**. A **Back to Orders** button sits at the top. Refunds need an “I’m sure…” tick, and each refund shows who made it (name, role, staff ID, time). |
+| Order detail | The full timeline with timestamps and staff IDs, payment, and Refund (managers only: a full refund, or a typed partial amount up to 99% of what was paid; it stays available while something is left to refund). Online orders show a **Customer** card: name, customer ID, phone, and delivery address (label, neighbourhood, landmark), with **Call** and **WhatsApp** buttons. Waiting orders show **Assign to a rider**. A **Back to Orders** button sits at the top. Refunds need an “I’m sure…” tick, and each refund shows who made it (name, role, staff ID, time). |
 | Riders | Riders online now, what each is carrying and their load (“Load 5 of 6”), and Call rider. Offline riders are listed below. |
 | Assign to a rider | Online riders whose remaining capacity fits the order, with their load and current stops. One tap assigns. |
 | Rider pay | Each rider's owed balance, per-delivery pay, mark a period as paid (simulated), and payout history. Account officers and managers. |
@@ -551,8 +551,8 @@ Comparing with the previous period is a possible future update (`architecture.md
 **Handle a cancellation or refund**
 1. Open Orders and choose the order, or open a customer's cancellation request from Alerts.
 2. Choose Approve or Decline for a request, or Cancel or Refund for an order the manager is acting on.
-3. For a refund, choose full or partial, pick a reason, and confirm.
-4. Tick “I’m sure I want to refund ₦… for …” (the dialog says who it will be recorded as), then confirm.
+3. For a refund, use the **refund box** (owner decision, 15 November 2026): two choices side by side, **Full refund, ₦…** (one tap) and **Partial refund**. Partial opens an **Amount to refund (₦)** field with the number keypad, and under it “Up to ₦… (99% of the ₦… paid)”. A higher amount shows a red line instead (“That’s more than 99% of the ₦… paid. The most is ₦….”), and the confirmation stays locked until the amount is allowed. Then pick a reason. The same box is used everywhere a refund is made: a manager’s Refund on the order, approving a cancellation request, and cancelling a walk-in.
+4. Tick “I’m sure I want to refund ₦… for …”, which shows the amount actually chosen (the dialog says who it will be recorded as), then confirm.
 5. The customer is notified, the refund shows "Refund pending" and then "Refund completed" (simulated), and the refund is recorded with the name, role, and staff ID of the person signed in, and the time. It appears on the order, in the audit trail, and in Reports, Refunds.
 
 **Approve a manual completion (dispatch officers and managers)**
@@ -597,7 +597,7 @@ Comparing with the previous period is a possible future update (`architecture.md
 **Handle a cancellation request (dispatch officers)**
 1. A customer’s request appears in Alerts.
 2. Open it, contact the customer if needed, and choose Approve or Decline.
-3. Approving needs the “I’m sure I want to refund ₦… for …” tick. The approved request refunds under the rules (`architecture.md` 4.6), recorded with the name, role, and staff ID of the person signed in. Other refunds are for managers.
+3. Approving shows the refund box (a full refund by default, or a typed partial amount up to 99% of what was paid) and needs the “I’m sure I want to refund ₦… for …” tick. The approved request refunds under the rules (`architecture.md` 4.6), recorded with the name, role, and staff ID of the person signed in. Other refunds are for managers.
 
 **Change the restaurant’s WhatsApp number (managers)**
 1. Open Settings, then Restaurant contact.
@@ -747,6 +747,7 @@ Every design question is now decided. Anything that needs checking is listed in 
 
 | Version | Change |
 |---|---|
+| 0.34 | Owner decision on 15 November 2026: the refund box, with Full refund or a typed Partial refund up to 99% of what was paid, wherever a refund is made (6.5, 7.2, 7.3). |
 | 0.33 | Fix on 15 November 2026: Business app rail items switch screens instead of stacking them (the stacked screens slowed the tablet), and the back button on a rail screen goes to the person’s first item (6.3). |
 | 0.32 | Owner decision on 15 November 2026: a tour guide for managers on Demo controls (7.2, 7.3), one straight tour where each step opens its screen. Demo controls now has Tour guide, Practice orders, and Reset sections, each control with a one-line explanation. |
 | 0.31 | Owner requests on 14 November 2026: the customer app’s Profile gets a Profile photo section (with real compression and a size note) and a camera badge on the photo, and a Sign out section between Theme and Help (4.2, 4.3). |

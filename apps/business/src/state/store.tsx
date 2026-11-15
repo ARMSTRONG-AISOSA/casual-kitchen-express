@@ -278,25 +278,41 @@ export function recordRefund(
   };
 }
 
-export function cancelOrder(s: State, no: string, reason: string): Partial<State> {
+/**
+ * Cancels an order and refunds it: everything that's left by default, or a typed partial amount
+ * (up to 99% of what was paid, checked where it's typed: src/ui/refund.tsx).
+ */
+export function cancelOrder(s: State, no: string, reason: string, amount?: number): Partial<State> {
+  const o = findOrder(s, no);
+  if (!o) return {};
+  const already = o.refunded ?? 0;
+  const left = orderTotal(o) - already;
+  const refund = amount ?? left;
+  const kind = already === 0 && refund === orderTotal(o) ? "full" : "partial";
+  return {
+    ...patchOrder(
+      s,
+      no,
+      () => ({ status: "cancelled", refunded: already + refund }),
+      kind === "full"
+        ? `Cancelled and refunded: ${reason}`
+        : `Cancelled, partly refunded: ${reason}`,
+    ),
+    ...recordRefund(s, o, refund, kind, `Cancelled: ${reason}`),
+  };
+}
+
+/** A typed partial refund that keeps the order going; refunds add up. */
+export function partialRefund(s: State, no: string, amount: number, reason: string) {
   const o = findOrder(s, no);
   if (!o) return {};
   return {
     ...patchOrder(
       s,
       no,
-      () => ({ status: "cancelled", refunded: orderTotal(o) }),
-      `Cancelled and refunded: ${reason}`,
+      () => ({ refunded: (o.refunded ?? 0) + amount }),
+      `Partly refunded: ${reason}`,
     ),
-    ...recordRefund(s, o, orderTotal(o), "full", `Cancelled: ${reason}`),
-  };
-}
-
-export function partialRefund(s: State, no: string, amount: number, reason: string) {
-  const o = findOrder(s, no);
-  if (!o) return {};
-  return {
-    ...patchOrder(s, no, () => ({ refunded: amount }), `Partly refunded: ${reason}`),
     ...recordRefund(s, o, amount, "partial", reason),
   };
 }

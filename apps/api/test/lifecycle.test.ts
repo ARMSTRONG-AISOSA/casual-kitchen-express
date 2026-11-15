@@ -353,7 +353,7 @@ describe("cancelling and refunds", () => {
       (
         await call(`/orders/${o.id}/refunds`, manager, {
           method: "POST",
-          body: { amount: o.total + 1, reason: "Too much", confirm: true },
+          body: { refund: { kind: "partial", amount: o.total }, reason: "Too much", confirm: true },
         })
       ).status,
     ).toBe(400);
@@ -361,14 +361,14 @@ describe("cancelling and refunds", () => {
       (
         await call(`/orders/${o.id}/refunds`, kitchen, {
           method: "POST",
-          body: { amount: 500, reason: "Cold", confirm: true },
+          body: { refund: { kind: "partial", amount: 500 }, reason: "Cold", confirm: true },
         })
       ).status,
     ).toBe(403);
     const r = await json<{ order: Order }>(
       await call(`/orders/${o.id}/refunds`, manager, {
         method: "POST",
-        body: { amount: 500, reason: "Arrived cold", confirm: true },
+        body: { refund: { kind: "partial", amount: 500 }, reason: "Arrived cold", confirm: true },
       }),
     );
     expect(r.order.refunds).toEqual([
@@ -432,6 +432,105 @@ describe("cancelling and refunds", () => {
       amount: 500,
       by: expect.objectContaining({ role: "kitchen" }),
     });
+  });
+});
+
+describe("partial refunds", () => {
+  it("lets everyone who refunds type a partial amount, never more than 99% of what was paid", async () => {
+    // Dispatch approving a cancellation request.
+    const o = await placeDelivery();
+    await acknowledge(o.id);
+    await call(`/me/orders/${o.id}/cancellation-request`, customer, {
+      method: "POST",
+      body: { reason: "Late", confirm: true },
+    });
+    const req = (await json<{ order: Order }>(await call(`/orders/${o.id}`, manager))).order
+      .cancellationRequest!;
+    const cap = Math.floor(o.total * 0.99);
+    const tooMuch = await call(`/cancellation-requests/${req.id}/approve`, dispatch, {
+      method: "POST",
+      body: { confirm: true, refund: { kind: "partial", amount: cap + 1 } },
+    });
+    expect(tooMuch.status).toBe(400);
+    expect(await json(tooMuch)).toMatchObject({ error: expect.stringContaining("99%") });
+    const ok = await json<{ order: Order }>(
+      await call(`/cancellation-requests/${req.id}/approve`, dispatch, {
+        method: "POST",
+        body: { confirm: true, refund: { kind: "partial", amount: cap } },
+      }),
+    );
+    expect(ok.order.status).toBe("cancelled");
+    expect(ok.order.refunds![0]).toMatchObject({ amount: cap, kind: "partial" });
+
+    // Kitchen staff cancelling a walk-in: ₦1,000 paid, so up to ₦990.
+    const w = await json<{ order: Order }>(
+      await call("/orders/walk-in", kitchen, {
+        method: "POST",
+        body: {
+          type: "take_away",
+          items: [{ itemId: drink, quantity: 2 }],
+          payment: { method: "card" },
+        },
+      }),
+    );
+    made.push(w.order.id);
+    expect(
+      (
+        await call(`/orders/${w.order.id}/cancel`, kitchen, {
+          method: "POST",
+          body: {
+            reason: "Changed order",
+            confirm: true,
+            refund: { kind: "partial", amount: 991 },
+          },
+        })
+      ).status,
+    ).toBe(400);
+    const wc = await json<{ order: Order }>(
+      await call(`/orders/${w.order.id}/cancel`, kitchen, {
+        method: "POST",
+        body: { reason: "Changed order", confirm: true, refund: { kind: "partial", amount: 990 } },
+      }),
+    );
+    expect(wc.order.refunds![0]).toMatchObject({ amount: 990, kind: "partial" });
+    // Kitchen staff can't cancel without a refund.
+    const w2 = await json<{ order: Order }>(
+      await call("/orders/walk-in", kitchen, {
+        method: "POST",
+        body: {
+          type: "eat_in",
+          items: [{ itemId: drink, quantity: 1 }],
+          payment: { method: "card" },
+        },
+      }),
+    );
+    made.push(w2.order.id);
+    expect(
+      (
+        await call(`/orders/${w2.order.id}/cancel`, kitchen, {
+          method: "POST",
+          body: { reason: "x", confirm: true, refund: { kind: "none" } },
+        })
+      ).status,
+    ).toBe(400);
+
+    // Managers on any order; a full refund is still possible separately.
+    const m = await placeDelivery();
+    const full = await json<{ order: Order }>(
+      await call(`/orders/${m.id}/refunds`, manager, {
+        method: "POST",
+        body: { refund: { kind: "full" }, reason: "Never arrived", confirm: true },
+      }),
+    );
+    expect(full.order.refunds![0]).toMatchObject({ amount: m.total, kind: "full" });
+    expect(
+      (
+        await call(`/orders/${m.id}/refunds`, manager, {
+          method: "POST",
+          body: { refund: { kind: "partial", amount: 100 }, reason: "Again", confirm: true },
+        })
+      ).status,
+    ).toBe(409);
   });
 });
 

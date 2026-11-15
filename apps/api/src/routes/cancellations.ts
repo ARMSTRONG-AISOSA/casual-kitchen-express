@@ -1,3 +1,4 @@
+import { refundChoice } from "@cke/validation";
 import { zValidator } from "@hono/zod-validator";
 import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
@@ -14,6 +15,7 @@ import {
   cancelOrder,
   recentCancellations,
   recordRefund,
+  refundAmount,
   refunded,
 } from "../orders/cancel";
 import { touch } from "../orders/store";
@@ -193,10 +195,7 @@ export const orderActions = new Hono<Ctx>()
     "/:id/cancel",
     requireRole("kitchen", "manager"),
     idParam,
-    zValidator(
-      "json",
-      z.object({ reason, confirm: ticked, refundAmount: z.number().int().min(0).optional() }),
-    ),
+    zValidator("json", z.object({ reason, confirm: ticked, refund: refundChoice.optional() })),
     async (c) => {
       const db = c.get("db");
       const actor = c.get("actor");
@@ -207,22 +206,24 @@ export const orderActions = new Hono<Ctx>()
         if (!o) return { status: 404 as const, error: "That order doesn’t exist" };
         const left = o.total - (await refunded(tx, id));
         let from = CANCELLABLE;
-        let amount: number;
+        const afterPickup = AFTER_PICKUP.includes(o.status);
         if (actor.role === "kitchen") {
           if (o.channel !== "walkin")
             return { status: 403 as const, error: "Ask a manager to cancel an online order" };
           from = BEFORE_READY; // walk-ins can be cancelled by staff before they're ready (4.6)
-          amount = left;
-        } else if (AFTER_PICKUP.includes(o.status)) {
+        } else if (afterPickup && !body.refund) {
           // After pickup, the manager decides how much to refund (4.6).
-          if (body.refundAmount === undefined)
-            return { status: 400 as const, error: "Choose how much to refund" };
-          amount = body.refundAmount;
-        } else {
-          amount = body.refundAmount ?? left; // before pickup the delivery fee goes back too
+          return { status: 400 as const, error: "Choose how much to refund" };
         }
-        if (amount > left)
-          return { status: 400 as const, error: `The most that can be refunded is ${naira(left)}` };
+        // Full by default (before pickup the delivery fee goes back too), or a typed partial amount.
+        const r = refundAmount(
+          body.refund ?? { kind: "full" },
+          o.total,
+          left,
+          actor.role === "manager" && afterPickup,
+        );
+        if ("error" in r) return { status: 400 as const, error: r.error };
+        const amount = r.amount;
         const done = await cancelOrder(
           tx,
           id,
@@ -250,12 +251,12 @@ export const orderActions = new Hono<Ctx>()
     },
   )
 
-  /** POST /orders/:id/refunds: a full or partial refund on any order (managers, MGR-15). */
+  /** POST /orders/:id/refunds: a full refund, or a typed partial one up to 99% of what was paid (managers, MGR-15). */
   .post(
     "/:id/refunds",
     requireRole("manager"),
     idParam,
-    zValidator("json", z.object({ amount: z.number().int().min(1), reason, confirm: ticked })),
+    zValidator("json", z.object({ refund: refundChoice, reason, confirm: ticked })),
     async (c) => {
       const db = c.get("db");
       const actor = c.get("actor");
@@ -265,10 +266,12 @@ export const orderActions = new Hono<Ctx>()
         const [o] = await tx.select().from(t.order).where(eq(t.order.id, id)).for("update");
         if (!o) return { status: 404 as const, error: "That order doesn’t exist" };
         const left = o.total - (await refunded(tx, id));
-        if (body.amount > left)
-          return { status: 400 as const, error: `The most that can be refunded is ${naira(left)}` };
+        if (left <= 0)
+          return { status: 409 as const, error: "This order is already fully refunded" };
+        const r = refundAmount(body.refund, o.total, left, false);
+        if ("error" in r) return { status: 400 as const, error: r.error };
         await recordRefund(tx, o, {
-          amount: body.amount,
+          amount: r.amount,
           reason: body.reason,
           requestedBy: actor.id,
           decidedBy: actor.id,
@@ -339,11 +342,12 @@ export const cancellationRequests = new Hono<Ctx>()
     "/:id/approve",
     requireRole("dispatch", "manager"),
     idParam,
-    zValidator("json", z.object({ confirm: ticked })),
+    zValidator("json", z.object({ confirm: ticked, refund: refundChoice.optional() })),
     async (c) => {
       const db = c.get("db");
       const actor = c.get("actor");
       const { id } = c.req.valid("param");
+      const body = c.req.valid("json");
       const result = await db.transaction(async (tx): Promise<Refused | Cancelled> => {
         const [req] = await tx
           .select()
@@ -353,13 +357,21 @@ export const cancellationRequests = new Hono<Ctx>()
         if (!req || req.status !== "pending")
           return { status: 409 as const, error: "That request has already been decided" };
         const [o] = await tx.select().from(t.order).where(eq(t.order.id, req.orderId));
+        // Full by default; the person approving can give a typed partial amount instead.
+        const r = refundAmount(
+          body.refund ?? { kind: "full" },
+          o!.total,
+          o!.total - (await refunded(tx, req.orderId)),
+          false,
+        );
+        if ("error" in r) return { status: 400 as const, error: r.error };
         const done = await cancelOrder(
           tx,
           req.orderId,
           BEFORE_READY,
           { kind: "staff", id: actor.id, decidedBy: actor.id, requestedBy: req.customerId },
           `Customer request: ${req.reason}`,
-          o!.total - (await refunded(tx, req.orderId)),
+          r.amount,
         );
         if (!done)
           return {
