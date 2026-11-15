@@ -1,5 +1,6 @@
 import { naira } from "@cke/brand-tokens";
 import { router, useLocalSearchParams } from "expo-router";
+import { goTo } from "../../../src/ui/nav";
 import { ChevronLeft, MessageCircle, Phone } from "lucide-react-native";
 import { useState } from "react";
 import { View } from "react-native";
@@ -85,7 +86,7 @@ export default function OrderDetail() {
         small
         icon={(col) => <ChevronLeft size={20} color={col} />}
         style={{ alignSelf: "flex-start", marginBottom: 12 }}
-        onPress={() => router.navigate("/orders")}
+        onPress={() => goTo("/orders")}
       />
       <Row style={{ justifyContent: "space-between", flexWrap: "wrap" }}>
         <T v="big">{o.no}</T>

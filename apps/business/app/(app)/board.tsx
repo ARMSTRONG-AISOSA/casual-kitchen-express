@@ -1,5 +1,6 @@
 import { fontFamily } from "@cke/brand-tokens";
 import { router } from "expo-router";
+import { goTo } from "../../src/ui/nav";
 import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -55,7 +56,7 @@ export default function Board() {
           />
         </Chips>
         <View style={{ flex: 1 }} />
-        <Button label="New walk-in order" small onPress={() => router.push("/walk-in")} />
+        <Button label="New walk-in order" small onPress={() => goTo("/walk-in")} />
       </View>
       <ScrollView horizontal={width < 700} contentContainerStyle={{ flexGrow: 1 }}>
         <View style={[styles.cols, width < 700 && { width: 3 * 260 + 40 }]}>

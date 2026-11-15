@@ -1,4 +1,5 @@
 import { router } from "expo-router";
+import { goTo } from "../../src/ui/nav";
 import { View } from "react-native";
 import { useStore } from "../../src/state/store";
 import { Button, Page, T } from "../../src/ui/kit";
@@ -25,11 +26,7 @@ export default function WalkInSent() {
           }}
         >
           <Button label="New walk-in order" onPress={() => router.replace("/walk-in")} />
-          <Button
-            label="Back to the board"
-            variant="ghost"
-            onPress={() => router.navigate("/board")}
-          />
+          <Button label="Back to the board" variant="ghost" onPress={() => goTo("/board")} />
         </View>
       </View>
     </Page>

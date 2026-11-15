@@ -1,6 +1,6 @@
 # CKE DESIGN
 
-**Document Status:** Draft v0.32. Records UI and UX decisions, design choices, page flows, and design libraries. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day).  
+**Document Status:** Draft v0.33. Records UI and UX decisions, design choices, page flows, and design libraries. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day).  
 **Related documents:** `Casual-Kitchen-Express.md` (business and brand, surface level), `architecture.md` (functions, features, data, technical decisions), and `list-of-areas.md` (delivery areas).
 
 ---
@@ -405,7 +405,7 @@ Menu photography follows the brand's photography direction. Images are shown in 
 | Account officer | Reports, Rider pay, Finance |
 | Manager | Board, Walk-in, Sold out, Alerts, then a Manager group: Dashboard, Orders, Riders, People, Menu, Rider pay, Reports, Finance, Settings, and Demo |
 
-The top bar shows the screen title, the Demo chip on manager screens, the signed-in person, and Switch person on kitchen screens. Tapping the person’s photo opens **Your profile**: their photo, name, role and staff ID, job, username or Google email, phone, and a Sign out button (the same cash-up check as the rail’s Sign out). A person who opens the app lands on their first item (the Board, Alerts, or Reports). On a narrow screen (a tablet in portrait, under 1100 dp wide), the Board’s pause switch and clock move to a second row so nothing overlaps the person and Switch person.
+The top bar shows the screen title, the Demo chip on manager screens, the signed-in person, and Switch person on kitchen screens. Tapping the person’s photo opens **Your profile**: their photo, name, role and staff ID, job, username or Google email, phone, and a Sign out button (the same cash-up check as the rail’s Sign out). A person who opens the app lands on their first item (the Board, Alerts, or Reports). Choosing a rail item switches to that screen rather than stacking it on the last one, so screens left behind don’t stay open and use memory. The tablet’s back button on a rail screen goes to the person’s first item, and from there it leaves the app; on a task screen (a ticket, an order, a person, an item) it goes back to its list. On a narrow screen (a tablet in portrait, under 1100 dp wide), the Board’s pause switch and clock move to a second row so nothing overlaps the person and Switch person.
 
 ### 6.4 Kitchen screen inventory
 
@@ -747,6 +747,7 @@ Every design question is now decided. Anything that needs checking is listed in 
 
 | Version | Change |
 |---|---|
+| 0.33 | Fix on 15 November 2026: Business app rail items switch screens instead of stacking them (the stacked screens slowed the tablet), and the back button on a rail screen goes to the person’s first item (6.3). |
 | 0.32 | Owner decision on 15 November 2026: a tour guide for managers on Demo controls (7.2, 7.3), one straight tour where each step opens its screen. Demo controls now has Tour guide, Practice orders, and Reset sections, each control with a one-line explanation. |
 | 0.31 | Owner requests on 14 November 2026: the customer app’s Profile gets a Profile photo section (with real compression and a size note) and a camera badge on the photo, and a Sign out section between Theme and Help (4.2, 4.3). |
 | 0.30 | Owner request on 14 November 2026: tapping your photo in the Business app’s top bar opens Your profile, with Sign out (6.3, 7). |

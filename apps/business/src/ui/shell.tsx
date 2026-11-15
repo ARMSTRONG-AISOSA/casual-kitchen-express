@@ -41,6 +41,7 @@ import { useTheme } from "../state/theme";
 import { Button, Sheet, T } from "./kit";
 import { Avatar } from "./avatar";
 import { useToast } from "./toast";
+import { goTo } from "./nav";
 import { TOUR, TourOverlay, TourProvider, type Rect } from "./tour";
 
 // The side rail and top bar (design.md 6.3). Each role sees only its own items
@@ -206,12 +207,12 @@ export function Shell({ children }: { children: ReactNode }) {
   const itemY = useRef<Partial<Record<NavId, number>>>({});
   const endTour = () => {
     setTourStep(null);
-    router.navigate("/demo");
+    goTo("/demo");
   };
   useEffect(() => {
     if (tourStep === null) return;
     const s = TOUR[tourStep]!;
-    router.navigate(`/${s.id}`);
+    goTo(`/${s.id}`);
     AccessibilityInfo.announceForAccessibility(
       `Step ${tourStep + 1} of ${TOUR.length}. ${s.title}. ${s.body}`,
     );
@@ -241,15 +242,24 @@ export function Shell({ children }: { children: ReactNode }) {
     );
     return () => timers.forEach(clearTimeout);
   }, [tourStep, tourKey]);
-  // The tablet's back button goes to the previous step.
+  // The tablet's back button: during the tour it goes to the previous step. On a main screen
+  // with nothing under it, it goes to the person's first screen (the Board, Alerts, or Reports);
+  // there it leaves the app as usual. Task screens go back to their list.
+  const home = homeFor(myRole(s));
   useEffect(() => {
-    if (tourStep === null) return;
     const sub = BackHandler.addEventListener("hardwareBackPress", () => {
-      setTourStep((n) => (n ? n - 1 : n));
-      return true;
+      if (tourStep !== null) {
+        setTourStep((n) => (n ? n - 1 : n));
+        return true;
+      }
+      if (!router.canGoBack() && `/${screen}` !== home) {
+        goTo(home);
+        return true;
+      }
+      return false;
     });
     return () => sub.remove();
-  }, [tourStep]);
+  }, [tourStep, screen, home]);
   const isManagerScreen = MANAGER.includes(active ?? "board") || screen === "assign";
   const showPause = screen === "board" && (role === "manager" || role === "kitchen");
   const pauseControl = (
@@ -300,7 +310,7 @@ export function Shell({ children }: { children: ReactNode }) {
         onLayout={(e) => {
           itemY.current[id] = e.nativeEvent.layout.y;
         }}
-        onPress={() => router.navigate(`/${id}`)}
+        onPress={() => goTo(`/${id}`)}
         accessibilityRole="button"
         accessibilityLabel={count ? `${n.label}, ${count}` : n.label}
         accessibilityState={{ selected: on }}
@@ -500,7 +510,7 @@ export function Shell({ children }: { children: ReactNode }) {
             style={{ marginTop: 16 }}
             onPress={() => {
               setLeaving(false);
-              router.navigate("/cash-up");
+              router.push("/cash-up");
             }}
           />
           <Button
@@ -543,7 +553,7 @@ export function NotForRole() {
         label="Go back"
         variant="ghost"
         style={{ marginTop: 16, alignSelf: "flex-start" }}
-        onPress={() => router.navigate(homeFor(myRole(s)))}
+        onPress={() => goTo(homeFor(myRole(s)))}
       />
     </View>
   );

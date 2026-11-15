@@ -28,7 +28,7 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and two
 |---|---|---|
 | `progress.md` | This file: status, rules, next steps, log | Start here |
 | `docs/architecture.md` (v0.39) | Functions, 129 feature IDs (CUS, RID, KIT, MGR, DSP, ACC, WEB), order lifecycle, data model, the API routes built so far, decisions, free-tier limits, **locked versions (section 15)**, build order (16), **16.1 to verify at build**, seed data | Wins on anything technical |
-| `docs/design.md` (v0.32) | UI rules per app, screens, page flows, colours, components | Wins on anything visual or UX |
+| `docs/design.md` (v0.33) | UI rules per app, screens, page flows, colours, components | Wins on anything visual or UX |
 | `docs/Casual-Kitchen-Express.md` (v1.10) | Brand and business, surface level only | Wins on brand (name, colours, logo, tone, menu, packaging) |
 | `docs/list-of-areas.md` | Delivery areas, boundary, landmarks, neighbourhood list | Areas still to confirm on a map |
 | `docs/photo-credits.md` | Every starting menu photo’s author, licence, and source, and the staff photos | The record the brand document asks for |
@@ -956,3 +956,31 @@ Append a new dated entry after each work session. Never edit or delete earlier e
 
 **Next step:**
 - The owner tries the tour on the tablet. Then go over the API call-reduction plan (architecture.md 14.4) with the owner, and build step 4c, the orders backend.
+
+---
+
+## [2026-11-15] The Business app slowed down: screens piled up in memory
+
+**What was done:**
+- The owner went over the tour, then found the Business app responding slowly when trying Practice orders and Reset.
+- **Cause:** the tablet was almost out of memory (about 80 MB free of 3.9 GB, 1.1 GB in swap), with the Business app at 735 MB and the customer app at 504 MB. The processor was mostly idle, so nothing was stuck in a loop. Each rail tap (and each tour step) used Expo Router’s `navigate`, which in this version adds a new screen on top of the stack every time, so every screen visited stayed alive with its photos and charts. Measured from a fresh start (458 MB): one tour added 98 MB, a second tour 81 MB more, and pressing back walked through every screen visited (Settings, Finance, Reports, …).
+- **Fix:** a small `goTo` helper (`apps/business/src/ui/nav.ts`) clears the stack and replaces the screen. It is used by the rail, the tour, Not available’s Go back, the Dashboard’s Open alerts and Open board, the Board’s New walk-in order, Order sent’s Back to the board, and the order’s Back to Orders. Task screens (ticket, order, person, item, assign, cash-up) still open on top of their list. The tablet’s back button on a rail screen now goes to the person’s first screen (the Board for managers and kitchen staff), and from there leaves the app.
+- **Tested on the tablet after the fix:** from a fresh start (459 MB), three tours added 70 MB, then 26 MB, then 11 MB (levelling off, against 98 MB and 81 MB before). Back from Demo goes to the Board, and from the Board leaves the app. Practice orders: New online order placed O-2180 on the Board (New 2 to 3); tapping it moved it to Preparing; tapping again opened the ticket; back returned to the Board. Reset asked for confirmation and put the Board back to its starting orders (O-2180 gone). The app stayed at about 560 MB.
+- The customer app was closed on the tablet to free memory while testing (it opens again from its icon).
+- Note: debug builds use far more memory than release builds, and the tablet also runs Gmail, YouTube, Chrome, and Google services. Closing apps not in use helps while testing.
+- Checks: typecheck and lint clean; Prettier clean.
+- Documents: `design.md` v0.33 (6.3: rail items switch screens; the back button), this file.
+
+**Files created/updated:**
+- `apps/business/src/ui/nav.ts` (new), `src/ui/shell.tsx`, `app/(app)/board.tsx`, `app/(app)/dashboard.tsx`, `app/(app)/walk-in-sent.tsx`, `app/(app)/order/[no].tsx`
+- `docs/design.md`, `progress.md`
+
+**Decisions locked in:**
+- None new (a fix). Back on a rail screen goes to the person’s first screen.
+
+**Open questions / not yet decided:**
+- The customer and rider apps use tabs, which don’t pile up the same way; to check when their screens are connected to the API (step 6).
+
+**Next step:**
+- The owner tries Practice orders and Reset, then commit. Then the API call-reduction review (architecture.md 14.4) and step 4c, the orders backend.
+

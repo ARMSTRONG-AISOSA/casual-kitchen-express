@@ -1,5 +1,5 @@
 import { naira } from "@cke/brand-tokens";
-import { router } from "expo-router";
+import { goTo } from "../../src/ui/nav";
 import { View } from "react-native";
 import { orderTotal } from "../../src/data/seed";
 import { useStore } from "../../src/state/store";
@@ -51,13 +51,8 @@ export default function Dashboard() {
           <T muted>Nothing right now.</T>
         )}
         <View style={{ flexDirection: "row", gap: 10, marginTop: 14, flexWrap: "wrap" }}>
-          <Button label="Open alerts" small onPress={() => router.navigate("/alerts")} />
-          <Button
-            label="Open the board"
-            variant="ghost"
-            small
-            onPress={() => router.navigate("/board")}
-          />
+          <Button label="Open alerts" small onPress={() => goTo("/alerts")} />
+          <Button label="Open the board" variant="ghost" small onPress={() => goTo("/board")} />
         </View>
       </Section>
     </Page>
