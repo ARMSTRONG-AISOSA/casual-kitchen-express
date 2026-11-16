@@ -12,7 +12,8 @@
       "adaptiveIcon": {
         "foregroundImage": "../../brand/cke-logo-package/app-icon/cke-app-icon-maskable-512.png",
         "backgroundColor": "#C83F2D"
-      }
+      },
+      "permissions": ["android.permission.RECORD_AUDIO"]
     },
     "plugins": [
       "expo-router",
@@ -43,6 +44,17 @@
         }
       ],
       "../../tools/expo-plugins/with-android-architectures.js"
-    ]
+    ],
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "30a6470d-e325-4a12-bf73-bd1d167cc007"
+      }
+    },
+    "owner": "armstrong-aisosas-team"
   }
 }
