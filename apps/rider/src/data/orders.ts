@@ -21,6 +21,9 @@ export type QueueOrder = {
   itemCount?: number;
   /** Assigned by dispatch rather than taken from the queue (DSP-05). */
   assigned?: boolean;
+  /** The address's map point, for the arrival geofence (step 6d); and whether it's arriving. */
+  pin?: { lat: number; lng: number };
+  arriving?: boolean;
 };
 
 export const KITCHEN = "CKE kitchen, Ugbowo";
@@ -86,8 +89,12 @@ export const orderLoad = (o: QueueOrder) => o.load ?? o.items.reduce((a, i) => a
 
 export const km = (n: number) => `${n.toFixed(1)} km`;
 
-export const readyText = (mins: number) =>
-  mins === 0 ? "Ready just now" : `Ready ${mins} minute${mins === 1 ? "" : "s"} ago`;
+export function readyText(mins: number) {
+  if (mins === 0) return "Ready just now";
+  if (mins < 60) return `Ready ${mins} minute${mins === 1 ? "" : "s"} ago`;
+  const h = Math.floor(mins / 60);
+  return h < 24 ? `Ready ${h} hour${h === 1 ? "" : "s"} ago` : "Ready more than a day ago";
+}
 
 /** Mock delivery code. The real one is made by the API and checked there (architecture.md 4.4). */
 export const DEMO_DELIVERY_CODE = "4827";

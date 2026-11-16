@@ -23,10 +23,12 @@ export default function DropOff() {
     );
   }
   const navigate = () => {
-    // geo: lets the phone offer Google Maps, Waze, or any navigation app installed.
-    Linking.openURL(`geo:0,0?q=${encodeURIComponent(o.address)}`).catch(() =>
-      toast("No navigation app found on this phone"),
-    );
+    // geo: lets the phone offer Google Maps, Waze, or any navigation app installed. Live, the
+    // customer's own pin is more exact than the street name.
+    const to = o.pin
+      ? `geo:${o.pin.lat},${o.pin.lng}?q=${o.pin.lat},${o.pin.lng}(${encodeURIComponent(o.no)})`
+      : `geo:0,0?q=${encodeURIComponent(o.address)}`;
+    Linking.openURL(to).catch(() => toast("No navigation app found on this phone"));
   };
   // Demo: the customers are made up, so the call isn't placed. The real app opens the phone's dialer.
   const call = () => toast(`In the real app this calls ${o.customer}`);
@@ -45,6 +47,17 @@ export default function DropOff() {
         <KV k="Landmark" v={o.landmark} />
         <KV k="Customer" v={o.customer} />
       </Card>
+      {o.arriving ? (
+        <T muted style={{ marginTop: 10 }}>
+          You’re nearly there. {o.customer || "The customer"} has been told you’re arriving.
+        </T>
+      ) : null}
+      {s.live && s.locationDenied ? (
+        <T muted style={{ marginTop: 10 }}>
+          Location is off for CKE, so your customer can’t see you on the map. You can still deliver
+          with their code. To turn it on: Settings, Apps, CKE Rider, Location.
+        </T>
+      ) : null}
       <Button
         label="Navigate"
         variant="alt"

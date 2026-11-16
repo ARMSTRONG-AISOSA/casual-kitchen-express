@@ -39,6 +39,10 @@ export type State = {
   /** Orders in the queue that don't fit what the rider carries (shown as a count). */
   hidden: number;
   earnings: RiderEarnings | null;
+  /** The manager's tracking mode: Light shares the position on the way, or Milestones only. */
+  tracking: "light" | "milestones";
+  /** The rider said no to location: deliveries still work, without the map or "Arriving soon". */
+  locationDenied: boolean;
 };
 
 export const MAX_ORDERS = 3;
@@ -61,6 +65,8 @@ export const initial = (): State => ({
   newOrder: true,
   live: false,
   hidden: 0,
+  tracking: "light",
+  locationDenied: false,
   earnings: null,
 });
 

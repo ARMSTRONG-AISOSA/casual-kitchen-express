@@ -9,6 +9,7 @@ import { AppState } from "react-native";
 import { api } from "../api";
 import { sessionCookie } from "../auth";
 import { HELP_REASONS, clockTime, type QueueOrder } from "../data/orders";
+import { onArrival, stopTracking, syncTracking } from "../tracking";
 import { useToast } from "../ui/toast";
 import {
   accept,
@@ -73,6 +74,8 @@ export const fromDelivery = (d: RiderDelivery): Carried => ({
   load: d.load,
   picked: d.picked,
   assigned: d.assignedByDispatch,
+  pin: d.address ? { lat: d.address.lat, lng: d.address.lng } : undefined,
+  arriving: d.status === "arriving",
 });
 
 let refresh: () => Promise<void> = async () => {};
@@ -125,6 +128,7 @@ export function RiderLive() {
       carrying: d.deliveries.map(fromDelivery),
       earnings: e,
       pay: b.settings.riderPay,
+      tracking: b.settings.trackingMode,
       delivered: e.todaysDeliveries.map((x) => ({
         no: x.number,
         area: "",
@@ -158,14 +162,48 @@ export function RiderLive() {
         if (!m.removed && m.delivery.assignedByDispatch && vibrate.current)
           alertRider({ vibrate: true } as State);
         if (m.removed) void api?.riderEarnings().then((e) => set({ earnings: e }));
+      } else if (m.type === "catalog") {
+        // A setting changed: pay per delivery or the tracking mode.
+        void api
+          ?.bootstrap()
+          .then((b) => set({ pay: b.settings.riderPay, tracking: b.settings.trackingMode }));
       }
     },
     [set, loadQueue],
   );
 
+  // Light tracking while orders are on the way (RID-17): the picked-up stops not yet arriving.
+  const stopsKey = s.live
+    ? s.carrying
+        .filter((c) => c.picked && !c.arriving && c.pin && c.id)
+        .map((c) => `${c.id}:${c.pin!.lat},${c.pin!.lng}`)
+        .join("|")
+    : "";
+  useEffect(() => {
+    onArrival((d) => set({ carrying: d.map(fromDelivery) }));
+    return () => onArrival(null);
+  }, [set]);
+  useEffect(() => {
+    const stops = stopsKey
+      ? stopsKey.split("|").map((x) => {
+          const [orderId, at] = x.split(":");
+          const [lat, lng] = at!.split(",").map(Number);
+          return { orderId: orderId!, lat: lat!, lng: lng! };
+        })
+      : [];
+    void syncTracking(stops, s.tracking, AppState.currentState === "active")
+      .then((r) =>
+        set((st) =>
+          st.locationDenied === (r === "denied") ? {} : { locationDenied: r === "denied" },
+        ),
+      )
+      .catch(() => {});
+  }, [stopsKey, s.tracking, set]);
+
   useEffect(() => {
     if (!on) {
       set((st) => (st.live ? { live: false } : {}));
+      void stopTracking().catch(() => {});
       return;
     }
     let stopped = false;

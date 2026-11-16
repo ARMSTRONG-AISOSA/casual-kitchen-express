@@ -27,6 +27,15 @@
       ],
       "expo-status-bar",
       "expo-splash-screen",
+      [
+        "expo-location",
+        {
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true,
+          "locationWhenInUsePermission": "CKE shares your location with your customer while their order is on the way.",
+          "locationAlwaysAndWhenInUsePermission": "CKE uses your location to tell your customer when you’re about to arrive, even while you use your navigation app."
+        }
+      ],
       "../../tools/expo-plugins/with-android-architectures.js"
     ]
   }

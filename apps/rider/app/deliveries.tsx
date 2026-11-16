@@ -45,7 +45,18 @@ export default function Deliveries() {
     >
       <View style={[styles.loc, { borderColor: t.border }]}>
         <MapPin size={20} color={t.text} />
-        <T v="small">Sharing your location while delivering</T>
+        <T v="small">
+          {/* Live: only once an order is picked up, and not with Milestones only (7.1). */}
+          {!s.live
+            ? "Sharing your location while delivering"
+            : s.tracking === "milestones"
+              ? "Your location isn’t shared. Customers see the steps only."
+              : s.locationDenied
+                ? "Location is off, so customers can’t see you on the map"
+                : s.carrying.some((c) => c.picked)
+                  ? "Sharing your location while delivering"
+                  : "Your location is shared once you pick up"}
+        </T>
       </View>
       <T muted style={{ marginTop: 12 }}>
         Next stop
