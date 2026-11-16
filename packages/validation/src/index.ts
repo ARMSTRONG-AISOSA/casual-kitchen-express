@@ -163,3 +163,51 @@ export const refundChoice = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("none") }),
 ]);
 export type RefundChoice = z.infer<typeof refundChoice>;
+
+/* ---------- places (the owner's pins, 16 November 2026) ---------- */
+
+/** The kitchen's pin in Ugbowo: riders' distances and the customer's map start here (4.7, 6). */
+export const KITCHEN_PIN = { lat: 6.400469, lng: 5.608338 };
+
+/**
+ * The delivery boundary (4.7), from the owner's pins: Uselu at the city end, along both sides of
+ * the Benin–Lagos expressway, up to Oluku, widened west to take in Uwelu. [lng, lat] corners in
+ * order, the map's order. The
+ * Setting row holds the boundary the API checks; this is its starting value.
+ */
+export const DELIVERY_BOUNDARY: [number, number][] = [
+  [5.598708, 6.361838],
+  // Widened west around Uwelu so its market area is in range (owner, 16 November 2026).
+  [5.582, 6.372],
+  [5.5755, 6.386],
+  [5.578, 6.398],
+  [5.58222, 6.40895],
+  [5.579466, 6.447428],
+  [5.586291, 6.457169],
+  [5.593531, 6.458759], // Oluku, the northern limit
+  [5.599013, 6.458658],
+  [5.607754, 6.44699],
+  [5.629341, 6.404813],
+  [5.633847, 6.388692],
+  [5.628907, 6.360549],
+  [5.618782, 6.354996], // Uselu, the city-side limit
+];
+
+/**
+ * Where each area's pin starts when a customer picks it. From OpenStreetMap (16 November 2026),
+ * except BDPA estate and Osasogie, which aren't on the map yet and are estimates to confirm.
+ */
+export const AREA_CENTRES: Record<string, { lat: number; lng: number }> = {
+  Ugbowo: { lat: 6.4003, lng: 5.61009 },
+  Ekosodin: { lat: 6.41668, lng: 5.61665 },
+  "BDPA estate": { lat: 6.404, lng: 5.604 },
+  Osasogie: { lat: 6.3925, lng: 5.625 },
+  Uselu: { lat: 6.38339, lng: 5.61072 },
+  Uwelu: { lat: 6.38613, lng: 5.58266 },
+  // Added by the owner's request (16 November 2026): beside the Ogida barracks, south-west of Uselu.
+  Evbogida: { lat: 6.36693, lng: 5.60005 },
+  Isihor: { lat: 6.41361, lng: 5.60403 },
+  Idunmwowina: { lat: 6.43332, lng: 5.59999 },
+  Iguosa: { lat: 6.43917, lng: 5.59769 },
+  "Oluku (up to Oluku Market)": { lat: 6.44967, lng: 5.59696 },
+};

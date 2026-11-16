@@ -1,6 +1,7 @@
 import { exports } from "cloudflare:workers";
 import { beforeAll, describe, expect, it } from "vitest";
 import { signIn } from "./session";
+import { NEIGHBOURHOODS } from "../src/db/catalog";
 
 // Tests that touch the catalog live in this one file, because a file's tests run in order: a soup
 // change in a parallel file would move the version under the 304 check. Needs the local database
@@ -103,7 +104,7 @@ describe("GET /bootstrap", () => {
     expect(body.soups.map((x) => x.name)).toContain(body.soupOfTheDay?.name);
     expect(body.menu[0]?.name).toBe("Rice meals");
     expect(body.menu[0]?.items[0]?.options.filter((o) => o.isDefault)).toHaveLength(1);
-    expect(body.areas).toHaveLength(10);
+    expect(body.areas).toHaveLength(NEIGHBOURHOODS.length);
   });
 
   it("answers 304 when the app already has this version", async () => {

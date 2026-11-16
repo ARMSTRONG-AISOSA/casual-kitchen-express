@@ -6,7 +6,7 @@ import { useCustomerOps } from "../src/state/live";
 import * as Location from "expo-location";
 import { LocateFixed } from "lucide-react-native";
 import {
-  APPROX_BOUNDARY,
+  DEFAULT_BOUNDARY,
   AREA_CENTRE,
   inRange,
   nearestArea,
@@ -30,8 +30,8 @@ export default function AddressScreen() {
     ...s.address,
     ...(outside ? { pin: OUTSIDE_EXAMPLE, area: "Other area in range" } : {}),
   });
-  // The boundary drawn in Settings, or a rough outline until then (4.7).
-  const boundary = s.boundary ?? APPROX_BOUNDARY;
+  // The boundary from Settings (the owner's pins), or the same starting copy before it loads (4.7).
+  const boundary = s.boundary ?? DEFAULT_BOUNDARY;
   const ok = inRange(draft.pin, boundary);
   const edit = (p: Partial<Address>) => setDraft((d) => ({ ...d, ...p }));
   const t = useTheme();

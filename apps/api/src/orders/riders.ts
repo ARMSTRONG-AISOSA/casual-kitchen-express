@@ -3,13 +3,10 @@ import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { Db } from "../db/client";
 import * as t from "../db/schema";
 import type { Tx } from "./store";
+import { KITCHEN_PIN } from "@cke/validation";
 
-/**
- * The kitchen's map pin, for the queue's distances (6.0 rule 2: computed on the server). An
- * approximate point in Ugbowo until the owner drops the real pin with the delivery boundary
- * (16.1 item 12).
- */
-export const KITCHEN = { name: "CKE kitchen, Ugbowo", lat: 6.4013, lng: 5.6145 };
+/** The kitchen's map pin, for the queue's distances (6.0 rule 2: computed on the server). The owner's pin. */
+export const KITCHEN = { name: "CKE kitchen, Ugbowo", ...KITCHEN_PIN };
 
 /** Straight-line distance in metres between two points (haversine). */
 export function metres(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {

@@ -5,6 +5,7 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { Client } from "pg";
 import { CATEGORIES, NEIGHBOURHOODS, OPTIONS, SOUPS } from "../src/db/catalog";
 import * as t from "../src/db/schema";
+import { DELIVERY_BOUNDARY } from "@cke/validation";
 
 const url = process.env.DATABASE_URL ?? "postgres://cke:cke-local-only@127.0.0.1:5432/cke";
 const client = new Client({ connectionString: url });
@@ -62,7 +63,9 @@ await db.transaction(async (tx) => {
     .values(NEIGHBOURHOODS.map((name, i) => ({ name, sortOrder: i })))
     .onConflictDoNothing();
 
-  await tx.insert(t.setting).values({ id: 1, soupVarietyId: soups[0]!.id });
+  await tx
+    .insert(t.setting)
+    .values({ id: 1, soupVarietyId: soups[0]!.id, boundary: DELIVERY_BOUNDARY });
 });
 
 const [{ n }] = (await client.query("select count(*)::int as n from menu_item")).rows;

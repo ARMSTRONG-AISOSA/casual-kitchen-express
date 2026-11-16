@@ -13,6 +13,7 @@ import { and, eq, inArray, like, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Client } from "pg";
 import * as t from "../src/db/schema";
+import { AREA_CENTRES, KITCHEN_PIN } from "@cke/validation";
 
 const DAYS = 90;
 const url = process.env.DATABASE_URL ?? "postgres://cke:cke-local-only@127.0.0.1:5432/cke";
@@ -102,21 +103,25 @@ const JOLLOF_RISE_DAY = addDays(firstDay, 47);
 
 /* ---------- places ---------- */
 
-// Approximate centres along the Ugbowo to Oluku Market corridor, and how many customers live in
+// The area centres (packages/validation, the owner's pins), and how many customers live in
 // each (more near the kitchen in Ugbowo). Pins scatter a few hundred metres around the centre.
-const PLACES: Record<string, { lat: number; lng: number; w: number }> = {
-  Ugbowo: { lat: 6.4015, lng: 5.61, w: 22 },
-  Ekosodin: { lat: 6.4065, lng: 5.6185, w: 16 },
-  "BDPA estate": { lat: 6.411, lng: 5.604, w: 10 },
-  Osasogie: { lat: 6.3925, lng: 5.625, w: 9 },
-  Uselu: { lat: 6.38, lng: 5.6165, w: 12 },
-  Uwelu: { lat: 6.377, lng: 5.595, w: 7 },
-  Isihor: { lat: 6.423, lng: 5.588, w: 8 },
-  Idunmwowina: { lat: 6.438, lng: 5.572, w: 5 },
-  Iguosa: { lat: 6.452, lng: 5.559, w: 5 },
-  "Oluku (up to Oluku Market)": { lat: 6.466, lng: 5.547, w: 6 },
+const WEIGHT: Record<string, number> = {
+  Ugbowo: 22,
+  Ekosodin: 16,
+  "BDPA estate": 10,
+  Osasogie: 9,
+  Uselu: 12,
+  Uwelu: 7,
+  Evbogida: 6,
+  Isihor: 8,
+  Idunmwowina: 5,
+  Iguosa: 5,
+  "Oluku (up to Oluku Market)": 6,
 };
-const KITCHEN = { lat: 6.4013, lng: 5.6145 };
+const PLACES: Record<string, { lat: number; lng: number; w: number }> = Object.fromEntries(
+  Object.entries(AREA_CENTRES).map(([name, c]) => [name, { ...c, w: WEIGHT[name] ?? 5 }]),
+);
+const KITCHEN = KITCHEN_PIN;
 function metres(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
   const r = Math.PI / 180;
   const h =
@@ -1459,7 +1464,9 @@ await db.transaction(async (tx) => {
   await chunked(rows.profiles, (p) => tx.insert(t.customerProfile).values(p));
   await chunked(rows.addresses, (p) => tx.insert(t.address).values(p));
   // History is already announced: no push notification for any of it (10).
-  await chunked(rows.orders, (p) => tx.insert(t.order).values(p.map((o) => ({ ...o, pushedStatus: o.status }))));
+  await chunked(rows.orders, (p) =>
+    tx.insert(t.order).values(p.map((o) => ({ ...o, pushedStatus: o.status }))),
+  );
   await chunked(rows.lines, (p) => tx.insert(t.orderItem).values(p));
   await chunked(rows.events, (p) => tx.insert(t.orderStatusEvent).values(p));
   await chunked(rows.payments, (p) => tx.insert(t.payment).values(p));

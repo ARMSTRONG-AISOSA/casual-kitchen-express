@@ -213,6 +213,7 @@ export const NEIGHBOURHOODS = [
   "Osasogie",
   "Uselu",
   "Uwelu",
+  "Evbogida",
   "Isihor",
   "Idunmwowina",
   "Iguosa",

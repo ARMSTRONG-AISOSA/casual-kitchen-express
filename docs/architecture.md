@@ -1,6 +1,6 @@
 # CKE ARCHITECTURE
 
-**Document Status:** Draft v0.50. Records the functions, features, and decisions for the apps and the website. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day with the backend foundation in progress), and again on 14 November 2026 after sign-in was built.  
+**Document Status:** Draft v0.51. Records the functions, features, and decisions for the apps and the website. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day with the backend foundation in progress), and again on 14 November 2026 after sign-in was built.  
 **Related documents:** `Casual-Kitchen-Express.md` (business and brand, surface level), `design.md` (UI/UX decisions and page flows), and `list-of-areas.md` (delivery areas).
 
 ---
@@ -201,6 +201,7 @@ Payments are simulated, so refunds are simulated too. The statuses, rules, and r
 
 - **Delivery range (decided):** from Uselu on the city side to **Oluku Market** in the north, on the Benin–Lagos Road. CKE does not deliver beyond Oluku Market. Both sides of the expressway in Oluku are in range up to the market, and so are Uwelu, Isihor, Idunmwowina, Iguosa, and the villages of Oluku that lie before the market (`list-of-areas.md`).
 - The range is defined by the **neighbourhood list** in Settings (MGR-11), where each area is flagged as in or out of range. The starting list is in `list-of-areas.md`.
+- **The owner's pins (16 November 2026):** the kitchen pin and the 14-corner boundary (Uselu to Oluku, widened west for Uwelu) are in `packages/validation` and in the Setting row, so the API now refuses an address whose pin is outside it even in an area marked in range, and the customer app draws it. Evbogida was added to the neighbourhood list (`list-of-areas.md` 3a).
 - When adding an address, the customer picks an in-range neighbourhood and drops a pin. The API checks the pin against a **delivery boundary polygon** stored in Settings, using a point-in-polygon test that is cheap enough for the Worker's CPU limit. The polygon is drawn once from map pins running from Uselu to Oluku Market. The neighbourhood list stays for labels and reports.
 - An address outside the range cannot be used for delivery. The app says so and offers pickup.
 - Pickup orders are not limited by the delivery range.
@@ -1098,15 +1099,15 @@ These checks were either not possible during planning or depend on the live setu
 1. Better Auth's username plugin, its admin features for creating users, and its custom password-hash setting. **Done 14 November 2026:** the username plugin and the custom PBKDF2 hash work in the Worker. Staff accounts are created by the API’s own People routes rather than the admin plugin.
 2. The real PBKDF2 timing at about 50,000 iterations on a deployed Worker, to confirm it fits the 10 ms CPU limit. **Done 14 November 2026:** a median of 9.5 ms at 50,000, right at the limit (figures in 12.2). The owner chose 30,000 iterations (12.2).
 3. Durable Object alarms and WebSocket hibernation on the free plan, and the daily request counts they use. **Done 14 November 2026:** on the free plan, a SQLite-backed Durable Object’s alarm set for 5 seconds ahead fired 1 ms after its time, and a WebSocket accepted with the hibernation API answered after 12 seconds idle. The daily request counts are checked once the real traffic exists (Workers Logs).
-4. Background location, the Android foreground-service notification, and the battery and heat target (7.5) on a mid-range phone.
+4. Background location, the Android foreground-service notification, and the battery and heat target (7.5) on a mid-range phone. **Partly done 16 November 2026:** background location, the “Delivery in progress” foreground-service notification, the two-step permission, and the arrival geofence work on the test tablet (with test positions, since it has no fix indoors). The battery and heat target still needs a real phone on a real shift.
 5. The Google sign-in console setup: consent screen, the client, and the privacy policy link. **Mostly done 14 November 2026:** Google Auth Platform (branding, External audience in testing, one Web application client with the localhost and workers.dev redirect addresses) is set up, and Continue with Google works on the tablet in the Business app (a manager) and the customer app (a customer; a staff Google account is refused). The browser-based flow needs no package name or key fingerprint. Still to do: the privacy policy link and publishing the consent screen, with the website (step 7).
 6. The Hyperdrive caching settings (off for live order data), and Neon's current free-plan storage allowance.
-7. OpenFreeMap's current usage terms, and the required map credit.
+7. OpenFreeMap's current usage terms, and the required map credit. **Done 16 November 2026:** no account or key, no limits on map views (offline downloads are limited, and the apps don’t download offline), commercial use allowed, no uptime guarantee, and whoever integrates it must be 18 or over. Attribution: “© OpenStreetMap contributors” visible on or next to the map and linked to openstreetmap.org/copyright, and “© OpenMapTiles” linked to openmaptiles.org; each credit under the map now opens its own page.
 8. A re-check of every free allowance (Cloudflare, Neon, and Expo) just before building.
 9. The Android install flow, unknown-source and Play Protect prompts, and the release signing key, on real Android 10 and newer phones.
 10. A quick check that Android 10 and above suits the target users' phones.
 11. The seed script's own checks (18.3), including the separate online and walk-in hours. **Done 15 November 2026:** built into `scripts/seed-history.ts`; they all pass.
-12. The delivery boundary polygon, drawn from map pins from Uselu to Oluku Market.
+12. The delivery boundary polygon, drawn from map pins from Uselu to Oluku Market. **Done 16 November 2026:** from the owner’s pins (4.7, `list-of-areas.md` 1).
 13. The performance targets (13) and the contrast ratios in `design.md` (3.2 and 3.9), in the design tools.
 14. Tool support for Node.js 24 LTS and JDK 17 with Expo SDK 58.
 15. Before installing, re-check each locked version in section 15 for security advisories.
@@ -1230,6 +1231,7 @@ A seed script fills the database with **three months** of history (owner decisio
 
 | Version | Change |
 |---|---|
+| 0.51 | 16 November 2026 (evening): the owner’s kitchen pin and delivery boundary, now checked by the API; Evbogida added to the areas; area centres from OpenStreetMap (4.7, `list-of-areas.md` 3a). |
 | 0.50 | 16 November 2026 (later): push notifications built through Expo and Firebase (16, the step 6d note); “Use my current location” in the customer app, so expo-location is in the customer app too (owner decision, 15.2); expo-device not needed; build step 7, the live simulator with practice orders (18.4). |
 | 0.49 | Build step 6d on 16 November 2026: the customer’s real map (MapLibre with OpenFreeMap) and riders’ light location tracking with the arrival geofence (16, the step 6d note). |
 | 0.48 | Build step 6c on 15 November 2026: the customer app on live data (16, the step 6c note), with several orders in progress at once and a development-only test sign-in. |

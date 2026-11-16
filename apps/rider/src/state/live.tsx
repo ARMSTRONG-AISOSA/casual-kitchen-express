@@ -5,6 +5,7 @@ import {
   type RiderLiveMessage,
 } from "@cke/api-client";
 import { useCallback, useEffect, useMemo, useRef } from "react";
+import { KITCHEN_PIN } from "@cke/validation";
 import { AppState } from "react-native";
 import { api } from "../api";
 import { sessionCookie } from "../auth";
@@ -32,7 +33,7 @@ import {
 // it can't be done (another rider took the order, a wrong code).
 
 // The kitchen's pin, for the distance to each stop (the API's KITCHEN).
-const KITCHEN = { lat: 6.4013, lng: 5.6145 };
+const KITCHEN = KITCHEN_PIN;
 function kmFrom(lat: number, lng: number) {
   const r = Math.PI / 180;
   const h =

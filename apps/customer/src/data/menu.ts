@@ -232,6 +232,7 @@ export const AREAS = [
   "Osasogie",
   "Uselu",
   "Uwelu",
+  "Evbogida",
   "Isihor",
   "Idunmwowina",
   "Iguosa",

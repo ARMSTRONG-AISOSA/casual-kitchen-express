@@ -1,6 +1,6 @@
 # AREAS AROUND UGBOWO, OLUKU, AND USELU
 
-**Status:** Scouting draft, compiled on 10 November 2026 from web sources, updated with the delivery boundary, and with the areas in range decided on 11 November 2026. It is a starting list to confirm on the ground, not a survey or an official map.  
+**Status:** Scouting draft, compiled on 10 November 2026 from web sources, updated with the delivery boundary, with the areas in range decided on 11 November 2026, and with the owner’s pins and Evbogida on 16 November 2026. It is a starting list to confirm on the ground, not a survey or an official map.  
 **Used by:** the delivery neighbourhood list in the apps (`architecture.md`, 4.7 and 18.3), the delivery area wording in `design.md`, and the seeded demo data.
 
 **How to read this list**
@@ -23,6 +23,8 @@
 - The Benin–Lagos Expressway divides the Oluku community into two parts (Oluku I and II). **Decided (11 November 2026): both sides of the expressway are in range, up to the market.**
 - **Recent event:** the market was badly damaged by a petrol tanker fire on 15 October 2026, and news reports say the state government has promised to rebuild it. The owner confirmed on 10 November 2026 that the road is now clear.
 
+**The owner's pins (16 November 2026):** the kitchen is at **6.400469° N, 5.608338° E** (Ugbowo). The boundary runs from the Uselu pin (6.354996° N, 5.618782° E) up both sides of the expressway to the Oluku pin (6.458759° N, 5.593531° E), through the owner's ten side points, and was widened west around Uwelu (owner: “you can decide to add Uwelu”) so its market area is in range. The 14 corners are `DELIVERY_BOUNDARY` in `packages/validation`; the API checks every new address against it, and the customer app draws it. Area pins start at the centres in section 3a.
+
 ---
 
 ## 2. Anchor point
@@ -43,6 +45,26 @@
 | **Uselu** | Described as lying between the campus and the city. It is in Egor LGA, and many university addresses (for example the Faculty of Engineering and the Faculty of Education) use "Uselu". Places include Federal Road, Uselu and Uselu Lagos Road. Uselu Market is on Ugbowo Lagos Road. | High |
 | **Uwelu** | Added 11 November 2026. The area of the Uwelu spare-parts market, just west of Uselu, off the main road (OpenStreetMap, about 6.386° N, 5.583° E). Close to the city-side limit, so the boundary pin decides. | Medium |
 | **Oluku (up to Oluku Market)** | A town in Ovia North-East LGA on the Benin–Lagos expressway, with Oluku Junction and Oluku Market as well-known landmarks. One student-housing guide places it further north than the campus, with cheaper rents. Delivery stops at the market. | High (existence), Medium (position) |
+
+### 3a. Where each area's pin starts (16 November 2026)
+
+From OpenStreetMap (Nominatim, Photon, and the Overpass API), except where marked.
+
+| Area | Centre | Source |
+|---|---|---|
+| Ugbowo | 6.40030, 5.61009 | OpenStreetMap |
+| Ekosodin | 6.41668, 5.61665 | OpenStreetMap |
+| BDPA estate | 6.40400, 5.60400 | Estimate (not on the map); to confirm |
+| Osasogie | 6.39250, 5.62500 | Estimate (OpenStreetMap only has an Osasogie Street in the city); to confirm |
+| Uselu | 6.38339, 5.61072 | OpenStreetMap (Uselu Market, a landmark, is at 6.37658, 5.63029) |
+| Uwelu | 6.38613, 5.58266 | OpenStreetMap |
+| **Evbogida** | 6.36693, 5.60005 | OpenStreetMap. **Added 16 November 2026** at the owner’s request for more areas between UNIBEN and Uselu: the village beside the Ogida barracks. |
+| Isihor | 6.41361, 5.60403 | Photon (spelled Isiehor) |
+| Idunmwowina | 6.43332, 5.59999 | OpenStreetMap |
+| Iguosa | 6.43917, 5.59769 | OpenStreetMap |
+| Oluku (up to Oluku Market) | 6.44967, 5.59696 | OpenStreetMap (the town) |
+
+Looked for between UNIBEN and Uselu but left out: Okhoro, Okhokhugbo Road, and the Ogida police post are just outside the boundary; Adolor is two streets in different places; Iyowa, Ekehuan, Ugbighoko, the teaching hospital (UBTH), and Ugbowo Market aren’t on OpenStreetMap.
 
 ---
 
@@ -123,11 +145,12 @@ The customer picks one of these when adding an address, then drops a pin and add
 4. Osasogie
 5. Uselu
 6. Uwelu
-7. Isihor
-8. Idunmwowina
-9. Iguosa
-10. Oluku (up to Oluku Market), including both sides of the expressway and the villages in section 5
-11. Other area in range
+7. Evbogida (added 16 November 2026)
+8. Isihor
+9. Idunmwowina
+10. Iguosa
+11. Oluku (up to Oluku Market), including both sides of the expressway and the villages in section 5
+12. Other area in range
 
 ---
 

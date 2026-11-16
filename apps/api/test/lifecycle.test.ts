@@ -226,6 +226,12 @@ describe("address book", () => {
     });
     expect(far.status).toBe(409);
     expect(await json(far)).toMatchObject({ outsideRange: true });
+    // An area in range, but a pin beyond the boundary (past Oluku Market): refused too (4.7).
+    const beyond = await call("/me/addresses", customer, {
+      method: "POST",
+      body: { ...home, label: "Beyond", lat: 6.49, lng: 5.53 },
+    });
+    expect(beyond.status).toBe(409);
     expect(
       (
         await call("/me/addresses", customer, {
