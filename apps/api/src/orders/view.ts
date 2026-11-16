@@ -1,4 +1,4 @@
-import { asc, eq, inArray } from "drizzle-orm";
+import { and, asc, count, eq, inArray } from "drizzle-orm";
 import type { Db } from "../db/client";
 import * as t from "../db/schema";
 import { deliveryCode } from "./code";
@@ -236,12 +236,68 @@ export async function orderDetail(db: Db, orderId: string) {
  * and the delivery code while a delivery is on its way. No staff names or codes. A page of
  * orders loads in a few queries, not a few per order.
  */
+/** Statuses in which the customer sees the rider's position on the map (CUS-09, after pickup). */
+export const ON_THE_WAY = ["picked_up", "arriving"] as const;
+/** A position older than this isn't shown: the rider's phone has stopped sending. */
+const POSITION_FRESH_MS = 10 * 60_000;
+
+/**
+ * The rider of each order still being carried, as the customer sees them (CUS-09, 6.0): first
+ * name, which stop this order is, and, once picked up, the last position (7.4).
+ */
+async function customerRiders(db: Db, rows: OrderRow[]) {
+  const ids = rows
+    .filter((o) => ["rider_accepted", ...ON_THE_WAY].includes(o.status))
+    .map((o) => o.id);
+  if (!ids.length) return [];
+  const found = await db
+    .select({
+      orderId: t.delivery.orderId,
+      riderId: t.delivery.riderId,
+      stop: t.delivery.stopNumber,
+      name: t.staffProfile.fullName,
+      lat: t.riderState.lat,
+      lng: t.riderState.lng,
+      at: t.riderState.locatedAt,
+    })
+    .from(t.delivery)
+    .innerJoin(t.staffProfile, eq(t.staffProfile.userId, t.delivery.riderId))
+    .leftJoin(t.riderState, eq(t.riderState.userId, t.delivery.riderId))
+    .where(inArray(t.delivery.orderId, ids));
+  const riderIds = [...new Set(found.map((r) => r.riderId))];
+  const stops = riderIds.length
+    ? await db
+        .select({ riderId: t.delivery.riderId, n: count() })
+        .from(t.delivery)
+        .innerJoin(t.order, eq(t.order.id, t.delivery.orderId))
+        .where(
+          and(
+            inArray(t.delivery.riderId, riderIds),
+            inArray(t.order.status, ["rider_accepted", ...ON_THE_WAY]),
+          ),
+        )
+        .groupBy(t.delivery.riderId)
+    : [];
+  return found.map((r) => ({
+    orderId: r.orderId,
+    firstName: r.name.split(" ")[0] ?? r.name,
+    stop: r.stop,
+    stops: stops.find((x) => x.riderId === r.riderId)?.n ?? 1,
+    position:
+      r.lat != null && r.lng != null && r.at && Date.now() - r.at.getTime() < POSITION_FRESH_MS
+        ? { lat: r.lat, lng: r.lng, at: r.at.toISOString() }
+        : null,
+  }));
+}
+
 export async function customerViews(db: Db, secret: string, rows: OrderRow[]) {
   const full = await loadOrders(db, rows, true);
+  const riders = await customerRiders(db, rows);
   return Promise.all(
     rows.map(async (o, i) => {
       const f = full[i]!;
       const live = !(FINISHED as readonly string[]).includes(o.status);
+      const r = riders.find((x) => x.orderId === o.id);
       return {
         id: o.id,
         number: o.number,
@@ -268,6 +324,15 @@ export async function customerViews(db: Db, secret: string, rows: OrderRow[]) {
           ? { status: f.cancellationRequest.status }
           : null,
         canCancel: (CUSTOMER_CAN_CANCEL as readonly string[]).includes(o.status),
+        rider: r
+          ? {
+              firstName: r.firstName,
+              stop: r.stop,
+              stops: r.stops,
+              // The position only after pickup (CUS-09), never while waiting at the kitchen.
+              position: (ON_THE_WAY as readonly string[]).includes(o.status) ? r.position : null,
+            }
+          : null,
         version: o.version,
       };
     }),

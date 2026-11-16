@@ -631,6 +631,54 @@ describe("riders and deliveries", () => {
     ).toBe(409);
   });
 
+  it("shares the rider's position with the customer only while the order is on the way", async () => {
+    type Mine = { rider: { firstName: string; stop: number; position: unknown } | null };
+    const o = await readyDelivery();
+    await call(`/rider/queue/${o.id}/accept`, musa, { method: "POST" });
+    const at = async (lat: number, lng: number) =>
+      json<{ tracking: boolean }>(
+        await call("/rider/location", musa, { method: "PUT", body: { lat, lng } }),
+      );
+    // Accepted but not picked up: nothing is kept, and the customer sees the name only.
+    expect(await at(6.402, 5.613)).toEqual({ tracking: false });
+    const waiting = await json<{ order: Mine }>(await call(`/me/orders/${o.id}`, customer));
+    expect(waiting.order.rider).toMatchObject({ firstName: "Musa", stop: 1, position: null });
+
+    await call(`/rider/deliveries/${o.id}/picked-up`, musa, { method: "POST" });
+    const cu = await live(customer);
+    await cu.waitFor((m) => m.type === "hello");
+    expect(await at(6.405, 5.612)).toEqual({ tracking: true });
+    await cu.waitFor((m) => m.type === "rider-location" && m.orderId === o.id && m.lat === 6.405);
+    const going = await json<{ order: Mine }>(await call(`/me/orders/${o.id}`, customer));
+    expect(going.order.rider?.position).toMatchObject({ lat: 6.405, lng: 5.612 });
+
+    // Milestones only: no position is taken or shown.
+    await call("/settings", manager, { method: "PATCH", body: { trackingMode: "milestones" } });
+    expect(await at(6.406, 5.611)).toEqual({ tracking: false });
+    const hidden = await json<{ order: Mine }>(await call(`/me/orders/${o.id}`, customer));
+    expect(hidden.order.rider?.position).toBeNull();
+    await call("/settings", manager, { method: "PATCH", body: { trackingMode: "light" } });
+
+    // Delivered: the position is gone.
+    expect(await at(6.407, 5.61)).toEqual({ tracking: true });
+    const { order } = await json<{ order: { deliveryCode: string } }>(
+      await call(`/me/orders/${o.id}`, customer),
+    );
+    await call(`/rider/deliveries/${o.id}/deliver`, musa, {
+      method: "POST",
+      body: { code: order.deliveryCode },
+    });
+    const { db, close } = await connect(env);
+    const [state] = await db
+      .select({ lat: t.riderState.lat })
+      .from(t.riderState)
+      .innerJoin(t.user, eq(t.user.id, t.riderState.userId))
+      .where(eq(t.user.username, "musa.a"));
+    await close();
+    expect(state?.lat).toBeNull();
+    cu.ws.close();
+  });
+
   it("lets dispatch assign a waiting order, and approve a manual completion after a help request", async () => {
     const o = await readyDelivery();
     expect(

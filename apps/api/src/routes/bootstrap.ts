@@ -2,6 +2,7 @@ import { asc, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import type { Db } from "../db/client";
 import * as t from "../db/schema";
+import { KITCHEN } from "../orders/riders";
 
 /**
  * GET /bootstrap: everything the apps need when they open, with a version number (architecture.md
@@ -56,6 +57,9 @@ export const bootstrap = new Hono<{ Bindings: Env; Variables: { db: Db } }>().ge
         trackingMode: s.trackingMode,
         whatsappNumber: s.whatsappNumber,
       },
+      // For the customer's map (7.4): the kitchen's pin, and the delivery boundary once drawn (4.7).
+      kitchen: { lat: KITCHEN.lat, lng: KITCHEN.lng },
+      boundary: s.boundary ?? null,
       soupOfTheDay: soups.find((x) => x.id === s.soupVarietyId) ?? null,
       soups,
       areas,

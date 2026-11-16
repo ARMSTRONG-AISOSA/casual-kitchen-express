@@ -43,6 +43,13 @@
       "when": 1794739079859,
       "tag": "0005_usual-times-and-chime",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794806849628,
+      "tag": "0006_rider-location",
+      "breakpoints": true
     }
   ]
 }

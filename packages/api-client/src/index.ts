@@ -73,6 +73,9 @@ export type Bootstrap = {
     trackingMode: "light" | "milestones";
     whatsappNumber: string;
   };
+  /** The kitchen's pin and the delivery boundary ([lng, lat] points, null until drawn), for the map. */
+  kitchen: { lat: number; lng: number };
+  boundary: [number, number][] | null;
   soupOfTheDay: Soup | null;
   soups: Soup[];
   areas: { id: string; name: string; inRange: boolean }[];
@@ -336,6 +339,8 @@ export type MyOrder = {
     street: string | null;
     landmark: string | null;
     neighbourhood: string;
+    lat: number;
+    lng: number;
   } | null;
   events: { status: OrderStatus; at: string }[];
   /** The 4-digit code for the rider, while a delivery is on its way (4.4). */
@@ -348,8 +353,23 @@ export type MyOrder = {
   }[];
   cancellationRequest: { status: "pending" | "approved" | "declined" } | null;
   canCancel: boolean;
+  /** The rider once one has it: first name, stop "2 of 3", and after pickup the last position. */
+  rider: {
+    firstName: string;
+    stop: number;
+    stops: number;
+    position: RiderPosition | null;
+  } | null;
   version: number;
 };
+
+export type RiderPosition = { lat: number; lng: number; at: string };
+
+/** What the customer app hears on the live connection. */
+export type CustomerLiveMessage =
+  | { type: "order"; order: MyOrder; version: number }
+  | ({ type: "rider-location"; orderId: string } & RiderPosition)
+  | { type: "catalog"; version: number };
 
 export type MyAddress = {
   id: string;
@@ -586,6 +606,12 @@ export function createApiClient({ baseUrl, getHeaders, onUnauthorized }: ApiClie
       request<{ online: boolean }>("/rider/online", {
         method: "PUT",
         body: JSON.stringify({ online }),
+      }),
+    /** The rider's position while an order is on the way (RID-17). `tracking: false` means stop. */
+    riderLocation: (lat: number, lng: number) =>
+      request<{ tracking: boolean }>("/rider/location", {
+        method: "PUT",
+        body: JSON.stringify({ lat, lng }),
       }),
     riderQueue: () =>
       request<{

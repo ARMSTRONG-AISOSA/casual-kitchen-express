@@ -19,7 +19,7 @@ import {
   ridersPanel,
 } from "../orders/riders";
 import { advance, touch, type Tx } from "../orders/store";
-import { orderDetail } from "../orders/view";
+import { ON_THE_WAY, orderDetail } from "../orders/view";
 import { latestChange } from "./orders";
 
 type Ctx = { Bindings: Env; Variables: { db: Db; actor: Actor } };
@@ -79,6 +79,9 @@ async function takeOrder(
   return { ok: true };
 }
 
+/** Clears the rider's last position (7.1 rule 3: kept only while an order is on the way). */
+const NO_POSITION = { lat: null, lng: null, locatedAt: null };
+
 /** The rider's own delivery that is still being carried, locked for the change. */
 async function myDelivery(tx: Tx, orderId: string, riderId: string) {
   const [row] = await tx
@@ -109,6 +112,21 @@ async function finishDelivery(tx: Tx, orderId: string, manualBy: string | null) 
       resolution: manualBy ? "manual_completion" : null,
     })
     .where(and(eq(t.helpRequest.orderId, orderId), eq(t.helpRequest.status, "open")));
+  // Nothing else on the way: the last position isn't kept (7.1 rule 3).
+  const [d] = await tx
+    .select({ riderId: t.delivery.riderId })
+    .from(t.delivery)
+    .where(eq(t.delivery.orderId, orderId));
+  if (d) {
+    const [still] = await tx
+      .select({ id: t.order.id })
+      .from(t.delivery)
+      .innerJoin(t.order, eq(t.order.id, t.delivery.orderId))
+      .where(and(eq(t.delivery.riderId, d.riderId), inArray(t.order.status, [...ON_THE_WAY])))
+      .limit(1);
+    if (!still)
+      await tx.update(t.riderState).set(NO_POSITION).where(eq(t.riderState.userId, d.riderId));
+  }
   return clearAlerts(tx, orderId, ["stuck", "help_request", "unaccepted"], manualBy);
 }
 
@@ -144,9 +162,65 @@ export const rider = new Hono<Ctx>()
       await db
         .insert(t.riderState)
         .values({ userId: me.id, online })
-        .onConflictDoUpdate({ target: t.riderState.userId, set: { online, ...touch() } });
+        .onConflictDoUpdate({
+          target: t.riderState.userId,
+          // Offline keeps no position (7.1 rule 3).
+          set: { online, ...(online ? {} : NO_POSITION), ...touch() },
+        });
       send(c, await riderMessages(db, [me.id]));
       return c.json({ online });
+    },
+  )
+
+  /**
+   * PUT /rider/location: the rider's position while an order is on the way (RID-17, 7.1). Sent
+   * about every 45 seconds and only after moving about 100 m, so it is cheap. Each customer whose
+   * order the rider has picked up gets it on the live connection (CUS-09). With nothing picked up,
+   * or with Milestones only set, it answers `tracking: false` and keeps nothing, and the app stops.
+   */
+  .put(
+    "/location",
+    requireRole("rider"),
+    zValidator(
+      "json",
+      z.object({ lat: z.number().min(-90).max(90), lng: z.number().min(-180).max(180) }),
+    ),
+    async (c) => {
+      const db = c.get("db");
+      const me = c.get("actor");
+      const { lat, lng } = c.req.valid("json");
+      const [s] = await db
+        .select({ mode: t.setting.trackingMode })
+        .from(t.setting)
+        .where(eq(t.setting.id, 1));
+      const onTheWay =
+        s?.mode === "milestones"
+          ? []
+          : await db
+              .select({ orderId: t.order.id, customerId: t.order.customerId })
+              .from(t.delivery)
+              .innerJoin(t.order, eq(t.order.id, t.delivery.orderId))
+              .where(and(eq(t.delivery.riderId, me.id), inArray(t.order.status, [...ON_THE_WAY])));
+      if (!onTheWay.length) {
+        await db.update(t.riderState).set(NO_POSITION).where(eq(t.riderState.userId, me.id));
+        return c.json({ tracking: false });
+      }
+      const now = new Date();
+      // The position isn't a change other screens catch up on, so the change number stays.
+      await db
+        .update(t.riderState)
+        .set({ lat, lng, locatedAt: now })
+        .where(eq(t.riderState.userId, me.id));
+      send(
+        c,
+        onTheWay
+          .filter((o) => o.customerId)
+          .map((o) => ({
+            to: [`customer:${o.customerId}`],
+            data: { type: "rider-location", orderId: o.orderId, lat, lng, at: now.toISOString() },
+          })),
+      );
+      return c.json({ tracking: true });
     },
   )
 

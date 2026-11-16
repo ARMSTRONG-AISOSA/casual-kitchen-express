@@ -255,6 +255,10 @@ export const riderState = pgTable("rider_state", {
     .references(() => user.id),
   online: boolean("online").notNull().default(false),
   capacityBudget: smallint("capacity_budget"), // null uses the setting
+  // The last position, only while carrying a picked-up order (7.1 rule 3); cleared after.
+  lat: doublePrecision("lat"),
+  lng: doublePrecision("lng"),
+  locatedAt: at("located_at"),
   version: changeVersion(),
 });
 
