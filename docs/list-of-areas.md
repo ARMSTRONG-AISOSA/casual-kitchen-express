@@ -54,8 +54,8 @@ From OpenStreetMap (Nominatim, Photon, and the Overpass API), except where marke
 |---|---|---|
 | Ugbowo | 6.40030, 5.61009 | OpenStreetMap |
 | Ekosodin | 6.41668, 5.61665 | OpenStreetMap |
-| BDPA estate | 6.40400, 5.60400 | Estimate (not on the map); to confirm |
-| Osasogie | 6.39250, 5.62500 | Estimate (OpenStreetMap only has an Osasogie Street in the city); to confirm |
+| BDPA estate | 6.39385, 5.60181 | **The owner’s pin** (16 November 2026), inside the boundary |
+| Osasogie | 6.39250, 5.62500 | Estimate (OpenStreetMap only has an Osasogie Street in the city). The owner isn’t sure of it either (16 November 2026), so it stays an estimate; customers drag the pin to their door anyway. |
 | Uselu | 6.38339, 5.61072 | OpenStreetMap (Uselu Market, a landmark, is at 6.37658, 5.63029) |
 | Uwelu | 6.38613, 5.58266 | OpenStreetMap |
 | **Evbogida** | 6.36693, 5.60005 | OpenStreetMap. **Added 16 November 2026** at the owner’s request for more areas between UNIBEN and Uselu: the village beside the Ogida barracks. |

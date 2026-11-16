@@ -132,8 +132,8 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and thr
 
 ## 7. Open items
 
-- **Temporary test customer (15 November 2026):** `tablet.test` (user ID `tablet-test-customer`, email `tablet.test@example.com`) in the laptop database only, for placing real online orders while testing step 6 before the customer app is connected. Delete it and its orders when step 6c is tested (`deleteOrders` in `apps/api/test/cleanup.ts`, then the `account`, `customer_profile`, `address`, and `user` rows).
-- **Test orders on the tablet (16 November 2026):** O-3233 (the test customer’s, ready, in the queue) and the practice orders O-3231 and O-3232 (removed with Demo controls, Remove practice orders). Delete O-3233 with the test customer.
+- ~~**Temporary test customer `tablet.test`**~~ **Deleted 16 November 2026** after the owner finished testing: the account, its profile, address, session, push token, and all seven of its orders (O-3225 to O-3230 and O-3233) with their deliveries, ratings, refunds, requests, alerts, and audit entries, in one transaction. Checked: no user or orders left.
+- ~~**Test orders on the tablet**~~ **Deleted 16 November 2026:** O-3233 went with the test customer; the practice orders O-3231 and O-3232 were already removed with Demo controls.
 - ~~**Tablet test settings (16 November 2026)**~~ **Removed 16 November 2026:** the test location providers, the shell’s mock-location permission, and stay-awake while charging are undone on the tablet.
 
 **Owner actions, in the order they will be needed**
@@ -142,7 +142,10 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and thr
 3. **Delivery boundary and the kitchen’s pin:** draw the polygon from map pins (Uselu to Oluku Market), drop the kitchen’s exact pin (the API uses an approximate point in Ugbowo for the queue’s distances until then), and confirm the spellings of area names (`list-of-areas.md` section 9). Needed when addresses are connected (step 6).
 4. **Firebase project and Expo account for push notifications: done (16 November 2026).** Firebase project `cke-push`; Expo team `armstrong-aisosas-team` with cke-customer, cke-rider, and cke-business; the FCM V1 key is on Expo for all three (the downloaded key file was deleted by the owner). `google-services.json` is in the project root and kept out of Git.
 5. **Neon account** at deploy time (decided): steps to follow.
-6. **Pushing to GitHub:** `origin` is https://github.com/ARMSTRONG-AISOSA/casual-kitchen-express.git (empty). Nothing is pushed until the owner says so.
+6. **Publishing the website (after the first push):** step-by-step in the log entry of 16 November 2026, “Step 8: the website”: turn on GitHub Pages, then give Google the homepage and privacy links and publish the consent screen.
+7. **Optional contact email on the website:** the footer and privacy page show WhatsApp and LinkedIn. To add the email too, run the one-line command in that log entry yourself (Claude doesn’t write the address into files).
+8. **OpenFreeMap donation (owner, 16 November 2026):** later, once a paid commercial project comes in. Nothing needed now.
+9. **Pushing to GitHub:** `origin` is https://github.com/ARMSTRONG-AISOSA/casual-kitchen-express.git (empty). Nothing is pushed until the owner says so.
 
 **Temporary things to remove later (don’t forget)**
 - ~~**Throwaway Cloudflare test Worker `cke-check-temp`**~~ **Deleted 14 November 2026** (confirmed: Cloudflare reports “This Worker does not exist on your account”, and its address returns 404; the local test files are deleted too). It was a tiny separate program put online only to measure two free-plan limits (16.1 items 2 and 3: PBKDF2 password-hash timing at about 50,000 iterations, and Durable Object alarms and hibernation). Its code stays in Claude’s scratchpad, never in the repository. When the measurements are recorded in `architecture.md` 16.1, delete it with `npx wrangler delete --name cke-check-temp` (from `apps/api`), check that it is gone from the Cloudflare dashboard (**Workers & Pages**), and mark this item done in the log. Deleting the Worker also deletes its Durable Object storage. Keep: the Wrangler login and the workers.dev subdomain (the real API uses them).
@@ -151,7 +154,7 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and thr
 - **Manager usernames on the laptop only** (`owner.m` for the owner M-001 and `ivie.m`, from `SEED_MANAGER_PASSWORDS=1`): kept on purpose after Google sign-in worked (14 November 2026), because the API tests sign in as the owner. Never seed them into the deployed database.
 - ~~**Owner’s Google sign-in for the deployed database**~~ **Settled 14 November 2026:** the owner is ammycan6@gmail.com as M-001 (owner decision). On the laptop it is set in `apps/api/.dev.vars` (`OWNER_GOOGLE_EMAIL`, `OWNER_NAME`); when seeding the deployed database, pass both as environment variables.
 - **Business and customer app `.env` files point at `http://localhost:8787`** (14 November 2026), because Google only returns to `http://localhost` and not to the laptop’s network address. It needs `adb reverse tcp:8787 tcp:8787` after every adb reconnect. Goes away when the API is deployed (an `https://…workers.dev` address).
-- **Test image on the tablet:** `/sdcard/Pictures/cke-test-photo.png` (a generated colour gradient for testing photo upload, 14 November 2026). Delete it when photo testing is done: `adb shell rm /sdcard/Pictures/cke-test-photo.png`.
+- ~~**Test image on the tablet**~~ **Deleted 16 November 2026** (`/sdcard/Pictures/cke-test-photo.png`; checked gone).
 - **Demo sign-in hints in development builds:** the Business app’s sign-in screen lists the demo accounts and the demo password only in development builds (`__DEV__`); release builds don’t show them. The rider app’s sign-in screen fills in `musa.a` and the demo password, in development builds only. Decide before release whether the public demo keeps shared demo staff accounts at all.
 
 **Known gaps and notes (no decision needed unless the owner wants one)**
@@ -168,7 +171,7 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and thr
 
 **To verify at build** (the full list is in `architecture.md`, 16.1)
 - Background location and the rider battery target (about 10% an hour or less).
-- Google sign-in: the privacy link and publishing the consent screen (with the website). The rest is done and tested on the tablet.
+- Google sign-in: the privacy page is built (`privacy.html`); giving Google its link and publishing the consent screen wait for the site to go online (owner action 6).
 - Hyperdrive caching (off for live order data) and Neon's free storage.
 - OpenFreeMap usage terms and the map credit.
 - Re-check every free allowance just before deploying.
@@ -193,7 +196,7 @@ The order below follows `architecture.md` 16, adjusted by the owner’s frontend
 | 5 | **Seed script:** three months of demo history (18.3), with its own checks | **Done** (15 November 2026) |
 | 6 | **Connect the screens to the API** in all three apps, replacing the demo data: (a) the Business app, (b) the rider app, (c) the customer app, (d) the real map (MapLibre) with the delivery boundary, push notifications (Expo and Firebase), and background location for riders | **6a, 6b, and 6c done** (15 November 2026); **6d done** (16 November 2026): the map, riders’ location, and push notifications |
 | 7 | Capacity rules, batching, and the demo simulator (18.4) | **Done** (16 November 2026): capacity and batching were built with the orders backend (4c); the live simulator with practice orders built on 16 November 2026 |
-| 8 | Website: turn `design/prototypes/cke-website.html` into the static GitHub Pages site | To do |
+| 8 | Website: turn `design/prototypes/cke-website.html` into the static GitHub Pages site | **Done** (16 November; goes online after the first push) |
 | 9 | Reports on real data (pre-computed summaries), rider payouts, Finance, polish, the remaining 16.1 checks (battery, performance, contrast), Neon at deploy, signed release APKs (arm64-v8a and armeabi-v7a) on GitHub Releases | To do |
 
 The prototypes are the visual reference for every screen. Reuse their copy, layout, and flows, but write production code fresh rather than copying prototype code.
@@ -1271,4 +1274,36 @@ Append a new dated entry after each work session. Never edit or delete earlier e
 - **Tests:** a pin beyond the boundary is refused; the catalog test counts the area list. All pass (the three rider tests failed once because Musa was left online by the push test; with riders offline they pass).
 - **Cleanup:** the tablet’s test location settings and stay-awake were removed (section 7).
 
-**Next step:** the owner finishes testing; then the test customer and O-3233 are deleted (section 7); then step 8, the website.
+**Next step:** the owner finishes testing; then the test customer and O-3233 are deleted (section 7); then step 8, the website. (Both done later the same day.)
+
+## [2026-11-16] Step 8: the website, the owner's BDPA pin, and the end-of-testing cleanup
+
+**What was done:**
+- **The website** (`apps/website/public`): the prototype became five real pages, Home (`index.html`), About, App, FAQ, and Privacy, plus a 404 page, `robots.txt`, and `sitemap.xml`. Plain HTML, CSS (`css/site.css`), and JavaScript (`js/site.js`), no packages. The real logo files from the logo package (the `-charcoal` lockup on the dark header and footer), three real menu photos (jollof, egusi, meat pie) resized to 720 pixels with their authors and CC BY-SA licences under each, titles, descriptions, and sharing previews on every page with a new 1200 × 630 preview image (`img/cke-share.png`).
+- **Download (WEB-07):** the button opens the latest GitHub release. With JavaScript, the App page asks GitHub for the latest release and shows its version, date, size, and SHA-256 checksum, and the button then downloads the customer APK directly (one tap fewer). Before the first release it says “First release coming soon”.
+- **Privacy page (WEB-10):** written from what the apps really collect and do: Google name, email, and picture; phone and addresses; optional gender and photo; orders and ratings; the notification token; location (customers only when they tap Use my current location; riders only while carrying an order, deleted after); the services used (Google, Expo, Cloudflare, Neon, OpenFreeMap, GitHub); deleting and deactivating; the website itself (no cookies).
+- **Changes from the prototype:** the App feature list drops cancelling (design 8.2) and adds notifications and Use my current location; the delivery areas list Uwelu and the About page names all eleven areas; the hand-drawn area sketch is labelled “a sketch, not to scale” instead of carrying the OpenFreeMap credit (it isn’t made from their map); the yellow speed lines moved above the headline (they crossed the words like a strikethrough); the footer no longer pushes a 360-pixel phone sideways (the prototype did).
+- **Contact email:** a privacy guard stops Claude from writing the owner’s email into files, so the footer and privacy page have WhatsApp and LinkedIn for now, with a marker where the email goes. Owner command to add it (run from the project folder, putting the address between the quotes):
+  `E='your-address'; sed -i "s|<!-- contact-email -->|<li><a href=\"mailto:$E\">Email (Google)</a></li>|; s|Message us on|Email <a href=\"mailto:$E\">$E</a> or message us on|" apps/website/public/*.html`
+  Tested on a copy with a dummy address: one email link in every footer and one in the privacy page’s Questions.
+- **Checks:** `@playwright/test` 1.64.1 (the locked version) in `apps/website`, with a tiny Node static server (`tests/serve.mjs`) that serves the site at `/casual-kitchen-express/` like GitHub Pages. 25 checks on a 360-pixel phone and a desktop: every page loads with no errors or broken images, has its sharing tags, and doesn’t scroll sideways; every internal link works; the menu button, the theme switch, the FAQ, the release details (offline, with a made-up release), the 404 page, and the single Claude Code line on About. All pass (`npm test --workspace @cke/website`).
+- **Publishing:** `.github/workflows/website.yml` deploys `apps/website/public` to GitHub Pages on every push to main that changes it. The address will be https://armstrong-aisosa.github.io/casual-kitchen-express/.
+- **BDPA estate:** the owner’s pin (6.393847, 5.601806, inside the boundary) is now its starting point. Osasogie stays an estimate (the owner isn’t sure either); customers drag the pin to their door anyway.
+- **Cleanup after the owner finished testing:** the test customer and its seven orders deleted, the tablet’s test photo deleted, the API, the three app servers, and the port-forwarding loop stopped, and the tablet’s port forwarding removed (section 7).
+- **OpenFreeMap donation:** the owner will donate later, once a paid commercial project comes in.
+
+**Owner steps to put the site online (after you say push and the code is on GitHub):**
+1. On github.com, open the repository **casual-kitchen-express** → **Settings** (top bar) → **Pages** (left menu).
+2. Under **Build and deployment**, set **Source** to **GitHub Actions**. Nothing else on that page needs changing.
+3. Open the **Actions** tab → **Website** in the left list → **Run workflow** → **Run workflow** (green button). After about a minute the run shows a green tick; if it shows a red cross, send Claude the run’s page.
+4. Open https://armstrong-aisosa.github.io/casual-kitchen-express/ and https://armstrong-aisosa.github.io/casual-kitchen-express/privacy.html. Both should load.
+5. Google: open https://console.cloud.google.com/auth/branding with the project **cke-project-514706** selected. Under **App domain**, set **Application home page** to `https://armstrong-aisosa.github.io/casual-kitchen-express/` and **Application privacy policy link** to `https://armstrong-aisosa.github.io/casual-kitchen-express/privacy.html`. Leave the terms link empty. Under **Authorised domains**, add `armstrong-aisosa.github.io` if Google asks for it. Click **Save**.
+6. Open **Audience** (left menu) → **Publish app** → **Confirm**. The status changes from **Testing** to **In production**. The apps ask only for name, email, and picture, which don’t need Google’s review. If Google asks you to prove you own the homepage’s domain, send Claude the verification file or code it gives, and Claude adds it to the site.
+
+**Files created/updated:** `apps/website/public/` (`index.html`, `about.html`, `app.html`, `faq.html`, `privacy.html`, `404.html`, `css/site.css`, `js/site.js`, `img/cke-logo-horizontal-charcoal.svg`, `img/cke-share.png`, `img/food/*.webp`, `robots.txt`, `sitemap.xml`; the icons, manifest, and cream logo moved in from `apps/website/`), `apps/website/package.json`, `apps/website/playwright.config.ts`, `apps/website/tests/` (new), `.github/workflows/website.yml` (new), `package-lock.json`, `packages/validation/src/index.ts`, `docs/list-of-areas.md`, `docs/architecture.md` (v0.52), `docs/design.md` (v0.39), `progress.md`.
+
+**Decisions:** the website is published from `apps/website/public` by GitHub Actions (owner sets Pages to GitHub Actions once); the App page’s download goes straight to the customer APK when GitHub answers, otherwise to the release page; OpenFreeMap donation later (owner).
+
+**Open questions:** whether to add the email to the website (owner command above); real phone screenshots for the App page come with the first release (the phone pictures are drawn for now).
+
+**Next step:** step 9: reports on real data, rider payouts, Finance, polish, the remaining checks, Neon and Cloudflare deploy, and signed APKs on GitHub Releases. The site goes online when the owner says push.

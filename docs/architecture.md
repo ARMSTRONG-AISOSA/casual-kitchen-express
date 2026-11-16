@@ -1,6 +1,6 @@
 # CKE ARCHITECTURE
 
-**Document Status:** Draft v0.51. Records the functions, features, and decisions for the apps and the website. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day with the backend foundation in progress), and again on 14 November 2026 after sign-in was built.  
+**Document Status:** Draft v0.52. Records the functions, features, and decisions for the apps and the website. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day with the backend foundation in progress), and again on 14 November 2026 after sign-in was built.  
 **Related documents:** `Casual-Kitchen-Express.md` (business and brand, surface level), `design.md` (UI/UX decisions and page flows), and `list-of-areas.md` (delivery areas).
 
 ---
@@ -393,16 +393,18 @@ A static website (plain HTML, CSS, and JavaScript, with no packages) on GitHub P
 
 | ID | Feature | Notes | Status |
 |---|---|---|---|
-| WEB-01 | Home page | Promotes the business, with the app as the main focus: tagline, app highlights, how ordering works, and a clear download button | Planned |
-| WEB-02 | About page | The business, its food, the delivery area (Uselu to Oluku Market), and the brand's values. Carries one small attribution line (section 17.4). | Planned |
-| WEB-03 | App page | More detail and the full feature list for the customer app, screenshots, install steps for Android, system requirement (Android 10 or newer), the latest version, and the download | Planned |
-| WEB-04 | FAQ page | Common questions, including the delivery area and fee, opening hours, how to install, and why the app is not on the Play Store | Planned |
+| WEB-01 | Home page | Promotes the business, with the app as the main focus: tagline, app highlights, how ordering works, and a clear download button | **Built** (16 November 2026) |
+| WEB-02 | About page | The business, its food, the delivery area (Uselu to Oluku Market), and the brand's values. Carries one small attribution line (section 17.4). | **Built** (16 November 2026) |
+| WEB-03 | App page | More detail and the full feature list for the customer app, screenshots, install steps for Android, system requirement (Android 10 or newer), the latest version, and the download | **Built** (16 November 2026) |
+| WEB-04 | FAQ page | Common questions, including the delivery area and fee, opening hours, how to install, and why the app is not on the Play Store | **Built** (16 November 2026) |
 | WEB-05 | Footer contact links | LinkedIn (https://www.linkedin.com/in/armstrong-omoregie-02367a271/), Google (email: ammycan6@gmail.com), and WhatsApp (https://wa.me/2349095466063). There is no separate contact page. | **Decided** |
-| WEB-06 | Footer developer credit | A link to the developer's site (https://bossstrong-dev.vercel.app/) and to GitHub (https://github.com/ARMSTRONG-AISOSA) | Planned |
-| WEB-07 | App download | Links to the latest release on GitHub Releases (https://github.com/ARMSTRONG-AISOSA/casual-kitchen-express/releases/latest), with a checksum and the install guide | Planned |
-| WEB-08 | SEO and sharing previews | Titles, descriptions, and social previews for each page | Planned |
+| WEB-06 | Footer developer credit | A link to the developer's site (https://bossstrong-dev.vercel.app/) and to GitHub (https://github.com/ARMSTRONG-AISOSA) | **Built** (16 November 2026) |
+| WEB-07 | App download | Links to the latest release on GitHub Releases (https://github.com/ARMSTRONG-AISOSA/casual-kitchen-express/releases/latest), with a checksum and the install guide. When GitHub answers, the App page shows the latest version, size, and SHA-256 checksum and the button downloads the customer APK directly. | **Built** (16 November 2026) |
+| WEB-08 | SEO and sharing previews | Titles, descriptions, and social previews for each page | **Built** (16 November 2026) |
 | WEB-09 | Ordering on the website | The site promotes only and does not take orders | **Decided** |
-| WEB-10 | Privacy page | A short privacy policy linked from the footer. The app collects an email and a delivery address, and the Google sign-in setup asks for a privacy policy link. | Planned |
+| WEB-10 | Privacy page | A short privacy policy linked from the footer. The app collects an email and a delivery address, and the Google sign-in setup asks for a privacy policy link. | **Built** (16 November 2026) |
+
+**Built 16 November 2026:** the pages are in `apps/website/public` and `.github/workflows/website.yml` publishes them to https://armstrong-aisosa.github.io/casual-kitchen-express/ on every push to main that changes them (the owner sets Pages to GitHub Actions once). Playwright checks are in `apps/website/tests`.
 
 **Hosting note:** GitHub Pages' terms say it is not to be used as free hosting to run an online business or a site mainly directed at commercial transactions, and the site should not be used for sensitive transactions. A promotional site is within those terms while CKE remains a concept project. If CKE became a real business, the site should move to another host. Free static hosts such as Cloudflare Pages are an option. The published site is limited to about 1 GB, with soft limits of about 100 GB of bandwidth a month and 10 builds an hour, far above what a small static site needs.
 
@@ -1100,7 +1102,7 @@ These checks were either not possible during planning or depend on the live setu
 2. The real PBKDF2 timing at about 50,000 iterations on a deployed Worker, to confirm it fits the 10 ms CPU limit. **Done 14 November 2026:** a median of 9.5 ms at 50,000, right at the limit (figures in 12.2). The owner chose 30,000 iterations (12.2).
 3. Durable Object alarms and WebSocket hibernation on the free plan, and the daily request counts they use. **Done 14 November 2026:** on the free plan, a SQLite-backed Durable Object’s alarm set for 5 seconds ahead fired 1 ms after its time, and a WebSocket accepted with the hibernation API answered after 12 seconds idle. The daily request counts are checked once the real traffic exists (Workers Logs).
 4. Background location, the Android foreground-service notification, and the battery and heat target (7.5) on a mid-range phone. **Partly done 16 November 2026:** background location, the “Delivery in progress” foreground-service notification, the two-step permission, and the arrival geofence work on the test tablet (with test positions, since it has no fix indoors). The battery and heat target still needs a real phone on a real shift.
-5. The Google sign-in console setup: consent screen, the client, and the privacy policy link. **Mostly done 14 November 2026:** Google Auth Platform (branding, External audience in testing, one Web application client with the localhost and workers.dev redirect addresses) is set up, and Continue with Google works on the tablet in the Business app (a manager) and the customer app (a customer; a staff Google account is refused). The browser-based flow needs no package name or key fingerprint. Still to do: the privacy policy link and publishing the consent screen, with the website (step 7).
+5. The Google sign-in console setup: consent screen, the client, and the privacy policy link. **Mostly done 14 November 2026:** Google Auth Platform (branding, External audience in testing, one Web application client with the localhost and workers.dev redirect addresses) is set up, and Continue with Google works on the tablet in the Business app (a manager) and the customer app (a customer; a staff Google account is refused). The browser-based flow needs no package name or key fingerprint. Still to do: the privacy policy link and publishing the consent screen, with the website (step 7). **The privacy page is built (16 November 2026);** the owner gives Google its link and publishes once the site is online (`progress.md`, log of 16 November 2026).
 6. The Hyperdrive caching settings (off for live order data), and Neon's current free-plan storage allowance.
 7. OpenFreeMap's current usage terms, and the required map credit. **Done 16 November 2026:** no account or key, no limits on map views (offline downloads are limited, and the apps don’t download offline), commercial use allowed, no uptime guarantee, and whoever integrates it must be 18 or over. Attribution: “© OpenStreetMap contributors” visible on or next to the map and linked to openstreetmap.org/copyright, and “© OpenMapTiles” linked to openmaptiles.org; each credit under the map now opens its own page.
 8. A re-check of every free allowance (Cloudflare, Neon, and Expo) just before building.
@@ -1231,6 +1233,7 @@ A seed script fills the database with **three months** of history (owner decisio
 
 | Version | Change |
 |---|---|
+| 0.52 | 16 November 2026 (late): the website built (WEB-01 to WEB-04 and WEB-06 to WEB-10) in `apps/website/public`, published by a GitHub Actions workflow; 16.1 item 5 note; BDPA estate’s centre is the owner’s pin. |
 | 0.51 | 16 November 2026 (evening): the owner’s kitchen pin and delivery boundary, now checked by the API; Evbogida added to the areas; area centres from OpenStreetMap (4.7, `list-of-areas.md` 3a). |
 | 0.50 | 16 November 2026 (later): push notifications built through Expo and Firebase (16, the step 6d note); “Use my current location” in the customer app, so expo-location is in the customer app too (owner decision, 15.2); expo-device not needed; build step 7, the live simulator with practice orders (18.4). |
 | 0.49 | Build step 6d on 16 November 2026: the customer’s real map (MapLibre with OpenFreeMap) and riders’ light location tracking with the arrival geofence (16, the step 6d note). |

@@ -1,6 +1,6 @@
 # CKE DESIGN
 
-**Document Status:** Draft v0.38. Records UI and UX decisions, design choices, page flows, and design libraries. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day).  
+**Document Status:** Draft v0.39. Records UI and UX decisions, design choices, page flows, and design libraries. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day).  
 **Related documents:** `Casual-Kitchen-Express.md` (business and brand, surface level), `architecture.md` (functions, features, data, technical decisions), and `list-of-areas.md` (delivery areas).
 
 ---
@@ -702,6 +702,7 @@ There is no menu page, delivery-area page, or contact page. The delivery area si
 - Accessible: contrast, focus states, and the FAQ built with native expandable sections.
 - Social sharing previews and search titles set for each page.
 - GitHub Pages limits (published site about 1 GB, soft 100 GB a month, soft 10 builds an hour) are well within a small static site.
+- **Built 16 November 2026** from the prototype, with these changes: the logo files from the logo package; real menu photos with their credits under each; the hero’s speed lines sit above the headline rather than across it; the footer fits a 360-pixel phone; the App feature list adds notifications and Use my current location (and, as 8.2 says, doesn’t mention cancelling); the delivery-area sketch is labelled as a sketch, not to scale; the App page shows the latest release’s version, size, and checksum from GitHub. The App page’s phone pictures are drawn until real screenshots come with the first release.
 
 ---
 
@@ -754,6 +755,7 @@ Every design question is now decided. Anything that needs checking is listed in 
 
 | Version | Change |
 |---|---|
+| 0.39 | 16 November 2026 (late): the website built (8.7 lists what changed from the prototype). |
 | 0.38 | 16 November 2026: Use my current location on the address screen (4.3); Demo controls on a live tablet place practice orders, auto-play them, and remove them (7.2); push notifications are only shown while an app is in the background, since the open app already shows the change. |
 | 0.37 | Build step 6a, 15 November 2026: the Business app on live data; the “Demo” chip only on screens still showing demo figures (3.10); Demo controls on a live tablet say practice orders return with the live simulator (7.2). |
 | 0.36 | Owner decisions on 15 November 2026 (evening): usual alert times 10 and 30 minutes for a rider and the road (7.2); the new-order chime built, with its switch in Settings, Alerts (6.2, 7.2, 7.3). |

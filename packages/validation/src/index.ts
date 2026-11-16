@@ -195,12 +195,12 @@ export const DELIVERY_BOUNDARY: [number, number][] = [
 
 /**
  * Where each area's pin starts when a customer picks it. From OpenStreetMap (16 November 2026),
- * except BDPA estate and Osasogie, which aren't on the map yet and are estimates to confirm.
+ * except BDPA estate (the owner's pin) and Osasogie (an estimate; not on the map).
  */
 export const AREA_CENTRES: Record<string, { lat: number; lng: number }> = {
   Ugbowo: { lat: 6.4003, lng: 5.61009 },
   Ekosodin: { lat: 6.41668, lng: 5.61665 },
-  "BDPA estate": { lat: 6.404, lng: 5.604 },
+  "BDPA estate": { lat: 6.393847, lng: 5.601806 }, // the owner's pin
   Osasogie: { lat: 6.3925, lng: 5.625 },
   Uselu: { lat: 6.38339, lng: 5.61072 },
   Uwelu: { lat: 6.38613, lng: 5.58266 },
