@@ -126,6 +126,8 @@ export type StaffOrder = {
   total: number;
   paymentMethod: "card" | "transfer" | "cash";
   label: string | null;
+  /** A practice order from Demo controls (18.4). */
+  practice?: boolean;
   placedAt: string;
   readyAt: string | null;
   load: number;
@@ -253,6 +255,7 @@ export type LiveMessage =
   | { type: "alert"; alert: AlertView; version: number; beep?: boolean }
   | { type: "rider"; rider: RiderPanel; version: number }
   | { type: "catalog"; version: number }
+  | { type: "reload" }
   | { type: "alert-settings"; alerts: AlertSettingsView };
 
 /* ---------- riders (build step 6b) ---------- */
@@ -317,7 +320,8 @@ export type RiderLiveMessage =
       version: number;
     }
   | { type: "delivery"; delivery: RiderDelivery; removed: boolean; version?: number }
-  | { type: "catalog"; version: number };
+  | { type: "catalog"; version: number }
+  | { type: "reload" };
 
 /* ---------- customers (build step 6c) ---------- */
 
@@ -364,6 +368,9 @@ export type MyOrder = {
 };
 
 export type RiderPosition = { lat: number; lng: number; at: string };
+
+/** Demo controls: auto-play, its speed, and how many practice orders are still moving. */
+export type DemoState = { auto: boolean; speed: 1 | 5 | 20; open: number };
 
 /** What the customer app hears on the live connection. */
 export type CustomerLiveMessage =
@@ -613,6 +620,18 @@ export function createApiClient({ baseUrl, getHeaders, onUnauthorized }: ApiClie
         method: "PATCH",
         body: JSON.stringify(a),
       }),
+    /* ----- Demo controls (managers, 18.4) ----- */
+    demoState: () => request<DemoState>("/demo"),
+    /** A practice order: online (a demo customer) or a walk-in. */
+    practiceOrder: (kind: "online" | "walkin") =>
+      post<{ order: { id: string; number: string } }>("/demo/orders", { kind }),
+    setAutoplay: (auto: boolean, speed: 1 | 5 | 20) =>
+      request<{ auto: boolean; speed: 1 | 5 | 20 }>("/demo/autoplay", {
+        method: "PUT",
+        body: JSON.stringify({ auto, speed }),
+      }),
+    /** Removes every practice order; real orders and the history stay. */
+    resetPractice: () => post<{ removed: number }>("/demo/reset", {}),
     /* ----- riders ----- */
     riderOnline: (online: boolean) =>
       request<{ online: boolean }>("/rider/online", {

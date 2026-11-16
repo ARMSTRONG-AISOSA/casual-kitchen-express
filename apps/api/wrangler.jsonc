@@ -23,11 +23,14 @@
     "bindings": [
       { "name": "AUTH_RATE_LIMITER", "class_name": "AuthRateLimiter" },
       { "name": "LIVE_HUB", "class_name": "LiveHub" },
+      // The live simulator's clock for practice orders (architecture.md 18.4).
+      { "name": "DEMO_SIM", "class_name": "DemoSim" },
     ],
   },
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["AuthRateLimiter"] },
     { "tag": "v2", "new_sqlite_classes": ["LiveHub"] },
+    { "tag": "v3", "new_sqlite_classes": ["DemoSim"] },
   ],
   // BETTER_AUTH_SECRET is a secret: in .dev.vars on the laptop, and set with
   // `wrangler secret put BETTER_AUTH_SECRET` on the deployed Worker. Never in this file.

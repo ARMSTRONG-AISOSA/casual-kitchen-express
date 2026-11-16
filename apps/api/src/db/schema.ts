@@ -405,6 +405,8 @@ export const order = pgTable(
     status: orderStatus("status").notNull(),
     // The last status a push notification was sent for, so each status is announced once (10).
     pushedStatus: orderStatus("pushed_status"),
+    // A practice order from Demo controls (18.4): the simulator moves only these, never real ones.
+    practice: boolean("practice").notNull().default(false),
     exception: orderException("exception"),
     foodTotal: integer("food_total").notNull(),
     deliveryFee: integer("delivery_fee").notNull().default(0), // stored when placed (18.2)

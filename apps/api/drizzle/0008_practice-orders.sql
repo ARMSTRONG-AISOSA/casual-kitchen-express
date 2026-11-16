@@ -1,0 +1,1 @@
+ALTER TABLE "order" ADD COLUMN "practice" boolean DEFAULT false NOT NULL;

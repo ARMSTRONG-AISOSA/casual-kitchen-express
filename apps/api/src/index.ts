@@ -7,6 +7,7 @@ import { alerts } from "./routes/alerts";
 import { bootstrap } from "./routes/bootstrap";
 import { cancellationRequests, myOrderActions, orderActions } from "./routes/cancellations";
 import { changes } from "./routes/changes";
+import { demo } from "./routes/demo";
 import { live } from "./routes/live";
 import { me } from "./routes/me";
 import { media } from "./routes/media";
@@ -21,6 +22,7 @@ import { staff } from "./routes/staff";
 
 export { AuthRateLimiter } from "./auth/rate-limit";
 export { LiveHub } from "./live/hub";
+export { DemoSim } from "./demo/sim";
 
 // `Env` (the Worker's bindings) is generated into worker-configuration.d.ts by `npm run types`.
 const app = new Hono<{ Bindings: Env; Variables: { db: Db; actor: Actor } }>();
@@ -50,6 +52,7 @@ app.route("/alerts", alerts);
 app.route("/bootstrap", bootstrap);
 app.route("/cancellation-requests", cancellationRequests);
 app.route("/changes", changes);
+app.route("/demo", demo);
 app.route("/help-requests", helpRequests);
 app.route("/live", live);
 app.route("/me/addresses", addresses);

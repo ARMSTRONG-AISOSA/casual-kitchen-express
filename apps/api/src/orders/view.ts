@@ -151,6 +151,7 @@ export async function loadOrders(db: Db, rows: OrderRow[], full: boolean) {
       total: o.total,
       paymentMethod: o.paymentMethod,
       label: o.label,
+      practice: o.practice,
       placedAt: o.placedAt,
       readyAt: o.readyAt,
       load: own.reduce((sum, i) => sum + i.load * i.quantity, 0),

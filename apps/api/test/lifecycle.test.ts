@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { hashPassword } from "../src/auth/password";
 import { connect } from "../src/db/client";
 import * as t from "../src/db/schema";
+import { stepPractice } from "../src/demo/practice";
 import { orderPushes } from "../src/live/push";
 import { scanAlerts } from "../src/orders/alerts";
 import { deleteOrders } from "./cleanup";
@@ -866,6 +867,56 @@ describe("push notifications", () => {
       expect(left).toEqual([]);
     } finally {
       await db.delete(t.pushToken).where(eq(t.pushToken.token, tok.kitchen));
+      await close();
+    }
+  });
+});
+
+describe("demo controls", () => {
+  it("places practice orders, simulates only those to the end, and removes them on reset", async () => {
+    expect(
+      (await call("/demo/orders", kitchen, { method: "POST", body: { kind: "online" } })).status,
+    ).toBe(403);
+    const online = await json<{ order: { id: string; number: string } }>(
+      await call("/demo/orders", manager, { method: "POST", body: { kind: "online" } }),
+    );
+    const walkin = await json<{ order: { id: string; number: string } }>(
+      await call("/demo/orders", manager, { method: "POST", body: { kind: "walkin" } }),
+    );
+    const real = await placeDelivery();
+    const { db, close } = await connect(env);
+    try {
+      // Each turn waits for the step's time; the test moves the clock by backdating instead.
+      const ids = [online.order.id, walkin.order.id, real.id];
+      for (let i = 0; i < 12; i++) {
+        await db
+          .update(t.orderStatusEvent)
+          .set({ at: new Date(Date.now() - 600_000) })
+          .where(inArray(t.orderStatusEvent.orderId, ids));
+        await db
+          .update(t.order)
+          .set({ pickedUpAt: new Date(Date.now() - 600_000) })
+          .where(eq(t.order.id, online.order.id));
+        await stepPractice(db, 20);
+      }
+      const rows = await db
+        .select({ id: t.order.id, status: t.order.status, practice: t.order.practice })
+        .from(t.order)
+        .where(inArray(t.order.id, ids));
+      const status = (id: string) => rows.find((r) => r.id === id)!.status;
+      expect(["delivered", "collected"]).toContain(status(online.order.id));
+      expect(status(walkin.order.id)).toBe("collected");
+      expect(status(real.id)).toBe("confirmed"); // a real order is never moved
+      const reset = await json<{ removed: number }>(
+        await call("/demo/reset", manager, { method: "POST" }),
+      );
+      expect(reset.removed).toBeGreaterThanOrEqual(2);
+      const left = await db
+        .select({ id: t.order.id })
+        .from(t.order)
+        .where(eq(t.order.practice, true));
+      expect(left).toEqual([]);
+    } finally {
       await close();
     }
   });
