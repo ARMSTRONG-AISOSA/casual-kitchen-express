@@ -5,6 +5,7 @@ import { alertViews } from "../orders/alerts";
 import { CARRYING, queueOrders, riderDeliveries, ridersPanel } from "../orders/riders";
 import { customerViews, loadOrders } from "../orders/view";
 import type { LiveMessage } from "./hub";
+import { alertPushes, orderPushes, sendPush } from "./push";
 
 // What goes over the live connection after each change (architecture.md 10, 14.4). The changed
 // record itself is sent, so the apps watching don't need to call the API. Each message carries the
@@ -94,6 +95,9 @@ export async function orderMessages(
   // The riders panel changes too when a rider's load changes (DSP-03).
   if (carried.length)
     messages.push(...(await riderMessages(db, [...new Set(carried.map((d) => d.riderId))])));
+  // Push notifications for statuses not announced yet (10): sent to Expo by `send`.
+  const push = await orderPushes(db, ids);
+  if (push.length) messages.push({ to: [], data: null, push });
   return messages;
 }
 
@@ -107,10 +111,16 @@ export async function alertMessages(
   beep: string[] = [],
 ): Promise<LiveMessage[]> {
   if (!alertIds.length) return [];
-  return (await alertViews(db, { ids: [...new Set(alertIds)] })).map((alert) => ({
-    to: ALERT_WATCHERS,
-    data: { type: "alert", alert, version: alert.version, beep: beep.includes(alert.id) },
-  }));
+  const messages: LiveMessage[] = (await alertViews(db, { ids: [...new Set(alertIds)] })).map(
+    (alert) => ({
+      to: ALERT_WATCHERS,
+      data: { type: "alert", alert, version: alert.version, beep: beep.includes(alert.id) },
+    }),
+  );
+  // The beep also goes out as a push, for tablets with the app in the background.
+  const push = await alertPushes(db, beep);
+  if (push.length) messages.push({ to: [], data: null, push });
+  return messages;
 }
 
 /** The Alerts settings changed: every screen showing them updates (MGR-14). */
@@ -148,9 +158,13 @@ export function send(
   messages: LiveMessage[],
 ) {
   if (!messages.length) return;
+  const pushes = messages.flatMap((m) => m.push ?? []);
+  if (pushes.length) c.executionCtx.waitUntil(sendPush(c.env, pushes));
+  const live = messages.filter((m) => !m.push);
+  if (!live.length) return;
   c.executionCtx.waitUntil(
     liveHub(c.env)
-      .publish(messages)
+      .publish(live)
       .then(
         () => undefined,
         () => undefined, // the live connection is a convenience; /changes catches apps up

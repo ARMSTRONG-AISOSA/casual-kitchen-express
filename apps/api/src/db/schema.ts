@@ -262,6 +262,28 @@ export const riderState = pgTable("rider_state", {
   version: changeVersion(),
 });
 
+/** Which app a push token belongs to (10): the same person can have more than one. */
+export const pushApp = pgEnum("push_app", ["customer", "rider", "business"]);
+
+/**
+ * A device's Expo push token (10, CUS-11, RID-14). Saved when someone signs in on a phone or
+ * tablet, removed when they sign out or Expo says the app was uninstalled. `sound` is the rider's
+ * Sound setting, which picks the notification channel with or without the tone.
+ */
+export const pushToken = pgTable(
+  "push_token",
+  {
+    token: text("token").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    app: pushApp("app").notNull(),
+    sound: boolean("sound").notNull().default(true),
+    updatedAt: at("updated_at").notNull().defaultNow(),
+  },
+  (t) => [index("push_token_user_idx").on(t.userId)],
+);
+
 /* ---------- menu ---------- */
 
 export const menuCategory = pgTable("menu_category", {
@@ -381,6 +403,8 @@ export const order = pgTable(
     customerId: text("customer_id").references(() => user.id), // empty for walk-ins
     type: orderType("type").notNull(),
     status: orderStatus("status").notNull(),
+    // The last status a push notification was sent for, so each status is announced once (10).
+    pushedStatus: orderStatus("pushed_status"),
     exception: orderException("exception"),
     foodTotal: integer("food_total").notNull(),
     deliveryFee: integer("delivery_fee").notNull().default(0), // stored when placed (18.2)

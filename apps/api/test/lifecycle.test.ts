@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { hashPassword } from "../src/auth/password";
 import { connect } from "../src/db/client";
 import * as t from "../src/db/schema";
+import { orderPushes } from "../src/live/push";
 import { scanAlerts } from "../src/orders/alerts";
 import { deleteOrders } from "./cleanup";
 import { DEMO_PASSWORD, signIn } from "./session";
@@ -800,6 +801,73 @@ describe("alerts and the live connection", () => {
     const [a] = await db2.select().from(t.alert).where(eq(t.alert.orderId, waiting.id));
     await close2();
     expect(a!.clearedAt).not.toBeNull();
+  });
+});
+
+describe("push notifications", () => {
+  it("saves each device's token, announces each status once, and tells the right people", async () => {
+    // Tokens that aren't real Expo tokens are never sent to Expo, so the tests send nothing.
+    const tok = {
+      customer: "test-push-customer-0001",
+      rider: "test-push-musa-0001",
+      kitchen: "test-push-kitchen-0001",
+    };
+    const save = (cookie: string, token: string, app: string, sound?: boolean) =>
+      call("/me/push-token", cookie, { method: "PUT", body: { token, app, sound } });
+    expect((await save(customer, tok.customer, "customer")).status).toBe(200);
+    expect((await save(musa, tok.rider, "rider", false)).status).toBe(200);
+    expect((await save(kitchen, tok.kitchen, "business")).status).toBe(200);
+    expect((await save(customer, "test-push-wrong-app-01", "rider")).status).toBe(403);
+
+    const { db, close } = await connect(env);
+    try {
+      await call("/rider/online", musa, { method: "PUT", body: { online: true } });
+      const o = await placeDelivery();
+      // The order route already announced "placed": asking again sends nothing.
+      expect(await orderPushes(db, [o.id])).toEqual([]);
+      // Pretend it wasn't announced: the customer and the kitchen hear about it.
+      await db.update(t.order).set({ pushedStatus: null }).where(eq(t.order.id, o.id));
+      const placed = await orderPushes(db, [o.id]);
+      expect(placed).toContainEqual(
+        expect.objectContaining({
+          to: tok.customer,
+          title: `Order ${o.number} placed`,
+          channelId: "orders",
+        }),
+      );
+      expect(placed).toContainEqual(
+        expect.objectContaining({
+          to: tok.kitchen,
+          title: `New online order ${o.number}`,
+          data: { open: "board", orderId: o.id },
+        }),
+      );
+
+      // Ready: Musa (online, Sound off) hears about it on the quiet channel; Preparing isn't announced.
+      await acknowledge(o.id);
+      await call(`/orders/${o.id}/ready`, kitchen, { method: "POST" });
+      await db.update(t.order).set({ pushedStatus: "preparing" }).where(eq(t.order.id, o.id));
+      const ready = await orderPushes(db, [o.id]);
+      expect(ready).toContainEqual(
+        expect.objectContaining({
+          to: tok.rider,
+          title: "New order ready",
+          channelId: "queue-quiet",
+        }),
+      );
+      expect(ready.some((m) => m.to === tok.customer)).toBe(false); // "ready" isn't a customer push
+
+      // Signing out on the device removes its token.
+      expect(
+        (await call("/me/push-token", musa, { method: "DELETE", body: { token: tok.rider } }))
+          .status,
+      ).toBe(200);
+      const left = await db.select().from(t.pushToken).where(eq(t.pushToken.token, tok.rider));
+      expect(left).toEqual([]);
+    } finally {
+      await db.delete(t.pushToken).where(eq(t.pushToken.token, tok.kitchen));
+      await close();
+    }
   });
 });
 

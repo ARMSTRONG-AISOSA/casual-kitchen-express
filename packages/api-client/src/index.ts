@@ -423,6 +423,18 @@ export function createApiClient({ baseUrl, getHeaders, onUnauthorized }: ApiClie
     imageHeaders,
     /** The signed-in person (GET /me). */
     me: () => request<Me>("/me"),
+    /** This device's Expo push token for the app it's in (10). `sound`: the rider's Sound setting. */
+    savePushToken: (token: string, app: "customer" | "rider" | "business", sound?: boolean) =>
+      request<{ saved: boolean }>("/me/push-token", {
+        method: "PUT",
+        body: JSON.stringify({ token, app, sound }),
+      }),
+    /** Signing out on this device: no more notifications here. */
+    removePushToken: (token: string) =>
+      request<{ removed: boolean }>("/me/push-token", {
+        method: "DELETE",
+        body: JSON.stringify({ token }),
+      }),
     /** Change your own password: at the first sign-in, after a reset, or any time (12.1). */
     changePassword: (currentPassword: string, newPassword: string) =>
       post<{ ok: true }>("/me/password", { currentPassword, newPassword }),

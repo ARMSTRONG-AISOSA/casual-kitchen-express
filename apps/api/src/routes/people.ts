@@ -307,6 +307,8 @@ export const people = new Hono<Ctx>()
         .set({ status: "deactivated" })
         .where(eq(t.staffProfile.code, code));
       await tx.delete(t.session).where(eq(t.session.userId, found.user.id));
+      // No more notifications on their devices either.
+      await tx.delete(t.pushToken).where(eq(t.pushToken.userId, found.user.id));
       await tx.insert(t.auditLog).values({
         actorId: actor.id,
         kind: "account",

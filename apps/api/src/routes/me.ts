@@ -1,6 +1,6 @@
 import { newPassword } from "@cke/validation";
 import { zValidator } from "@hono/zod-validator";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { readActor, type Actor } from "../auth/actor";
@@ -94,6 +94,60 @@ export const me = new Hono<Ctx>()
    * the phone first (8.1: square, up to 512 px and 80 KB, WebP). The old photo is deleted (8.3).
    * DELETE /me/photo removes it. The photo is private to the customer (and managers and dispatch).
    */
+  /**
+   * PUT /me/push-token: this device's Expo push token, for the app it's in (10). Saved at sign-in
+   * and when the rider changes Sound; a device that signs in as someone else moves to them.
+   */
+  .put(
+    "/push-token",
+    zValidator(
+      "json",
+      z.object({
+        token: z.string().min(10).max(200),
+        app: z.enum(t.pushApp.enumValues),
+        sound: z.boolean().optional(),
+      }),
+    ),
+    async (c) => {
+      const actor = await readActor(c);
+      if (!actor) return c.json({ error: "Sign in to continue" }, 401);
+      const { token, app, sound = true } = c.req.valid("json");
+      const allowed =
+        app === "customer"
+          ? actor.role === "customer"
+          : app === "rider"
+            ? actor.role === "rider"
+            : ["kitchen", "dispatch", "accounts", "manager"].includes(actor.role);
+      if (!allowed) return c.json({ error: "That app isn’t for this account" }, 403);
+      await c
+        .get("db")
+        .insert(t.pushToken)
+        .values({ token, userId: actor.id, app, sound })
+        .onConflictDoUpdate({
+          target: t.pushToken.token,
+          set: { userId: actor.id, app, sound, updatedAt: new Date() },
+        });
+      return c.json({ saved: true });
+    },
+  )
+
+  /** DELETE /me/push-token: signing out on this device stops its notifications. */
+  .delete(
+    "/push-token",
+    zValidator("json", z.object({ token: z.string().max(200) })),
+    async (c) => {
+      const actor = await readActor(c);
+      if (!actor) return c.json({ error: "Sign in to continue" }, 401);
+      await c
+        .get("db")
+        .delete(t.pushToken)
+        .where(
+          and(eq(t.pushToken.token, c.req.valid("json").token), eq(t.pushToken.userId, actor.id)),
+        );
+      return c.json({ removed: true });
+    },
+  )
+
   .put("/photo", async (c) => {
     const actor = await readActor(c);
     if (actor?.role !== "customer") return c.json({ error: "Sign in to continue" }, 401);

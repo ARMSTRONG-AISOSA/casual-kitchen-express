@@ -1458,7 +1458,8 @@ await db.transaction(async (tx) => {
   await chunked(rows.users, (p) => tx.insert(t.user).values(p));
   await chunked(rows.profiles, (p) => tx.insert(t.customerProfile).values(p));
   await chunked(rows.addresses, (p) => tx.insert(t.address).values(p));
-  await chunked(rows.orders, (p) => tx.insert(t.order).values(p));
+  // History is already announced: no push notification for any of it (10).
+  await chunked(rows.orders, (p) => tx.insert(t.order).values(p.map((o) => ({ ...o, pushedStatus: o.status }))));
   await chunked(rows.lines, (p) => tx.insert(t.orderItem).values(p));
   await chunked(rows.events, (p) => tx.insert(t.orderStatusEvent).values(p));
   await chunked(rows.payments, (p) => tx.insert(t.payment).values(p));

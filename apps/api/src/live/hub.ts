@@ -4,6 +4,7 @@ import { connect } from "../db/client";
 import * as t from "../db/schema";
 import { scanAlerts } from "../orders/alerts";
 import { alertMessages, orderMessages } from "./publish";
+import { sendPush, type PushMessage } from "./push";
 
 const ALERT_CHECK_MS = 60_000;
 /** Orders still in progress, which the alert check watches. */
@@ -20,7 +21,8 @@ const OPEN_STATUSES = [
 ] as const;
 
 /** One message for the apps, and the groups of connections (tags) it goes to. */
-export type LiveMessage = { to: string[]; data: unknown };
+/** `push` carries push notifications instead: sent to Expo, never over the WebSocket. */
+export type LiveMessage = { to: string[]; data: unknown; push?: PushMessage[] };
 
 /**
  * The live connection (architecture.md 10, 14.4): every app keeps one WebSocket to this single
@@ -54,10 +56,11 @@ export class LiveHub extends DurableObject<Env> {
   /** Sends each message once to every connection in any of its groups. */
   async publish(messages: LiveMessage[]) {
     // An order changed, so the alert check should be running.
-    if (messages.some((m) => (m.data as { type?: string }).type === "order"))
+    if (messages.some((m) => (m.data as { type?: string } | null)?.type === "order"))
       await this.checkSoon();
     let sent = 0;
     for (const m of messages) {
+      if (m.push) continue;
       const text = JSON.stringify(m.data);
       const seen = new Set<WebSocket>();
       for (const tag of m.to)
@@ -91,6 +94,8 @@ export class LiveHub extends DurableObject<Env> {
         ...(await orderMessages(db, this.env.BETTER_AUTH_SECRET, found.orders)),
       ];
       if (messages.length) await this.publish(messages);
+      const pushes = messages.flatMap((m) => m.push ?? []);
+      if (pushes.length) await sendPush(this.env, pushes);
       const [open] = (await db
         .select({ n: sql<number>`count(*)::int` })
         .from(t.order)

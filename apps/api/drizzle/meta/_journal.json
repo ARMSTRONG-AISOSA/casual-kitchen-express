@@ -50,6 +50,13 @@
       "when": 1794806849628,
       "tag": "0006_rider-location",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794822395497,
+      "tag": "0007_push-tokens",
+      "breakpoints": true
     }
   ]
 }
