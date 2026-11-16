@@ -4,6 +4,7 @@ import { AppState } from "react-native";
 import { beep, chime } from "../alert-sound";
 import { api } from "../api";
 import { sessionCookie } from "../auth";
+import { registerPush } from "../push";
 import type { Order } from "../data/seed";
 import { refreshCatalog } from "./catalog";
 import { lineName, mapAlert, mapOrder, mapRow } from "./mapping";
@@ -158,6 +159,9 @@ export function LiveSync() {
         void refreshCatalog();
         if (roleRef.current === "dispatch" || roleRef.current === "manager")
           void api?.settings().then((v) => set((st) => settingsFrom(v, st.settings)));
+      } else if (m.type === "reload") {
+        // Practice orders were reset (Demo controls): load what's true now.
+        void load().catch(() => {});
       } else if (m.type === "alert-settings") {
         const v = m.alerts;
         set((st) => ({
@@ -177,7 +181,7 @@ export function LiveSync() {
         }));
       }
     },
-    [set],
+    [set, load],
   );
 
   // Catches up after a gap: only what changed, or a full reload after a long one.
@@ -213,6 +217,8 @@ export function LiveSync() {
       set((st) => (st.live ? { live: false } : {}));
       return;
     }
+    // This tablet's push token, for the new-order chime and the beep in the background (10).
+    void registerPush();
     let stopped = false;
     const close = () => {
       if (retry.current) clearTimeout(retry.current);

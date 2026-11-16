@@ -3,6 +3,8 @@ import { useEffect, type ReactNode } from "react";
 import { api } from "../api";
 import { authClient, refreshCookie, signInError } from "../auth";
 import { useStore } from "./store";
+import { unregisterPush } from "../push";
+import { ApiError } from "@cke/api-client";
 
 type Set = ReturnType<typeof useStore>["set"];
 
@@ -46,6 +48,8 @@ export async function saveProfile(changes: { name?: string; gender?: string }) {
 
 /** Signs out on this phone and on the API. The account, orders, and addresses stay saved. */
 export async function signOutCustomer(set: Set) {
+  // While still signed in: this phone stops getting the customer's notifications.
+  await unregisterPush();
   try {
     await authClient?.signOut();
   } catch {
@@ -124,13 +128,18 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!api) return;
     void (async () => {
-      try {
-        if (await refreshCookie()) {
+      if (!(await refreshCookie().catch(() => false))) return;
+      // Can't reach CKE yet: try again for about 15 seconds, so a saved session isn't lost to a
+      // slow start. Signed out (a refusal from the API) or still offline: browse as a guest.
+      for (let attempt = 0; ; attempt++) {
+        try {
           const me = await api.me();
           if (me.role === "customer") enterAs(me, set);
+          return;
+        } catch (e) {
+          if (e instanceof ApiError || attempt >= 4) return;
+          await new Promise((r) => setTimeout(r, 3000));
         }
-      } catch {
-        // No session, or offline: the customer browses as a guest until they sign in.
       }
     })();
   }, [set]);

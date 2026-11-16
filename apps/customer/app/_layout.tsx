@@ -14,6 +14,7 @@ import { StoreProvider } from "../src/state/store";
 import { CustomerLive } from "../src/state/live";
 import { useTheme } from "../src/state/theme";
 import { ToastProvider } from "../src/ui/toast";
+import { PushTaps } from "../src/push";
 
 function Shell() {
   const t = useTheme();
@@ -47,6 +48,7 @@ export default function RootLayout() {
         <CatalogProvider>
           <ToastProvider>
             <CustomerLive />
+            <PushTaps />
             <Shell />
           </ToastProvider>
         </CatalogProvider>

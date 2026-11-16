@@ -13,6 +13,7 @@ import { StoreProvider } from "../src/state/store";
 import { RiderLive } from "../src/state/live";
 import { useTheme } from "../src/state/theme";
 import { ToastProvider } from "../src/ui/toast";
+import { PushTaps } from "../src/push";
 
 function Shell() {
   const t = useTheme();
@@ -46,6 +47,7 @@ export default function RootLayout() {
       <SessionProvider>
         <ToastProvider>
           <RiderLive />
+          <PushTaps />
           <Shell />
         </ToastProvider>
       </SessionProvider>

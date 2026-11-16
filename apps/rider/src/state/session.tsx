@@ -6,6 +6,7 @@ import { api, whenSignedOut } from "../api";
 import { authClient, refreshCookie } from "../auth";
 import { RIDER } from "../data/orders";
 import { useStore } from "./store";
+import { unregisterPush } from "../push";
 
 type Set = ReturnType<typeof useStore>["set"];
 
@@ -59,6 +60,8 @@ export async function enterAs(me: Me, set: Set) {
 
 /** Signs out of the API too, and goes offline. */
 export async function signOut(set: Set, toSignIn = true) {
+  // While still signed in: this phone stops getting the rider's notifications.
+  await unregisterPush();
   try {
     await authClient?.signOut();
   } catch {

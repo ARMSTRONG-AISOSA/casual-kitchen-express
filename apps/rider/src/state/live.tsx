@@ -9,6 +9,7 @@ import { AppState } from "react-native";
 import { api } from "../api";
 import { sessionCookie } from "../auth";
 import { HELP_REASONS, clockTime, type QueueOrder } from "../data/orders";
+import { registerPush } from "../push";
 import { onArrival, stopTracking, syncTracking } from "../tracking";
 import { useToast } from "../ui/toast";
 import {
@@ -162,6 +163,9 @@ export function RiderLive() {
         if (!m.removed && m.delivery.assignedByDispatch && vibrate.current)
           alertRider({ vibrate: true } as State);
         if (m.removed) void api?.riderEarnings().then((e) => set({ earnings: e }));
+      } else if (m.type === "reload") {
+        // Practice orders were removed (Demo controls): the queue and deliveries as they are now.
+        void refresh().catch(() => {});
       } else if (m.type === "catalog") {
         // A setting changed: pay per delivery or the tracking mode.
         void api
@@ -179,6 +183,10 @@ export function RiderLive() {
         .map((c) => `${c.id}:${c.pin!.lat},${c.pin!.lng}`)
         .join("|")
     : "";
+  // This phone's push token, with the Sound setting choosing the channel (RID-14).
+  useEffect(() => {
+    if (on) void registerPush(s.sound);
+  }, [on, s.sound]);
   useEffect(() => {
     onArrival((d) => set({ carrying: d.map(fromDelivery) }));
     return () => onArrival(null);

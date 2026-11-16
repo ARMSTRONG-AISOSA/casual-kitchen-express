@@ -13,7 +13,8 @@
         "foregroundImage": "../../brand/cke-logo-package/app-icon/cke-app-icon-maskable-512.png",
         "backgroundColor": "#C83F2D"
       },
-      "permissions": ["android.permission.RECORD_AUDIO"]
+      "permissions": ["android.permission.RECORD_AUDIO"],
+      "googleServicesFile": "../../google-services.json"
     },
     "plugins": [
       "expo-router",

@@ -9,6 +9,7 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 import { AppState } from "react-native";
 import { api } from "../api";
 import { sessionCookie } from "../auth";
+import { registerPush } from "../push";
 import { MENU, PROTEINS, SWALLOWS, type ProteinId, type SwallowId } from "../data/menu";
 import { useToast } from "../ui/toast";
 import {
@@ -26,7 +27,6 @@ import {
 // live hub, where each change to the customer's own orders arrives (tracking moves on by itself);
 // and asks again when the app comes back from the background. Checkout, cancelling, requests, and
 // ratings go to the API, which prices every order itself and answers in plain English.
-
 
 /** The step each status reaches on the tracking screen (data/order.ts). */
 const DELIVERY_STEP: Partial<Record<MyOrder["status"], number>> = {
@@ -235,6 +235,8 @@ export function CustomerLive() {
       set((st) => (st.live ? { live: false } : {}));
       return;
     }
+    // This phone's push token, for order updates in the background (CUS-11).
+    void registerPush();
     let stopped = false;
     const close = () => {
       if (retry.current) clearTimeout(retry.current);

@@ -5,8 +5,8 @@ import { Platform } from "react-native";
 // The alert beep (MGR-14, owner decision 15 November 2026): when an alert timer runs out, every
 // Business app device that shows Alerts plays a short urgent tone, once per alert, if the beep is
 // on in Settings, Alerts. It's a local notification on its own Android channel, so it sounds even
-// when the screen is off or the app is in the background. No push service is involved: the app
-// already hears about new alerts over the live connection (architecture.md 10).
+// when the screen is off. While the app is in the background the live connection is closed, so the
+// API sends the same beep as a push notification on this channel (architecture.md 10).
 
 // The new-order chime (design.md 6.2, KIT-02) works the same way on its own channel and tone: a
 // pleasant double chime when a new online order arrives, if the chime is on in Settings, Alerts.
@@ -18,15 +18,20 @@ const CHANNEL = "alerts-v1";
 const ORDERS = "orders-v2";
 let ready: Promise<boolean> | null = null;
 
-// Show the notification and play its sound while the app is open too.
+// Show the beep and the chime while the app is open too. A push notification (step 6d) is for
+// when the app is in the background: while it's open the live connection has already played the
+// same thing, so a push arriving then is kept quiet.
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    priority: Notifications.AndroidNotificationPriority.HIGH,
-  }),
+  handleNotification: async (n) => {
+    const push = (n.request.trigger as { type?: string } | null)?.type === "push";
+    return {
+      shouldShowBanner: !push,
+      shouldShowList: !push,
+      shouldPlaySound: !push,
+      shouldSetBadge: false,
+      priority: Notifications.AndroidNotificationPriority.HIGH,
+    };
+  },
 });
 
 /** Makes the channel and asks for permission, once. Resolves to whether the beep can play. */
@@ -48,6 +53,14 @@ export function prepareAlertSound() {
       description: "A chime when a new online order arrives on the board",
       importance: AndroidImportance.HIGH,
       sound: "cke_chime.wav",
+      lockscreenVisibility: AndroidNotificationVisibility.PUBLIC,
+    });
+    // A new online order while the chime is off still arrives by push, without the tone.
+    await Notifications.setNotificationChannelAsync("orders-quiet", {
+      name: "New online orders (quiet)",
+      description: "New online orders while the chime is off in Settings, Alerts",
+      importance: AndroidImportance.DEFAULT,
+      sound: null,
       lockscreenVisibility: AndroidNotificationVisibility.PUBLIC,
     });
     const now = await Notifications.getPermissionsAsync();

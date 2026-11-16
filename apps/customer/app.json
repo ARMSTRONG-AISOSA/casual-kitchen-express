@@ -13,7 +13,8 @@
         "foregroundImage": "../../brand/cke-logo-package/app-icon/cke-app-icon-maskable-512.png",
         "backgroundColor": "#C83F2D"
       },
-      "permissions": ["android.permission.RECORD_AUDIO"]
+      "permissions": ["android.permission.RECORD_AUDIO"],
+      "googleServicesFile": "../../google-services.json"
     },
     "plugins": [
       "expo-router",
@@ -33,6 +34,21 @@
         {
           "photosPermission": "CKE uses your photos to add a profile picture.",
           "cameraPermission": "CKE uses the camera to take a profile picture."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "../../brand/cke-logo-package/logo/png/cke-icon-mono-charcoal.png",
+          "color": "#C83F2D"
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "CKE uses your location once, when you tap Use my current location, to place your delivery pin.",
+          "isAndroidBackgroundLocationEnabled": false,
+          "isAndroidForegroundServiceEnabled": false
         }
       ],
       "../../tools/expo-plugins/with-android-architectures.js",

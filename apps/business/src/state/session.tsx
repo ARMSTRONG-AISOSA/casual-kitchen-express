@@ -7,6 +7,8 @@ import { authClient, refreshCookie, sessionCookie } from "../auth";
 import type { Person } from "../data/seed";
 import { homeFor } from "../ui/shell";
 import { useStore, type State } from "./store";
+import { unregisterPush } from "../push";
+import { ApiError } from "@cke/api-client";
 
 type Set = ReturnType<typeof useStore>["set"];
 
@@ -55,6 +57,8 @@ export function enterAs(me: Me, set: Set) {
 
 /** Signs out of the API too, so the next person on the tablet starts fresh (Switch person). */
 export async function signOut(set: Set) {
+  // While still signed in: this tablet stops getting this person's notifications.
+  await unregisterPush();
   try {
     await authClient?.signOut();
   } catch {
@@ -84,9 +88,18 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     });
     void (async () => {
       try {
-        if (await refreshCookie()) enterAs(await api.me(), set);
-      } catch {
-        // No session, or offline: the sign-in screen shows.
+        if (!(await refreshCookie())) return;
+        // Can't reach CKE yet (the network or the API waking up): try again for about 15
+        // seconds before showing sign-in, so a saved session isn't lost to a slow start.
+        for (let attempt = 0; ; attempt++) {
+          try {
+            enterAs(await api.me(), set);
+            return;
+          } catch (e) {
+            if (e instanceof ApiError || attempt >= 4) return; // signed out, or still offline
+            await new Promise((r) => setTimeout(r, 3000));
+          }
+        }
       } finally {
         setReady(true);
       }

@@ -33,8 +33,8 @@ export default function Settings() {
       <SwitchRow label="Sound" value={s.sound} onChange={(sound) => set({ sound })} />
       <SwitchRow label="Vibration" value={s.vibrate} onChange={(vibrate) => set({ vibrate })} />
       <T v="small" muted style={{ marginTop: 8 }}>
-        For new orders and changes to your deliveries. The sound comes with notifications in a later
-        version; vibration works now.
+        For new orders and orders dispatch gives you. The sound plays with notifications while the
+        app is in the background; vibration works with the app open too.
       </T>
     </Screen>
   );

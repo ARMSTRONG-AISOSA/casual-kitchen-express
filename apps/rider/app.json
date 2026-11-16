@@ -21,7 +21,8 @@
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_LOCATION",
         "android.permission.POST_NOTIFICATIONS"
-      ]
+      ],
+      "googleServicesFile": "../../google-services.json"
     },
     "plugins": [
       "expo-router",
@@ -43,6 +44,14 @@
           "isAndroidForegroundServiceEnabled": true,
           "locationWhenInUsePermission": "CKE shares your location with your customer while their order is on the way.",
           "locationAlwaysAndWhenInUsePermission": "CKE uses your location to tell your customer when you’re about to arrive, even while you use your navigation app."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "../../brand/cke-logo-package/logo/png/cke-icon-mono-charcoal.png",
+          "color": "#C83F2D",
+          "sounds": ["./assets/sounds/cke_chime.wav"]
         }
       ],
       "../../tools/expo-plugins/with-android-architectures.js"
