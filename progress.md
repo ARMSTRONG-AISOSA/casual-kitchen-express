@@ -132,6 +132,32 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and thr
 
 ## 7. Open items
 
+**When the owner comes back (paused 16 November 2026, late)**
+
+Everything is stopped: the API, the three app servers (Metro), the port-forwarding loop, the database container (`cke-db-1`; its data is kept in the Docker volume), the Gradle build process, and the tablet’s adb connection. The working tree is clean and nothing is pushed.
+
+*Owner, to restart:*
+1. On the tablet: **Settings → Developer options → Wireless debugging** → turn it on. Send Claude the **IP address and port** shown on that screen.
+2. Tap **Pair device with pairing code** and send Claude the **six-digit code** and the **IP address and port** shown in that box (the port differs from step 1). Both ports change every time, so send fresh ones.
+3. Say **resume**.
+
+*Claude, on resume (in this order):* read this file; start the database (`npm run db:up` in `apps/api`); pair and connect the tablet with `adb`; start the API (`npm run dev:lan` in `apps/api`, with `NODE_OPTIONS="--network-family-autoselection-attempt-timeout=2000"`); keep `adb reverse tcp:8787 tcp:8787` up with a small loop; start Metro only for the app being worked on (customer 8081, rider 8082, business 8083); check that `/health` answers before telling the owner it’s ready.
+
+*Good to know:* the customer app on the tablet is signed out (its test customer was deleted). To test it again, sign in with a Google account listed under **Audience → Test users** in the Google console (until the consent screen is published). The Business app (`owner.m`) and the rider app (Musa, offline) are still signed in.
+
+**For the owner to attend to (16 November 2026)**
+1. **Pushing to GitHub:** say “push” when ready. Nothing goes online before that.
+2. **After the push: put the website online and publish Google sign-in.** These are the six steps in the log entry “Step 8: the website” (turn on GitHub Pages, then give Google the homepage and privacy links and publish the consent screen).
+3. **Optional: your email on the website.** Run the one-line command in that same log entry, or leave it with WhatsApp and LinkedIn only.
+4. **Osasogie’s pin:** send it if you find it; it stays an estimate until then.
+5. **Website additions (owner request, 16 November 2026, to do next session):**
+   - **Light and dark mode button at the top:** move the theme switch from the footer into the header, next to Get the app (inside the Menu on phones). Claude builds it.
+   - **SEO:** a review of every page’s title, description, and headings, plus structured data that tells Google this is a restaurant (name, area, opening hours, delivery area). Claude builds it.
+   - **Google Search Console (needs the site online):** add a **URL-prefix** property for `https://armstrong-aisosa.github.io/casual-kitchen-express/`. Choose the **HTML file** check, download the file, and send it to Claude. Claude adds it to the site and pushes. Then press **Verify** and, under **Sitemaps**, submit `sitemap.xml`. (A Domain property isn’t possible on a github.io address.)
+   - **Bing Webmaster Tools (after Search Console):** sign in at bing.com/webmasters and choose **Import from Google Search Console**. That brings the site and its sitemap across, with nothing to verify again.
+6. **Step 9, the next build stage:** reports on real data, rider payouts, Finance, polish, the remaining checks (battery on a real phone, performance, contrast), Neon and Cloudflare deploy, and signed APKs on GitHub Releases.
+7. **Memory and CPU check:** available whenever you want it; Claude only runs it with your yes.
+
 - ~~**Temporary test customer `tablet.test`**~~ **Deleted 16 November 2026** after the owner finished testing: the account, its profile, address, session, push token, and all seven of its orders (O-3225 to O-3230 and O-3233) with their deliveries, ratings, refunds, requests, alerts, and audit entries, in one transaction. Checked: no user or orders left.
 - ~~**Test orders on the tablet**~~ **Deleted 16 November 2026:** O-3233 went with the test customer; the practice orders O-3231 and O-3232 were already removed with Demo controls.
 - ~~**Tablet test settings (16 November 2026)**~~ **Removed 16 November 2026:** the test location providers, the shell’s mock-location permission, and stay-awake while charging are undone on the tablet.
@@ -1307,3 +1333,18 @@ Append a new dated entry after each work session. Never edit or delete earlier e
 **Open questions:** whether to add the email to the website (owner command above); real phone screenshots for the App page come with the first release (the phone pictures are drawn for now).
 
 **Next step:** step 9: reports on real data, rider payouts, Finance, polish, the remaining checks, Neon and Cloudflare deploy, and signed APKs on GitHub Releases. The site goes online when the owner says push.
+
+## [2026-11-16] Paused: restart steps and the owner's list
+
+**What was done:**
+- Showed the owner the website as a private preview (https://claude.ai/artifact/TW1fDXfkJsiqPomjhJ8tX8).
+- Stopped everything: the database container, the leftover Gradle build process, and the tablet’s adb connection (the API, Metro, and the port-forwarding loop were already stopped).
+- Wrote the restart steps and the owner’s list at the top of section 7. New owner requests are recorded there as website to-dos: the theme button at the top, SEO, Google Search Console with the sitemap, and Bing Webmaster Tools.
+
+**Files created/updated:** `progress.md`.
+
+**Decisions:** none new.
+
+**Open questions:** none.
+
+**Next step:** on resume, the website additions (theme button at the top, SEO), then step 9. Search Console and Bing wait until the site is online.
