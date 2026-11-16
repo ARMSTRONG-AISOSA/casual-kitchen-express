@@ -25,7 +25,13 @@ const STYLE = {
   light: "https://tiles.openfreemap.org/styles/positron",
   dark: "https://tiles.openfreemap.org/styles/dark",
 };
-const CREDIT_URL = "https://www.openstreetmap.org/copyright";
+// Each name in the credit opens its own page (OpenMapTiles' licence asks for a link to
+// openmaptiles.org; OpenStreetMap's for its copyright page).
+const CREDITS = [
+  { label: "OpenFreeMap", url: "https://openfreemap.org/" },
+  { label: "© OpenMapTiles", url: "https://openmaptiles.org/" },
+  { label: "© OpenStreetMap contributors", url: "https://www.openstreetmap.org/copyright" },
+];
 
 const lngLat = (p: LatLng): LngLat => [p.lng, p.lat];
 
@@ -161,12 +167,19 @@ export function CkeMap({
           ) : null}
         </Map>
       </View>
-      <Text
-        style={[styles.credit, { color: t.muted }]}
-        onPress={() => void Linking.openURL(CREDIT_URL)}
-        accessibilityRole="link"
-      >
-        OpenFreeMap · © OpenMapTiles · © OpenStreetMap contributors
+      <Text style={[styles.credit, { color: t.muted }]}>
+        {CREDITS.map((c, i) => (
+          <Text key={c.url}>
+            {i ? " · " : ""}
+            <Text
+              onPress={() => void Linking.openURL(c.url)}
+              accessibilityRole="link"
+              style={{ textDecorationLine: "underline" }}
+            >
+              {c.label}
+            </Text>
+          </Text>
+        ))}
       </Text>
     </View>
   );

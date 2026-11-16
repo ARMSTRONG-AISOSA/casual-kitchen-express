@@ -3,7 +3,16 @@ import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { AREAS } from "../src/data/menu";
 import { useCustomerOps } from "../src/state/live";
-import { APPROX_BOUNDARY, AREA_CENTRE, inRange, OUTSIDE_EXAMPLE } from "../src/data/geo";
+import * as Location from "expo-location";
+import { LocateFixed } from "lucide-react-native";
+import {
+  APPROX_BOUNDARY,
+  AREA_CENTRE,
+  inRange,
+  nearestArea,
+  OUTSIDE_EXAMPLE,
+} from "../src/data/geo";
+import { useTheme } from "../src/state/theme";
 import { useStore, type Address } from "../src/state/store";
 import { Button, Chip, Field, Notice, Screen, T, TopBar } from "../src/ui/kit";
 import { CkeMap } from "../src/ui/map";
@@ -25,6 +34,39 @@ export default function AddressScreen() {
   const boundary = s.boundary ?? APPROX_BOUNDARY;
   const ok = inRange(draft.pin, boundary);
   const edit = (p: Partial<Address>) => setDraft((d) => ({ ...d, ...p }));
+  const t = useTheme();
+  const [locating, setLocating] = useState(false);
+
+  // One reading of where the phone is, only when asked (design.md 4.3). No tracking: the
+  // permission is "while using the app" and nothing runs in the background.
+  const locateMe = async () => {
+    setLocating(true);
+    try {
+      let perm = await Location.getForegroundPermissionsAsync();
+      if (!perm.granted && perm.canAskAgain)
+        perm = await Location.requestForegroundPermissionsAsync();
+      if (!perm.granted) {
+        toast("Location is off for CKE. Tap the map to place your pin instead.");
+        return;
+      }
+      const here =
+        (await Promise.race([
+          Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
+          new Promise<null>((r) => setTimeout(() => r(null), 15_000)),
+        ])) ?? (await Location.getLastKnownPositionAsync());
+      if (!here) {
+        toast("Couldn’t find your location. Tap the map to place your pin instead.");
+        return;
+      }
+      const pin = { lat: here.coords.latitude, lng: here.coords.longitude };
+      const area = nearestArea(pin);
+      edit({ pin, ...(area && AREAS.includes(area) ? { area } : {}) });
+    } catch {
+      toast("Couldn’t find your location. Tap the map to place your pin instead.");
+    } finally {
+      setLocating(false);
+    }
+  };
 
   return (
     <Screen
@@ -70,6 +112,15 @@ export default function AddressScreen() {
           (tap the map to move it)
         </T>
       </T>
+      <Button
+        label={locating ? "Finding you…" : "Use my current location"}
+        variant="ghost"
+        small
+        disabled={locating}
+        icon={<LocateFixed size={18} color={t.text} />}
+        onPress={() => void locateMe()}
+        style={{ marginBottom: 10 }}
+      />
       <CkeMap
         pin={draft.pin}
         boundary={boundary}

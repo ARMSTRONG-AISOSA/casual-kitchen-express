@@ -49,3 +49,17 @@ export function inRange({ lat, lng }: LatLng, poly: [number, number][] = APPROX_
   }
   return inside;
 }
+
+/** The area whose centre is nearest a point: the first guess after "Use my current location". */
+export function nearestArea(p: LatLng): string | null {
+  let best: string | null = null;
+  let bestD = Infinity;
+  for (const [name, c] of Object.entries(AREA_CENTRE)) {
+    const d = (c.lat - p.lat) ** 2 + ((c.lng - p.lng) * Math.cos((p.lat * Math.PI) / 180)) ** 2;
+    if (d < bestD) {
+      bestD = d;
+      best = name;
+    }
+  }
+  return best;
+}
