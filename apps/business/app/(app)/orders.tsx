@@ -114,7 +114,10 @@ export default function Orders() {
               {clock(o.placedAt)}
             </T>
             <T style={{ flex: 1, minWidth: 160 }} numberOfLines={1}>
-              {o.channel === "walkin" ? `Walk-in${o.name ? `, ${o.name}` : ""}` : o.customerId}
+              {o.practice ? "Practice, " : ""}
+              {o.channel === "walkin"
+                ? `Walk-in${o.name && !o.practice ? `, ${o.name}` : ""}`
+                : o.customerId}
             </T>
             <T bold style={{ width: 90, textAlign: "right" }}>
               {naira(orderTotal(o))}

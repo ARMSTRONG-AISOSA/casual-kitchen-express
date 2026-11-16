@@ -107,7 +107,15 @@ export function mapOrder(o: StaffOrder, prev?: Order): Order {
     cashReceived: o.payment?.cashReceived ?? prev?.cashReceived,
     placedAt: ms(o.placedAt),
     customerId: o.customer?.code,
-    name: o.channel === "walkin" ? (o.label ?? undefined) : o.customer?.name,
+    practice: o.practice,
+    // Practice orders (Demo controls, 18.4) say so wherever the name shows.
+    name: o.practice
+      ? o.channel === "walkin"
+        ? "Practice"
+        : `Practice: ${o.customer?.name ?? "demo customer"}`
+      : o.channel === "walkin"
+        ? (o.label ?? undefined)
+        : o.customer?.name,
     customerPhone: o.customer?.phone ?? prev?.customerPhone,
     address: o.customer?.address ?? prev?.address,
     riderId: o.rider?.code,
@@ -143,6 +151,7 @@ export function mapRow(r: OrderRow, prev?: Order): Order {
   return {
     no: r.number,
     id: r.id,
+    practice: r.practice,
     channel: r.channel,
     type: TYPE[r.type],
     status: stageOf(r.status),

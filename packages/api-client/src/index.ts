@@ -190,6 +190,7 @@ export type OrderRow = Pick<
   | "paymentMethod"
   | "placedAt"
   | "label"
+  | "practice"
 > & { customerCode: string | null; customerName: string | null; enteredByCode: string | null };
 
 export type AlertView = {

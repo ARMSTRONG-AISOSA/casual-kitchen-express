@@ -237,6 +237,7 @@ export const orders = new Hono<Ctx>()
           paymentMethod: t.order.paymentMethod,
           placedAt: t.order.placedAt,
           label: t.order.label,
+          practice: t.order.practice,
           customerCode: t.customerProfile.code,
           customerName: t.customerProfile.name,
           enteredByCode: t.staffProfile.code,

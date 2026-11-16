@@ -1,4 +1,7 @@
-import { useEffect, useState } from "react";
+import type { DemoState } from "@cke/api-client";
+import { ApiError } from "@cke/api-client";
+import { useCallback, useEffect, useState } from "react";
+import { api } from "../../src/api";
 import { CUSTOMERS, MENU, type Order } from "../../src/data/seed";
 import { initial, useStore } from "../../src/state/store";
 import { Button, Card, Chip, Chips, Page, Section, Sheet, SwitchRow, T } from "../../src/ui/kit";
@@ -84,15 +87,7 @@ export default function Demo() {
         </Card>
       </Section>
       {s.live ? (
-        <Section title="Practice orders">
-          <Card style={{ marginTop: 0 }}>
-            <T muted>
-              This tablet is on the live kitchen, so every order here is real. Practice orders,
-              auto-play, and Reset come back with the live simulator. To try an order now, place one
-              in the customer app.
-            </T>
-          </Card>
-        </Section>
+        <LivePractice />
       ) : (
         <>
           <Section title="Practice orders">
@@ -149,5 +144,112 @@ export default function Demo() {
         {initial().orders.length} orders in the starting data.
       </T>
     </Page>
+  );
+}
+
+/**
+ * Practice orders on the live kitchen (build step 7, architecture.md 18.4): pretend online orders
+ * from the demo customers and pretend walk-ins go into the real board, marked "Practice", and the
+ * simulator on the server moves only those along. Real orders are never touched.
+ */
+function LivePractice() {
+  const toast = useToast();
+  const [st, setSt] = useState<DemoState | null>(null);
+  const [confirm, setConfirm] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const refresh = useCallback(() => {
+    void api
+      ?.demoState()
+      .then(setSt)
+      .catch(() => {});
+  }, []);
+  useEffect(refresh, [refresh]);
+
+  const run = async (call: () => Promise<unknown>, done?: (r: never) => string) => {
+    setBusy(true);
+    try {
+      const r = await call();
+      if (done) toast(done(r as never));
+    } catch (e) {
+      toast(e instanceof ApiError ? e.message : "Can’t reach CKE right now. Try again.");
+    } finally {
+      setBusy(false);
+      refresh();
+    }
+  };
+  const place = (kind: "online" | "walkin") =>
+    run(
+      () => api!.practiceOrder(kind),
+      (r: { order: { number: string } }) => `Practice order ${r.order.number} placed`,
+    );
+  const autoplay = (auto: boolean, speed: 1 | 5 | 20) => run(() => api!.setAutoplay(auto, speed));
+
+  return (
+    <>
+      <Section title="Practice orders">
+        <Card style={{ marginTop: 0 }}>
+          <Button label="New online order" disabled={busy} onPress={() => void place("online")} />
+          <T v="small" muted style={{ marginTop: 8 }}>
+            A pretend customer order on the Board, marked Practice. Riders see it in their queue.
+          </T>
+          <Button
+            label="New walk-in order"
+            variant="ghost"
+            disabled={busy}
+            style={{ marginTop: 12 }}
+            onPress={() => void place("walkin")}
+          />
+          <SwitchRow
+            label="Auto-play"
+            hint="A simulated kitchen and rider move practice orders along. Real orders are never touched."
+            value={!!st?.auto}
+            onChange={(on) => void autoplay(on, st?.speed ?? 1)}
+          />
+          <T v="label" style={{ marginTop: 12 }}>
+            Speed
+          </T>
+          <Chips style={{ marginTop: 8 }}>
+            {([1, 5, 20] as const).map((n) => (
+              <Chip
+                key={n}
+                label={`${n}x`}
+                selected={(st?.speed ?? 1) === n}
+                onPress={() => void autoplay(!!st?.auto, n)}
+              />
+            ))}
+          </Chips>
+          <T v="small" muted style={{ marginTop: 10 }}>
+            {st
+              ? st.open
+                ? `${st.open} practice order${st.open === 1 ? "" : "s"} in progress.`
+                : "No practice orders in progress."
+              : " "}
+          </T>
+        </Card>
+      </Section>
+      <Section title="Reset">
+        <Button label="Remove practice orders" variant="ghost" onPress={() => setConfirm(true)} />
+        <T v="small" muted style={{ marginTop: 8 }}>
+          Takes every practice order off the Board and the reports. Real orders and the history
+          stay.
+        </T>
+      </Section>
+      <Sheet visible={confirm} onClose={() => setConfirm(false)} title="Remove practice orders?">
+        <T muted>Every practice order goes, with its alerts and refunds. Real orders stay.</T>
+        <Button
+          label="Remove"
+          variant="danger"
+          style={{ marginTop: 16 }}
+          onPress={() => {
+            setConfirm(false);
+            void run(
+              () => api!.resetPractice(),
+              (r: { removed: number }) =>
+                `${r.removed} practice order${r.removed === 1 ? "" : "s"} removed`,
+            );
+          }}
+        />
+      </Sheet>
+    </>
   );
 }

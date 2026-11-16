@@ -397,6 +397,8 @@ export type Event = { label: string; at: number; by: string; byName?: string };
 
 export type Order = {
   no: string;
+  /** A practice order from Demo controls (18.4). */
+  practice?: boolean;
   channel: "online" | "walkin";
   type: "delivery" | "pickup" | "eatin" | "takeaway";
   status: OrderStatus;
