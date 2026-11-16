@@ -34,7 +34,8 @@
           "cameraPermission": "CKE uses the camera to take a profile picture."
         }
       ],
-      "../../tools/expo-plugins/with-android-architectures.js"
+      "../../tools/expo-plugins/with-android-architectures.js",
+      "@maplibre/maplibre-react-native"
     ]
   }
 }

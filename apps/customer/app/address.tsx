@@ -3,10 +3,10 @@ import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { AREAS } from "../src/data/menu";
 import { useCustomerOps } from "../src/state/live";
-import { inRange, type Point } from "../src/data/geo";
+import { APPROX_BOUNDARY, AREA_CENTRE, inRange, OUTSIDE_EXAMPLE } from "../src/data/geo";
 import { useStore, type Address } from "../src/state/store";
 import { Button, Chip, Field, Notice, Screen, T, TopBar } from "../src/ui/kit";
-import { MapStandIn } from "../src/ui/map";
+import { CkeMap } from "../src/ui/map";
 import { useToast } from "../src/ui/toast";
 
 // Address entry without search: pick an area, drop a pin, add a landmark (design.md 4.3, architecture.md 14.3).
@@ -19,9 +19,11 @@ export default function AddressScreen() {
   const outside = example === "outside";
   const [draft, setDraft] = useState<Address>({
     ...s.address,
-    ...(outside ? { pin: [312, 16] as Point, area: "Other area in range" } : {}),
+    ...(outside ? { pin: OUTSIDE_EXAMPLE, area: "Other area in range" } : {}),
   });
-  const ok = inRange(draft.pin);
+  // The boundary drawn in Settings, or a rough outline until then (4.7).
+  const boundary = s.boundary ?? APPROX_BOUNDARY;
+  const ok = inRange(draft.pin, boundary);
   const edit = (p: Partial<Address>) => setDraft((d) => ({ ...d, ...p }));
 
   return (
@@ -52,7 +54,13 @@ export default function AddressScreen() {
       </T>
       <View style={styles.chips}>
         {AREAS.map((a) => (
-          <Chip key={a} label={a} selected={draft.area === a} onPress={() => edit({ area: a })} />
+          <Chip
+            key={a}
+            label={a}
+            selected={draft.area === a}
+            // The pin moves to the area, so most people only need to nudge it.
+            onPress={() => edit({ area: a, pin: AREA_CENTRE[a] ?? draft.pin })}
+          />
         ))}
       </View>
 
@@ -62,11 +70,12 @@ export default function AddressScreen() {
           (tap the map to move it)
         </T>
       </T>
-      <MapStandIn
+      <CkeMap
         pin={draft.pin}
-        boundary
+        boundary={boundary}
         onPick={(pin) => edit({ pin })}
-        label="Map of the delivery area with your pin. Tap to move the pin."
+        focus={draft.area}
+        label={`Map of the delivery area with your pin in ${draft.area}. Tap the map to move the pin.`}
       />
 
       {!ok ? (

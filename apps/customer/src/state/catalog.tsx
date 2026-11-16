@@ -39,6 +39,9 @@ function CatalogSync() {
         soups: b.soups.map((x) => x.name),
         soupToday: b.soupOfTheDay?.name ?? b.soups[0]?.name ?? "",
         catalogFrom: "api",
+        // The delivery boundary for the address map, once drawn in Settings (4.7).
+        boundary: b.boundary?.length ? b.boundary : null,
+        trackingMode: b.settings.trackingMode,
         // Dish photos by name, and each soup's own photo, which the soup dishes show (KIT-17).
         photos: Object.fromEntries(
           [...b.menu.flatMap((c) => c.items), ...b.soups].flatMap((x) =>

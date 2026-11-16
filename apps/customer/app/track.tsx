@@ -13,16 +13,14 @@ import {
   PICKUP_STEPS,
   WHATSAPP_URL,
 } from "../src/data/order";
-import type { Point } from "../src/data/geo";
+import { AREA_CENTRE, KITCHEN, type LatLng } from "../src/data/geo";
 import { useCustomerOps } from "../src/state/live";
 import { useStore } from "../src/state/store";
 import { useTheme } from "../src/state/theme";
 import { Button, Checkbox, Notice, Option, QuietLink, Screen, T, TopBar } from "../src/ui/kit";
-import { MapStandIn } from "../src/ui/map";
+import { CkeMap } from "../src/ui/map";
 import { Sheet } from "../src/ui/sheet";
 import { useToast } from "../src/ui/toast";
-
-const CUSTOMER_PIN: Point = [205, 104];
 
 // Order tracking (CUS-08 to CUS-11). Cancelling follows architecture.md 4.6: a quiet link, a reason,
 // and a tick; a request after the kitchen acknowledges; nothing once the food is ready.
@@ -57,8 +55,22 @@ export default function TrackScreen() {
     : !o.cancelled && !done && st <= 1 && !limited;
   const canRequest = !o.cancelled && !done && !o.requested && st <= 3 && (!canCancel || limited);
   const code = ops.live ? (o.code ?? "") : DEMO_DELIVERY_CODE;
-  const rider: Point | undefined =
-    st >= 8 ? CUSTOMER_PIN : st === 7 ? [196, 110] : st === 6 ? [172, 124] : undefined;
+  // Where it's going, and the rider's last position. The demo moves a pretend rider along the
+  // way from the kitchen: a third of the way on the way, most of the way when arriving.
+  const pin: LatLng = o.pin ?? s.address.pin ?? AREA_CENTRE.Ekosodin!;
+  const along = (f: number): LatLng => ({
+    lat: KITCHEN.lat + (pin.lat - KITCHEN.lat) * f,
+    lng: KITCHEN.lng + (pin.lng - KITCHEN.lng) * f,
+  });
+  const rider: LatLng | null = ops.live
+    ? (o.rider?.position ?? null)
+    : st === 7
+      ? along(0.85)
+      : st === 6
+        ? along(0.35)
+        : null;
+  const riderName = ops.live ? o.rider?.firstName : "Musa";
+  const stops = ops.live && o.rider && o.rider.stops > 1 ? o.rider : null;
 
   const openSheet = (kind: "cancel" | "request") => {
     setReason(null);
@@ -148,10 +160,27 @@ export default function TrackScreen() {
 
       {o.mode === "delivery" && st >= 6 && !done && !o.cancelled ? (
         <View style={{ marginTop: 14 }}>
-          <MapStandIn pin={CUSTOMER_PIN} rider={rider} label="Map showing your rider on the way" />
+          <CkeMap
+            pin={pin}
+            rider={rider}
+            label={
+              rider
+                ? "Map showing your rider on the way to your address"
+                : "Map of the kitchen and your address"
+            }
+          />
           <T v="small" muted style={{ marginTop: 6 }}>
-            The rider’s position updates about every 45 seconds.
+            {s.trackingMode === "milestones"
+              ? "Your rider’s position isn’t shared. The steps below show where your order is."
+              : rider
+                ? "Your rider’s position updates about every 45 seconds."
+                : "Your rider’s position shows here once they’re on the move."}
           </T>
+          {stops ? (
+            <T v="small" muted style={{ marginTop: 2 }}>
+              Your order is stop {stops.stop} of {stops.stops}.
+            </T>
+          ) : null}
         </View>
       ) : null}
 
@@ -182,8 +211,11 @@ export default function TrackScreen() {
               </View>
               <View style={{ flex: 1, paddingBottom: 14, opacity: faded ? 0.4 : 1 }}>
                 <T v={isNow ? "label" : "body"} muted={!reached}>
-                  {/* Live, the rider's name isn't sent to customers yet; the demo names one. */}
-                  {ops.live && label.startsWith("Rider assigned") ? "Rider assigned" : label}
+                  {label.startsWith("Rider assigned")
+                    ? riderName
+                      ? `Rider assigned: ${riderName}`
+                      : "Rider assigned"
+                    : label}
                 </T>
                 {reached ? (
                   <T v="small" muted>

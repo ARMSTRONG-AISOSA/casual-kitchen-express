@@ -1,4 +1,10 @@
-import { ApiError, type Bootstrap, type MyAddress, type MyOrder } from "@cke/api-client";
+import {
+  ApiError,
+  type Bootstrap,
+  type CustomerLiveMessage,
+  type MyAddress,
+  type MyOrder,
+} from "@cke/api-client";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { AppState } from "react-native";
 import { api } from "../api";
@@ -21,20 +27,6 @@ import {
 // and asks again when the app comes back from the background. Checkout, cancelling, requests, and
 // ratings go to the API, which prices every order itself and answers in plain English.
 
-// Approximate centres of the delivery areas (the same as the demo history's), used for a saved
-// address until the real map places the pin (build step 6d).
-const AREA_CENTRE: Record<string, [number, number]> = {
-  Ugbowo: [6.4015, 5.61],
-  Ekosodin: [6.4065, 5.6185],
-  "BDPA estate": [6.411, 5.604],
-  Osasogie: [6.3925, 5.625],
-  Uselu: [6.38, 5.6165],
-  Uwelu: [6.377, 5.595],
-  Isihor: [6.423, 5.588],
-  Idunmwowina: [6.438, 5.572],
-  Iguosa: [6.452, 5.559],
-  "Oluku (up to Oluku Market)": [6.466, 5.547],
-};
 
 /** The step each status reaches on the tracking screen (data/order.ts). */
 const DELIVERY_STEP: Partial<Record<MyOrder["status"], number>> = {
@@ -123,6 +115,17 @@ export function fromMyOrder(v: MyOrder): Order {
     code: v.deliveryCode,
     stepAt,
     canCancel: v.canCancel,
+    pin: v.address ? { lat: v.address.lat, lng: v.address.lng } : undefined,
+    rider: v.rider
+      ? {
+          firstName: v.rider.firstName,
+          stop: v.rider.stop,
+          stops: v.rider.stops,
+          position: v.rider.position
+            ? { lat: v.rider.position.lat, lng: v.rider.position.lng }
+            : null,
+        }
+      : null,
   };
 }
 
@@ -162,12 +165,12 @@ export function toPast(v: MyOrder): PastOrder {
   };
 }
 
-const toAddress = (a: MyAddress, prev: Address): Address => ({
+const toAddress = (a: MyAddress): Address => ({
   label: (["Home", "Work"].includes(a.label) ? a.label : "Other") as Address["label"],
   area: a.neighbourhood,
   landmark: a.landmark ?? a.street ?? "",
   phone: a.contactPhone,
-  pin: prev.pin, // the drawn map's pin stays until the real map arrives (6d)
+  pin: { lat: a.lat, lng: a.lng },
 });
 
 let reloadNow: () => Promise<void> = async () => {};
@@ -216,7 +219,7 @@ export function CustomerLive() {
         history: history.orders.filter((o) => o.id !== kept?.id).map(toPast),
         hasAddress: !!home,
         addressId: home?.id,
-        address: home ? toAddress(home, st.address) : st.address,
+        address: home ? toAddress(home) : st.address,
         returning: history.orders.length > 0 || !!current || st.returning,
         recentCancels: 0,
       };
@@ -256,8 +259,17 @@ export function CustomerLive() {
       };
       ws.onmessage = (e) => {
         try {
-          const m = JSON.parse(String(e.data)) as { type: string; order?: MyOrder };
-          if (m.type === "order" && m.order) {
+          const m = JSON.parse(String(e.data)) as CustomerLiveMessage;
+          if (m.type === "rider-location") {
+            // The rider moved (about every 45 seconds, CUS-09): only the marker changes.
+            const at = { lat: m.lat, lng: m.lng };
+            const move = (o: Order): Order =>
+              o.id === m.orderId && o.rider ? { ...o, rider: { ...o.rider, position: at } } : o;
+            set((st) => ({
+              order: st.order && move(st.order),
+              others: st.others.map(move),
+            }));
+          } else if (m.type === "order" && m.order) {
             const v = m.order;
             set((st) => {
               const o = fromMyOrder(v);
@@ -447,8 +459,7 @@ export function useCustomerOps() {
         }
         if (!catalog) catalog = await api!.bootstrap();
         const area = catalog.areas.find((x) => x.name === a.area);
-        const centre = AREA_CENTRE[a.area];
-        if (!area || !centre) {
+        if (!area) {
           toast("Pick your area from the list");
           return false;
         }
@@ -457,8 +468,8 @@ export function useCustomerOps() {
           landmark: a.landmark || undefined,
           neighbourhoodId: area.id,
           contactPhone: a.phone,
-          lat: centre[0],
-          lng: centre[1],
+          lat: a.pin.lat,
+          lng: a.pin.lng,
           isDefault: true,
         };
         try {
@@ -469,7 +480,7 @@ export function useCustomerOps() {
           set((st) => ({
             hasAddress: true,
             addressId: home?.id,
-            address: home ? toAddress(home, a) : a,
+            address: home ? toAddress(home) : a,
           }));
           return true;
         } catch (e) {

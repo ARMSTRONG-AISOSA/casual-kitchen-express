@@ -12,7 +12,7 @@ import {
   type ProteinId,
   type SwallowId,
 } from "../data/menu";
-import type { Point } from "../data/geo";
+import { AREA_CENTRE, type LatLng } from "../data/geo";
 
 // In-app state for building the screens against mock data. It moves to the API
 // (with TanStack Query) once the backend exists.
@@ -25,7 +25,8 @@ export type Address = {
   area: string;
   landmark: string;
   phone: string;
-  pin: Point;
+  /** The map pin (build step 6d). */
+  pin: LatLng;
 };
 export type Order = {
   no: string;
@@ -48,6 +49,10 @@ export type Order = {
   stepAt?: (number | undefined)[];
   /** The kitchen hasn't acknowledged yet, so the customer can still cancel on their own (4.6). */
   canCancel?: boolean;
+  /** Where it's going, for the map. */
+  pin?: LatLng;
+  /** The rider once one has it: first name, "stop 2 of 3", and after pickup the last position. */
+  rider?: { firstName: string; stop: number; stops: number; position: LatLng | null } | null;
 };
 export type PastOrder = {
   no: string;
@@ -81,6 +86,10 @@ export type State = {
   soupToday: string;
   /** Where the menu data came from: the API, or the demo data in the app. */
   catalogFrom: "api" | "demo";
+  /** The delivery boundary from Settings ([lng, lat] points); null until drawn (4.7). */
+  boundary: [number, number][] | null;
+  /** Light shares the rider's position after pickup; Milestones only shows the steps (7.1 rule 12). */
+  trackingMode: "light" | "milestones";
   /** Photo addresses by dish or soup name, from the API. Empty means placeholders. */
   photos: Record<string, string>;
   fee: number;
@@ -118,7 +127,7 @@ export const initialState: State = {
     area: "Ekosodin",
     landmark: "Blue gate after Ekosodin Market",
     phone: "0803 555 0142",
-    pin: [168, 122],
+    pin: AREA_CENTRE.Ekosodin!,
   },
   cart: [],
   mode: "delivery",
@@ -126,6 +135,8 @@ export const initialState: State = {
   soups: SOUPS,
   soupToday: "Egusi",
   catalogFrom: "demo",
+  boundary: null,
+  trackingMode: "light",
   photos: {},
   fee: DEFAULTS.deliveryFee,
   pay: "card",
