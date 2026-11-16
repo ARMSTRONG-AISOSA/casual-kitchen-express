@@ -3,5 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "license": "MIT",
-  "description": "Static site for GitHub Pages. Plain HTML, CSS, and JavaScript with no packages (architecture.md 5.4)."
+  "description": "Static site for GitHub Pages. Plain HTML, CSS, and JavaScript with no packages (architecture.md 5.4).",
+  "devDependencies": {
+    "@playwright/test": "1.64.1"
+  },
+  "scripts": {
+    "test": "playwright test",
+    "serve": "node tests/serve.mjs"
+  }
 }

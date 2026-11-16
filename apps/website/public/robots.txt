@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://armstrong-aisosa.github.io/casual-kitchen-express/sitemap.xml

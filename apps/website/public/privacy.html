@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Privacy – Casual Kitchen Express</title>
+    <meta
+      name="description"
+      content="What Casual Kitchen Express collects, why, who helps us run the apps, and how to delete your data."
+    />
+    <link
+      rel="canonical"
+      href="https://armstrong-aisosa.github.io/casual-kitchen-express/privacy.html"
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Casual Kitchen Express" />
+    <meta property="og:title" content="Privacy – Casual Kitchen Express" />
+    <meta
+      property="og:description"
+      content="What Casual Kitchen Express collects, why, who helps us run the apps, and how to delete your data."
+    />
+    <meta
+      property="og:url"
+      content="https://armstrong-aisosa.github.io/casual-kitchen-express/privacy.html"
+    />
+    <meta
+      property="og:image"
+      content="https://armstrong-aisosa.github.io/casual-kitchen-express/img/cke-share.png"
+    />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="Casual Kitchen Express. Tastes like home. Arrives fast."
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" href="favicon.ico" sizes="48x48" />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+    <link rel="manifest" href="site.webmanifest" />
+    <meta name="theme-color" content="#292522" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Nunito:wght@700;800;900&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/site.css" />
+    <script>
+      try {
+        var t = localStorage.getItem("cke-site-theme");
+        if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+      } catch (e) {}
+    </script>
+    <script src="js/site.js" defer></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <header class="site-head">
+      <div class="wrap">
+        <a class="brand" href="index.html" aria-label="Casual Kitchen Express home"
+          ><img src="img/cke-logo-horizontal-charcoal.svg" width="186" height="37" alt=""
+        /></a>
+        <button
+          class="menu-btn"
+          id="menuBtn"
+          type="button"
+          aria-expanded="false"
+          aria-controls="siteNav"
+        >
+          Menu
+        </button>
+        <nav class="site-nav" id="siteNav" aria-label="Main">
+          <a href="index.html">Home</a><a href="about.html">About</a><a href="app.html">The app</a
+          ><a href="faq.html">FAQ</a><a class="get" href="app.html#download">Get the app</a>
+        </nav>
+      </div>
+    </header>
+    <main id="main">
+      <header class="page-head">
+        <div class="wrap">
+          <h1>Privacy</h1>
+          <p>What we collect, why, and how to remove it. Last updated 16 November 2026.</p>
+        </div>
+      </header>
+      <div class="wrap block prose">
+        <p>
+          This covers the Casual Kitchen Express customer app, rider app, and business app, and this
+          website. We collect only what we need to cook and deliver your food. We don’t sell your
+          details, show ads, or use tracking or analytics tools.
+        </p>
+        <h2>What we collect from customers</h2>
+        <ul>
+          <li>
+            <b>Your name, email address, and Google profile picture</b>, from your Google account
+            when you sign in, so we know whose order it is.
+          </li>
+          <li>
+            <b>Your phone number and delivery addresses</b> (area, map pin, and landmark), so the
+            rider can find you and call if needed.
+          </li>
+          <li><b>Your gender</b>, only if you choose to give it.</li>
+          <li>
+            <b>A profile photo</b>, only if you add one. It’s made smaller on your phone before
+            upload.
+          </li>
+          <li>
+            <b>Your orders and ratings</b>, so you can track and reorder, and so the kitchen can
+            improve.
+          </li>
+          <li>
+            <b>A notification token</b> for your phone, so we can tell you when your order moves on.
+          </li>
+        </ul>
+        <h2>Payments</h2>
+        <p>
+          The app currently uses demo payments. No real card or bank details are collected or
+          stored, and no money is taken.
+        </p>
+        <h2>Location</h2>
+        <p>
+          <b>Customers:</b> the app reads your location only when you tap
+          <b>Use my current location</b>, once, to place your map pin. We keep only the pin you
+          save.
+        </p>
+        <p>
+          <b>Riders:</b> while carrying an order, the rider app shares the rider’s position about
+          every 45 seconds, with a notification showing the whole time, so the customer can follow
+          the food on the map. Only that customer sees it. Sharing stops, and the position is
+          deleted, when the delivery ends or the rider goes offline.
+        </p>
+        <h2>Notifications</h2>
+        <p>
+          Notifications reach your phone through Expo’s push service and Google’s Firebase Cloud
+          Messaging. They carry order updates only. Your phone’s token is removed when you sign out.
+        </p>
+        <h2>Staff</h2>
+        <p>
+          For our riders and kitchen staff we keep a name, phone number, staff ID, and optionally
+          gender, home address, and a photo. Only managers and the person themself can see these
+          details.
+        </p>
+        <h2>Services we use</h2>
+        <ul>
+          <li><b>Google</b>, for sign-in and for delivering notifications (Firebase).</li>
+          <li><b>Expo</b>, for sending notifications to the apps.</li>
+          <li><b>Cloudflare</b>, which runs our server and stores photos.</li>
+          <li><b>Neon</b>, which hosts our database.</li>
+          <li>
+            <b>OpenFreeMap</b>, for the map. Your phone loads map images from their servers, so they
+            see your IP address, as any website does.
+          </li>
+          <li><b>GitHub</b>, which hosts this website and the app downloads.</li>
+        </ul>
+        <h2>How long we keep it</h2>
+        <p>
+          We keep your details while your account is open. If you deactivate your account, it’s
+          hidden until you sign in and reactivate it.
+        </p>
+        <h2>Deleting your data</h2>
+        <p>
+          Delete your account from Profile in the app, with <b>Delete my account</b>. We remove your
+          name, email, phone number, addresses, photo, and notification tokens. Past orders stay in
+          our records without your details, for the kitchen’s accounts. You can also ask us to
+          delete your data using the contacts below.
+        </p>
+        <h2>This website</h2>
+        <p>
+          The site sets no cookies. If you change the theme, your choice is kept in your own
+          browser. Its fonts load from Google Fonts, and the App page asks GitHub for the latest
+          release, so both see your IP address. GitHub, which hosts the site, may keep visit logs.
+        </p>
+        <h2>Changes</h2>
+        <p>If we change this policy, we’ll update it here and change the date at the top.</p>
+        <h2>Questions</h2>
+        <p>
+          Message us on
+          <a href="https://wa.me/2349095466063" target="_blank" rel="noopener">WhatsApp</a>.
+        </p>
+      </div>
+    </main>
+
+    <footer class="site-foot">
+      <div class="wrap">
+        <div class="cols">
+          <div>
+            <img
+              class="foot-logo"
+              src="img/cke-logo-horizontal-charcoal.svg"
+              width="186"
+              height="37"
+              alt="Casual Kitchen Express"
+            />
+            <p style="margin: 14px 0 0; color: var(--band-muted); max-width: 28ch">
+              Tastes like home. Arrives fast.
+            </p>
+          </div>
+          <div>
+            <h2>Contact</h2>
+            <ul>
+              <li>
+                <a href="https://wa.me/2349095466063" target="_blank" rel="noopener">WhatsApp</a>
+              </li>
+              <!-- contact-email -->
+              <li>
+                <a
+                  href="https://www.linkedin.com/in/armstrong-omoregie-02367a271/"
+                  target="_blank"
+                  rel="noopener"
+                  >LinkedIn</a
+                >
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h2>Pages</h2>
+            <ul>
+              <li><a href="about.html">About</a></li>
+              <li><a href="app.html">The app</a></li>
+              <li><a href="faq.html">FAQ</a></li>
+              <li><a href="privacy.html">Privacy</a></li>
+            </ul>
+          </div>
+          <div>
+            <h2>Developer</h2>
+            <ul>
+              <li>
+                <a href="https://bossstrong-dev.vercel.app/" target="_blank" rel="noopener"
+                  >Built by bossstrong-dev</a
+                >
+              </li>
+              <li>
+                <a href="https://github.com/ARMSTRONG-AISOSA" target="_blank" rel="noopener"
+                  >GitHub</a
+                >
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="legal">
+          <span
+            >© 2026 Casual Kitchen Express. Code released under the
+            <a
+              href="https://github.com/ARMSTRONG-AISOSA/casual-kitchen-express/blob/main/LICENSE"
+              target="_blank"
+              rel="noopener"
+              >MIT licence</a
+            >.</span
+          ><span
+            ><a href="privacy.html">Privacy</a>
+            <button class="theme-btn" id="themeBtn" type="button">
+              Theme: follow device
+            </button></span
+          >
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>
