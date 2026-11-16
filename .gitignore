@@ -36,3 +36,6 @@ playwright-report/
 *.swp
 .~lock.*#
 apps/api/seed-media/incoming/
+
+# Firebase config for push (owner-side setup, step 6d)
+google-services.json
