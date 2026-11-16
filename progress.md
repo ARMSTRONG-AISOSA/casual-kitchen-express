@@ -134,7 +134,7 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and thr
 
 - **Temporary test customer (15 November 2026):** `tablet.test` (user ID `tablet-test-customer`, email `tablet.test@example.com`) in the laptop database only, for placing real online orders while testing step 6 before the customer app is connected. Delete it and its orders when step 6c is tested (`deleteOrders` in `apps/api/test/cleanup.ts`, then the `account`, `customer_profile`, `address`, and `user` rows).
 - **Test orders on the tablet (16 November 2026):** O-3233 (the test customer’s, ready, in the queue) and the practice orders O-3231 and O-3232 (removed with Demo controls, Remove practice orders). Delete O-3233 with the test customer.
-- **Tablet test settings (16 November 2026):** for testing riders' location on the tablet (it has no location fix indoors), the shell was allowed mock locations and test `gps` and `network` providers were added; the tablet was also set to stay awake while charging. Undo after testing: `adb shell cmd location providers remove-test-provider gps`, the same for `network`, `adb shell appops set com.android.shell android:mock_location deny`, and `adb shell svc power stayon false`.
+- ~~**Tablet test settings (16 November 2026)**~~ **Removed 16 November 2026:** the test location providers, the shell’s mock-location permission, and stay-awake while charging are undone on the tablet.
 
 **Owner actions, in the order they will be needed**
 1. **Cloudflare account: done (14 November 2026).** Wrangler is logged in on the laptop (`npx wrangler whoami` shows the account). The early 16.1 checks are done (items 2 and 3). The workers.dev subdomain is `casualkitchenexpress`, and staff passwords use 30,000 iterations (owner, 14 November 2026).
@@ -1262,3 +1262,13 @@ Append a new dated entry after each work session. Never edit or delete earlier e
 **Open questions:** the real kitchen pin, delivery boundary, and area centres (owner collecting them); whether the API should check the boundary too; MGR-29’s full history regeneration stays a laptop command (`npm run db:seed-history`).
 
 **Next step:** the owner tests 6a to 7 on the tablet; then the cleanup in section 7; then step 8, the website.
+
+## [2026-11-16] The owner's kitchen pin and delivery boundary, Evbogida, and the tablet cleanup
+
+**What was done:**
+- **Pins from the owner:** the kitchen pin (6.400469, 5.608338) and the delivery boundary from the Uselu and Oluku pins and ten side points, widened west so Uwelu is in range (owner: “you can decide to add Uwelu”). They live in `@cke/validation` (`KITCHEN_PIN`, `DELIVERY_BOUNDARY`, `AREA_CENTRES`) and in the Setting row, so the API now refuses an address whose pin is outside the boundary even in an area in range; the customer app draws it, and the rider app measures distances from the real kitchen. The owner allowed narrowing the width around the expressway; it was kept as drawn, since narrowing would leave out more customers.
+- **Area centres** from OpenStreetMap (Nominatim, Photon, Overpass); BDPA estate and Osasogie are estimates to confirm. At the owner’s request for more areas between UNIBEN and Uselu, **Evbogida** (beside the Ogida barracks) was added; the others looked for were outside the boundary or not on the map (`list-of-areas.md` 3a).
+- **Tests:** a pin beyond the boundary is refused; the catalog test counts the area list. All pass (the three rider tests failed once because Musa was left online by the push test; with riders offline they pass).
+- **Cleanup:** the tablet’s test location settings and stay-awake were removed (section 7).
+
+**Next step:** the owner finishes testing; then the test customer and O-3233 are deleted (section 7); then step 8, the website.
