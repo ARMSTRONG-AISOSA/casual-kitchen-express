@@ -151,8 +151,8 @@ Everything is stopped: the API, the three app servers (Metro), the port-forwardi
 3. **Optional: your email on the website.** Run the one-line command in that same log entry, or leave it with WhatsApp and LinkedIn only.
 4. **Osasogie’s pin:** send it if you find it; it stays an estimate until then.
 5. **Website additions (owner request, 16 November 2026, to do next session):**
-   - **Light and dark mode button at the top:** move the theme switch from the footer into the header, next to Get the app (inside the Menu on phones). Claude builds it.
-   - **SEO:** a review of every page’s title, description, and headings, plus structured data that tells Google this is a restaurant (name, area, opening hours, delivery area). Claude builds it.
+   - ~~**Light and dark mode button at the top**~~ **Done 17 November 2026:** in the header on every page, after Get the app on wide screens and as an icon beside Menu on phones (one tap, not inside Menu).
+   - ~~**SEO**~~ **Done 17 November 2026:** titles, descriptions, and headings checked; Home now carries restaurant details for search engines (name, Ugbowo in Benin City, Nigerian food, prices, payments, the eleven delivery areas, and hours). The kitchen’s exact pin is left off the public site. **Owner to confirm:** the hours say every day, 8:00 am to 8:30 pm, because no closed days are written down anywhere; say if any day is different.
    - **Google Search Console (needs the site online):** add a **URL-prefix** property for `https://armstrong-aisosa.github.io/casual-kitchen-express/`. Choose the **HTML file** check, download the file, and send it to Claude. Claude adds it to the site and pushes. Then press **Verify** and, under **Sitemaps**, submit `sitemap.xml`. (A Domain property isn’t possible on a github.io address.)
    - **Bing Webmaster Tools (after Search Console):** sign in at bing.com/webmasters and choose **Import from Google Search Console**. That brings the site and its sitemap across, with nothing to verify again.
 6. **Step 9, the next build stage:** reports on real data, rider payouts, Finance, polish, the remaining checks (battery on a real phone, performance, contrast), Neon and Cloudflare deploy, and signed APKs on GitHub Releases.
@@ -1348,3 +1348,20 @@ Append a new dated entry after each work session. Never edit or delete earlier e
 **Open questions:** none.
 
 **Next step:** on resume, the website additions (theme button at the top, SEO), then step 9. Search Console and Bing wait until the site is online.
+
+## [2026-11-17] Resumed: the theme button at the top and SEO
+
+**What was done:**
+- Resumed: database, tablet (paired; it answered on port 45455, not the 45155 sent, found by checking the tablet’s open ports), API, and the port-forwarding loop. Metro isn’t started until an app is worked on.
+- **Theme button at the top (owner request):** moved from the footer into the header on every page. On wide screens it shows an icon and Auto, Light, or Dark after Get the app; on phones it is an icon button beside Menu, so changing the theme is one tap (fewest taps) rather than Menu then the switch.
+- **SEO (owner request):** the pages’ language is set to English (Nigeria) with a matching sharing locale, and Home carries schema.org Restaurant details (name, slogan, Ugbowo in Benin City, Edo, Nigerian food, ₦500 to ₦4,800, cash, card, or transfer, the eleven delivery areas, opening hours, logo, and picture). The exact kitchen pin is left out on purpose. The titles, descriptions, sitemap, and robots file were already in place.
+- **Checks:** 27 Playwright checks pass (new: the theme button is in the header and not the footer; Home’s restaurant details, with no exact pin).
+- The website preview was refreshed at the same link.
+
+**Files created/updated:** `apps/website/public/*.html`, `css/site.css`, `js/site.js`, `apps/website/tests/site.spec.ts`, `docs/design.md` (v0.40), `docs/architecture.md` (v0.53), `progress.md`.
+
+**Decisions:** the theme button stays visible on phones as an icon (one tap); restaurant hours shown as every day 8:00 am to 8:30 pm until the owner says otherwise.
+
+**Open questions:** are there any closed days?
+
+**Next step:** step 9. Search Console and Bing wait until the site is online (after the push).

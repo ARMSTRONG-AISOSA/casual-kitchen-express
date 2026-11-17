@@ -1,6 +1,6 @@
 # CKE ARCHITECTURE
 
-**Document Status:** Draft v0.52. Records the functions, features, and decisions for the apps and the website. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day with the backend foundation in progress), and again on 14 November 2026 after sign-in was built.  
+**Document Status:** Draft v0.53. Records the functions, features, and decisions for the apps and the website. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day with the backend foundation in progress), and again on 14 November 2026 after sign-in was built.  
 **Related documents:** `Casual-Kitchen-Express.md` (business and brand, surface level), `design.md` (UI/UX decisions and page flows), and `list-of-areas.md` (delivery areas).
 
 ---
@@ -400,7 +400,7 @@ A static website (plain HTML, CSS, and JavaScript, with no packages) on GitHub P
 | WEB-05 | Footer contact links | LinkedIn (https://www.linkedin.com/in/armstrong-omoregie-02367a271/), Google (email: ammycan6@gmail.com), and WhatsApp (https://wa.me/2349095466063). There is no separate contact page. | **Decided** |
 | WEB-06 | Footer developer credit | A link to the developer's site (https://bossstrong-dev.vercel.app/) and to GitHub (https://github.com/ARMSTRONG-AISOSA) | **Built** (16 November 2026) |
 | WEB-07 | App download | Links to the latest release on GitHub Releases (https://github.com/ARMSTRONG-AISOSA/casual-kitchen-express/releases/latest), with a checksum and the install guide. When GitHub answers, the App page shows the latest version, size, and SHA-256 checksum and the button downloads the customer APK directly. | **Built** (16 November 2026) |
-| WEB-08 | SEO and sharing previews | Titles, descriptions, and social previews for each page | **Built** (16 November 2026) |
+| WEB-08 | SEO and sharing previews | Titles, descriptions, and social previews for each page. Home also carries schema.org Restaurant details (17 November 2026), without the kitchen’s exact pin; the sitemap goes to Google Search Console and Bing Webmaster Tools once the site is online. | **Built** (16 November 2026) |
 | WEB-09 | Ordering on the website | The site promotes only and does not take orders | **Decided** |
 | WEB-10 | Privacy page | A short privacy policy linked from the footer. The app collects an email and a delivery address, and the Google sign-in setup asks for a privacy policy link. | **Built** (16 November 2026) |
 
@@ -1233,6 +1233,7 @@ A seed script fills the database with **three months** of history (owner decisio
 
 | Version | Change |
 |---|---|
+| 0.53 | 17 November 2026: WEB-08 adds the Restaurant details on Home and the Search Console and Bing plan. |
 | 0.52 | 16 November 2026 (late): the website built (WEB-01 to WEB-04 and WEB-06 to WEB-10) in `apps/website/public`, published by a GitHub Actions workflow; 16.1 item 5 note; BDPA estate’s centre is the owner’s pin. |
 | 0.51 | 16 November 2026 (evening): the owner’s kitchen pin and delivery boundary, now checked by the API; Evbogida added to the areas; area centres from OpenStreetMap (4.7, `list-of-areas.md` 3a). |
 | 0.50 | 16 November 2026 (later): push notifications built through Expo and Firebase (16, the step 6d note); “Use my current location” in the customer app, so expo-location is in the customer app too (owner decision, 15.2); expo-device not needed; build step 7, the live simulator with practice orders (18.4). |

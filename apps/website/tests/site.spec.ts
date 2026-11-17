@@ -69,17 +69,33 @@ test("the menu button opens the navigation on a phone", async ({ page, isMobile 
   await expect(page).toHaveURL(/faq\.html$/);
 });
 
-test("the theme switch cycles and is remembered", async ({ page }) => {
+test("the theme switch is in the header, cycles, and is remembered", async ({ page }) => {
   await page.goto("");
-  const btn = page.locator("#themeBtn");
-  await expect(btn).toHaveText("Theme: follow device");
+  const btn = page.locator("header #themeBtn");
+  await expect(btn).toBeVisible();
+  await expect(page.locator("footer #themeBtn")).toHaveCount(0);
+  await expect(btn).toHaveAttribute("aria-label", /follow device/);
   await btn.click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  await expect(btn).toHaveAttribute("data-mode", "light");
   await btn.click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   await page.goto("faq.html");
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
-  await expect(page.locator("#themeBtn")).toHaveText("Theme: dark");
+  await expect(page.locator("#themeBtn")).toHaveAttribute("aria-label", /Theme: dark/);
+  await page.locator("#themeBtn").click();
+  await expect(page.locator("html")).not.toHaveAttribute("data-theme", /./);
+});
+
+test("Home tells search engines it's a restaurant", async ({ page }) => {
+  await page.goto("");
+  const ld = JSON.parse(
+    (await page.locator('script[type="application/ld+json"]').textContent()) ?? "{}",
+  );
+  expect(ld["@type"]).toBe("Restaurant");
+  expect(ld.name).toBe("Casual Kitchen Express");
+  expect(ld.openingHoursSpecification[0].closes).toBe("20:30");
+  expect(ld.geo).toBeUndefined(); // the kitchen's exact pin stays off the public site
 });
 
 test("FAQ answers open natively", async ({ page }) => {

@@ -13,10 +13,11 @@
     });
   }
 
-  // Theme: follow the device, light, or dark. The choice stays in this browser only.
+  // Theme (the button in the header): follow the device, light, or dark. Kept in this browser only.
   var themeBtn = document.getElementById("themeBtn");
   var order = ["auto", "light", "dark"];
   var labels = { auto: "follow device", light: "light", dark: "dark" };
+  var short = { auto: "Auto", light: "Light", dark: "Dark" };
   var current = "auto";
   try {
     current = localStorage.getItem("cke-site-theme") || "auto";
@@ -25,7 +26,12 @@
   function apply(mode) {
     if (mode === "auto") document.documentElement.removeAttribute("data-theme");
     else document.documentElement.setAttribute("data-theme", mode);
-    if (themeBtn) themeBtn.textContent = "Theme: " + labels[mode];
+    if (!themeBtn) return;
+    themeBtn.setAttribute("data-mode", mode);
+    themeBtn.setAttribute("aria-label", "Theme: " + labels[mode] + ". Tap to change.");
+    themeBtn.title = "Theme: " + labels[mode];
+    var label = themeBtn.querySelector(".label");
+    if (label) label.textContent = short[mode];
   }
   apply(current);
   if (themeBtn) {

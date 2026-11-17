@@ -867,16 +867,55 @@ section.block {
 .site-foot a {
   overflow-wrap: anywhere;
 }
+/* The theme switch sits in the header on every page: after the links on wide screens, and as an
+   icon beside Menu on phones, so it's one tap away. */
 .theme-btn {
-  background: transparent;
-  border: 1.5px solid rgba(255, 243, 223, 0.35);
-  color: var(--on-band);
-  border-radius: 10px;
-  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
   padding: 0 12px;
+  border-radius: 10px;
+  border: 1.5px solid rgba(255, 243, 223, 0.35);
+  background: transparent;
+  color: var(--on-band);
   font: inherit;
-  font-size: 14px;
+  font-size: 14.5px;
+  font-weight: 600;
   cursor: pointer;
+}
+.theme-btn svg {
+  display: none;
+  flex: none;
+}
+.theme-btn[data-mode="auto"] .ic-auto,
+.theme-btn[data-mode="light"] .ic-light,
+.theme-btn[data-mode="dark"] .ic-dark {
+  display: block;
+}
+.site-head .site-nav {
+  order: 1;
+}
+.site-head .theme-btn {
+  order: 2;
+  margin-left: 8px;
+}
+.site-head .menu-btn {
+  order: 3;
+}
+@media (max-width: 820px) {
+  .site-head .theme-btn {
+    margin-left: auto;
+    width: 44px;
+    padding: 0;
+    justify-content: center;
+  }
+  .site-head .theme-btn .label {
+    display: none;
+  }
+  .site-head .menu-btn {
+    margin-left: -8px;
+  }
 }
 /* real files in place of the prototype's inline logo and placeholders */
 .site-head .brand img {
