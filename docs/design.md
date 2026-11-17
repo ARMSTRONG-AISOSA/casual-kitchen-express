@@ -1,6 +1,6 @@
 # CKE DESIGN
 
-**Document Status:** Draft v0.41. Records UI and UX decisions, design choices, page flows, and design libraries. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day).  
+**Document Status:** Draft v0.42. Records UI and UX decisions, design choices, page flows, and design libraries. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day).  
 **Related documents:** `Casual-Kitchen-Express.md` (business and brand, surface level), `architecture.md` (functions, features, data, technical decisions), and `list-of-areas.md` (delivery areas).
 
 ---
@@ -108,7 +108,7 @@ Colour choices should differ in lightness as well as hue, so they remain readabl
 
 ### 3.6 Accessibility baseline
 
-- Text contrast of at least 4.5:1 everywhere, and 7:1 in the rider app.
+- Text contrast of at least 4.5:1 everywhere, and 7:1 in the rider app. **Checked 17 November 2026** (every text and colour pair in the three apps’ light and dark themes, 60 pairs): five fell short and were fixed by adjusting the text or a shade, keeping the hues. Text on Light Tomato in the dark themes uses the dark background colour (#1F1B19, 4.9:1; charcoal was 4.4:1). In the rider app, the dark alert is a shade lighter (#E77361, 7.0:1 with black) and the light success green a shade darker (#176631, 7.0:1 with white).
 - Tap targets at least 44 px, and larger in the kitchen and rider apps.
 - Real labels for icon-only buttons.
 - Every password field has an eye button on its right that shows or hides what was typed (labelled “Show password” or “Hide password”). It starts hidden.
@@ -755,6 +755,7 @@ Every design question is now decided. Anything that needs checking is listed in 
 
 | Version | Change |
 |---|---|
+| 0.42 | 17 November 2026 (night): contrast checked in all three apps; five colour pairs fixed (3.6). |
 | 0.41 | 17 November 2026 (later): Demo controls gains Reset demo data under Reset: a sheet explaining what goes back to the start, a tick box (“I understand everything goes back to the start”), then Reset everything; a progress card shows the step (1 of 5 and its name) or why it stopped; the practice buttons wait while it runs, and every app reloads when it finishes (the customer’s basket starts again, since the menu is rebuilt). |
 | 0.40 | 17 November 2026: the website’s theme switch moved from the footer to the header (owner request): after Get the app on wide screens, an icon beside Menu on phones (8.7). |
 | 0.39 | 16 November 2026 (late): the website built (8.7 lists what changed from the prototype). |

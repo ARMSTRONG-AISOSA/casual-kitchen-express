@@ -57,10 +57,10 @@ export const dark: Palette = {
   muted: darkTheme.mutedText,
   line: "#3A332E",
   primary: accent.lightTomato,
-  onPrimary: color.charcoal,
+  onPrimary: darkTheme.background, // 4.9:1 on Light Tomato (charcoal was 4.4)
   chip: "#332C28",
   danger: accent.lightTomato,
-  onDanger: color.charcoal,
+  onDanger: darkTheme.background,
   newBg: color.yellow,
   onNew: color.charcoal,
   progressBg: "#9FB0C0",

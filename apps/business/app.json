@@ -44,7 +44,13 @@
           "sounds": ["./assets/sounds/cke_alert.wav", "./assets/sounds/cke_chime.wav"]
         }
       ],
-      "../../tools/expo-plugins/with-android-architectures.js"
+      "../../tools/expo-plugins/with-android-architectures.js",
+      [
+        "../../tools/expo-plugins/with-release-signing.js",
+        {
+          "app": "business"
+        }
+      ]
     ],
     "extra": {
       "router": {

@@ -52,7 +52,13 @@
         }
       ],
       "../../tools/expo-plugins/with-android-architectures.js",
-      "@maplibre/maplibre-react-native"
+      "@maplibre/maplibre-react-native",
+      [
+        "../../tools/expo-plugins/with-release-signing.js",
+        {
+          "app": "customer"
+        }
+      ]
     ],
     "extra": {
       "router": {

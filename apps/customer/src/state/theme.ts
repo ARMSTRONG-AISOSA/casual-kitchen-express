@@ -62,7 +62,7 @@ export const dark: Palette = {
   chip: "#332C28",
   success: accent.successDark,
   danger: accent.lightTomato,
-  onDanger: color.charcoal,
+  onDanger: darkTheme.background, // 4.9:1 on Light Tomato (charcoal was 4.4)
   hero: "#332C28",
   onHero: color.cream,
   heroMuted: "#E9DCC4",

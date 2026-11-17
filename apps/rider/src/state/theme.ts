@@ -32,7 +32,7 @@ export const light: Palette = {
   onPrimary: "#FFFFFF",
   alert: accent.deepTomato,
   onAlert: "#FFFFFF",
-  success: accent.successLight,
+  success: "#176631", // Success green, a shade darker for 7:1 with white (design.md 3.6)
   onSuccess: "#FFFFFF",
   notice: color.yellow,
   onNotice: "#000000",
@@ -47,7 +47,7 @@ export const dark: Palette = {
   border: "#FFFFFF",
   primary: "#FFFFFF",
   onPrimary: "#000000",
-  alert: accent.lightTomato,
+  alert: "#E77361", // Light Tomato, a shade lighter for 7:1 with black (design.md 3.6)
   onAlert: "#000000",
   success: accent.successDark,
   onSuccess: "#000000",
