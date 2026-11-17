@@ -446,6 +446,71 @@ export type RefundRowView = {
   byRole: string;
 };
 
+/* ----- Money: rider pay, cash-up, and Finance (MGR-30, ACC-02 to ACC-07) ----- */
+export type RiderPayView = {
+  rate: number;
+  riders: {
+    code: string;
+    name: string;
+    active: boolean;
+    owed: number;
+    owedDeliveries: number;
+    today: number;
+    since: string | null;
+  }[];
+  history: {
+    code: string;
+    name: string;
+    periodStart: string;
+    periodEnd: string;
+    deliveries: number;
+    amount: number;
+    paidAt: string;
+    paidBy: string | null;
+  }[];
+};
+export type CashUpView = {
+  date: string;
+  expected: number;
+  counted: number | null;
+  countedBy: string | null;
+  countedAt: string | null;
+  signedOffBy: string | null;
+  signedOffAt: string | null;
+  note: string | null;
+  closed: boolean;
+};
+export type Statement = {
+  sales: number;
+  online: number;
+  walkin: number;
+  byMethod: { cash: number; card: number; transfer: number };
+  refunds: number;
+  deliveryFees: number;
+  riderPayEarned: number;
+  riderPayPaid: number;
+  cashVariance: number;
+  adjustments: number;
+  net: number;
+  orders: number;
+};
+export type StatementView = {
+  month: string;
+  months: string[];
+  statement: Statement;
+  closed: { by: string | null; at: string } | null;
+  canClose: boolean;
+  waiting: string[];
+  adjustmentsList: { amount: number; reason: string; by: string | null; at: string }[];
+};
+export type AuditView = {
+  at: string;
+  kind: string;
+  action: string;
+  who: string | null;
+  name: string | null;
+};
+
 /** Reset demo data (MGR-29): the running or last reset, step by step. */
 export type DemoResetState = {
   status: "idle" | "running" | "failed";
@@ -721,6 +786,30 @@ export function createApiClient({ baseUrl, getHeaders, onUnauthorized }: ApiClie
     reportRefunds: (from: string, to: string, channel: ReportChannel) =>
       request<{ refunds: RefundRowView[] }>(
         `/reports/refunds?${new URLSearchParams({ from, to, channel }).toString()}`,
+      ),
+    /* ----- Money (MGR-30, ACC-02 to ACC-07) ----- */
+    riderPay: () => request<RiderPayView>("/payouts"),
+    payRider: (code: string) =>
+      post<{ payout: { amount: number; deliveries: number } }>(`/payouts/${code}/pay`, {}),
+    cashUpToday: () => request<CashUpView>("/finance/cash-up/today"),
+    countCash: (counted: number) =>
+      request<{ expected: number; counted: number }>("/finance/cash-up/today", {
+        method: "PUT",
+        body: JSON.stringify({ counted }),
+      }),
+    cashUps: (month: string) =>
+      request<{ cashUps: CashUpView[] }>(`/finance/cash-ups?month=${month}`),
+    signOffCashUp: (day: string, note: string | null) =>
+      post<{ ok: true }>(`/finance/cash-ups/${day}/sign-off`, { note }),
+    statement: (month: string) => request<StatementView>(`/finance/statement?month=${month}`),
+    closeMonth: (month: string) => post<{ ok: true }>(`/finance/months/${month}/close`, {}),
+    addAdjustment: (amount: number, reason: string) =>
+      post<{ ok: true; month: string }>("/finance/adjustments", { amount, reason }),
+    audit: (q: { from: string; to: string; kind: string; person?: string }) =>
+      request<{ entries: AuditView[] }>(
+        `/finance/audit?${new URLSearchParams(
+          Object.entries(q).filter(([, v]) => v) as [string, string][],
+        ).toString()}`,
       ),
     /* ----- Demo controls (managers, 18.4) ----- */
     demoState: () => request<DemoState>("/demo"),

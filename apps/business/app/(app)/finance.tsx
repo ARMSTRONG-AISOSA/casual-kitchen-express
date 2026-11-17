@@ -1,8 +1,9 @@
+import { ApiError, type CashUpView, type StatementView } from "@cke/api-client";
 import { naira } from "@cke/brand-tokens";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { View } from "react-native";
-import { STATEMENTS, type MonthKey } from "../../src/data/seed";
-import { cashExpectedToday, clock, log, nameOf, useStore } from "../../src/state/store";
+import { Share, View } from "react-native";
+import { api } from "../../src/api";
 import {
   Badge,
   Button,
@@ -22,39 +23,89 @@ import {
 } from "../../src/ui/kit";
 import { useToast } from "../../src/ui/toast";
 
-/** Today's entries show the time; older ones show how many days ago. */
-const when = (at: number) => {
-  const days = Math.round((Date.now() - at) / 86_400_000);
-  return days >= 1 ? `${days} day${days === 1 ? "" : "s"} ago` : clock(at);
-};
-
 type Tab = "statement" | "cash" | "audit" | "close";
+type Kind = "all" | "money" | "account" | "setting" | "contact";
 
-// Finance (ACC-03 to ACC-07): fixed monthly figures for record keeping and the accountant's
-// monthly report. Account officers and managers.
+/** The business day in West Africa Time (UTC+1 all year), shifted by some days. */
+const watDay = (shift = 0) =>
+  new Date(Date.now() + 60 * 60_000 + shift * 86_400_000).toISOString().slice(0, 10);
+const monthLabel = (m: string) =>
+  new Date(`${m}-15T12:00:00Z`).toLocaleDateString("en-GB", { month: "short", year: "numeric" });
+const dayLabel = (s: string) =>
+  new Date(`${s}T12:00:00Z`).toLocaleDateString("en-GB", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  });
+const when = (iso: string) =>
+  new Date(iso).toLocaleString("en-GB", {
+    day: "numeric",
+    month: "short",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+const csv = (lines: (string | number | null)[][]) =>
+  lines
+    .map((l) =>
+      l
+        .map((v) => {
+          const s = v === null ? "" : String(v);
+          return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+        })
+        .join(","),
+    )
+    .join("\n");
+
+// Finance (ACC-03 to ACC-07): the monthly statement, the daily cash-ups and their sign-off, the
+// audit trail, and closing a month, all from the real records. Account officers and managers.
+// A closed month shows the figures saved when it closed; they never change.
 export default function Finance() {
-  const { s, set } = useStore();
   const toast = useToast();
   const [tab, setTab] = useState<Tab>("statement");
-  const [month, setMonth] = useState<MonthKey>("Nov 2026");
-  const [signing, setSigning] = useState<string | null>(null);
+  const [month, setMonth] = useState(watDay(0).slice(0, 7));
+  const [kind, setKind] = useState<Kind>("all");
+  const [signing, setSigning] = useState<CashUpView | null>(null);
   const [note, setNote] = useState("");
-  const [kind, setKind] = useState<"all" | "money" | "account" | "setting" | "contact">("all");
-  const st = STATEMENTS[month];
-  const closedRec = s.monthCloses.find((c) => c.month === month);
-  const closed = !!closedRec;
-  const sales = st.online + st.walkin;
-  const net = sales - st.refunds - st.riderPay + st.variance;
+  const [adjusting, setAdjusting] = useState(false);
+  const [adj, setAdj] = useState({ amount: "", reason: "", minus: false });
+  const [busy, setBusy] = useState(false);
 
-  const today = {
-    date: "Thu 12 Nov (today)",
-    expected: cashExpectedToday(s),
-    ...s.today,
+  const st = useQuery({
+    queryKey: ["statement", month],
+    queryFn: () => api!.statement(month),
+    enabled: !!api,
+  });
+  const cash = useQuery({
+    queryKey: ["cash-ups", month],
+    queryFn: () => api!.cashUps(month),
+    enabled: !!api && tab === "cash",
+  });
+  const [auditFrom] = useState(() => watDay(-29));
+  const audit = useQuery({
+    queryKey: ["audit", kind, auditFrom],
+    queryFn: () => api!.audit({ from: auditFrom, to: watDay(0), kind }),
+    enabled: !!api && tab === "audit",
+  });
+
+  const act = async (call: () => Promise<unknown>, done: string) => {
+    setBusy(true);
+    try {
+      await call();
+      toast(done);
+      await Promise.all([st.refetch(), tab === "cash" ? cash.refetch() : null]);
+      return true;
+    } catch (e) {
+      toast(e instanceof ApiError ? e.message : "Can’t reach CKE right now. Try again.");
+      return false;
+    } finally {
+      setBusy(false);
+    }
   };
-  const cashUps = [today, ...s.cashUps];
-  // Every day's cash-up, today included, must be signed off before a month can close (ACC-07).
-  const unsigned = cashUps.filter((c) => !c.signedOffBy);
-  const exportIt = (what: string) => toast(`${what} export comes with the backend (CSV and PDF)`);
+  const share = (title: string, text: string) =>
+    void Share.share({ title, message: text }).catch(() => toast("Can’t share the file right now"));
+
+  const v: StatementView | undefined = st.data;
+  const s = v?.statement;
 
   return (
     <Page>
@@ -69,50 +120,111 @@ export default function Finance() {
         onChange={setTab}
       />
 
-      {tab === "statement" ? (
+      {tab !== "audit" && v ? (
+        <Row style={{ marginTop: 14, flexWrap: "wrap" }}>
+          <Chips>
+            {v.months.slice(0, 6).map((m) => (
+              <Chip
+                key={m}
+                label={monthLabel(m)}
+                selected={month === m}
+                onPress={() => setMonth(m)}
+              />
+            ))}
+          </Chips>
+          <View style={{ alignSelf: "center" }}>
+            <Badge label={v.closed ? "Closed, locked" : "Open month"} />
+          </View>
+        </Row>
+      ) : null}
+
+      {!v && tab !== "audit" ? (
+        <T muted style={{ marginTop: 16 }}>
+          {st.isError ? "Can’t load Finance right now. Try again." : "Loading…"}
+        </T>
+      ) : null}
+
+      {tab === "statement" && s && v ? (
         <>
-          <Row style={{ marginTop: 14, flexWrap: "wrap" }}>
-            <Chips>
-              {(Object.keys(STATEMENTS) as MonthKey[]).map((m) => (
-                <Chip key={m} label={m} selected={month === m} onPress={() => setMonth(m)} />
-              ))}
-            </Chips>
-            <View style={{ alignSelf: "center" }}>
-              <Badge label={closed ? "Closed, locked" : "Open month"} />
-            </View>
-          </Row>
           <Section title="Sales">
             <Card style={{ marginTop: 0 }}>
-              <KV k="Online orders" v={<Money n={st.online} />} />
-              <KV k="Walk-in orders" v={<Money n={st.walkin} />} />
-              <KV k="Total sales" v={<Money n={sales} strong />} strong />
-              <KV k="Of which delivery fees" v={<Money n={st.fees} />} />
+              <KV k="Online orders" v={<Money n={s.online} />} />
+              <KV k="Walk-in orders" v={<Money n={s.walkin} />} />
+              <KV k="Total sales" v={<Money n={s.sales} strong />} strong />
+              <KV k="Of which delivery fees" v={<Money n={s.deliveryFees} />} />
+              <KV k="Orders" v={String(s.orders)} />
             </Card>
           </Section>
           <Section title="By payment method">
             <Card style={{ marginTop: 0 }}>
-              <KV k="Card" v={<Money n={st.card} />} />
-              <KV k="Transfer" v={<Money n={st.transfer} />} />
-              <KV k="Cash" v={<Money n={st.cash} />} />
+              <KV k="Card" v={<Money n={s.byMethod.card} />} />
+              <KV k="Transfer" v={<Money n={s.byMethod.transfer} />} />
+              <KV k="Cash" v={<Money n={s.byMethod.cash} />} />
             </Card>
           </Section>
           <Section title="Out and adjustments">
             <Card style={{ marginTop: 0 }}>
-              <KV k="Refunds" v={<Money n={-st.refunds} />} />
-              <KV k="Rider pay earned" v={<Money n={-st.riderPay} />} />
-              <KV k="Rider pay paid out" v={<Money n={st.riderPaid} />} />
-              <KV k="Cash variances" v={<Money n={st.variance} />} />
-              <KV k="Net" v={<Money n={net} strong />} strong />
+              <KV k="Refunds" v={<Money n={-s.refunds} />} />
+              <KV k="Rider pay earned" v={<Money n={-s.riderPayEarned} />} />
+              <KV k="Rider pay paid out" v={<Money n={s.riderPayPaid} />} />
+              <KV k="Cash variances" v={<Money n={s.cashVariance} />} />
+              <KV k="Adjustments" v={<Money n={s.adjustments} />} />
+              <KV k="Net" v={<Money n={s.net} strong />} strong />
             </Card>
           </Section>
-          <Button
-            label="Export statement"
-            variant="ghost"
-            small
-            style={{ marginTop: 14, alignSelf: "flex-start" }}
-            onPress={() => exportIt("Statement")}
-          />
-          <DemoNote text="Demo figures. Each line opens the orders behind it once the backend is connected." />
+          {v.adjustmentsList.length ? (
+            <Section title="Adjustments this month">
+              <Card style={{ marginTop: 0 }}>
+                {v.adjustmentsList.map((a, i) => (
+                  <KV
+                    key={i}
+                    k={`${a.reason}${a.by ? `, by ${a.by}` : ""}, ${when(a.at)}`}
+                    v={naira(a.amount)}
+                  />
+                ))}
+              </Card>
+            </Section>
+          ) : null}
+          <Row style={{ marginTop: 14, flexWrap: "wrap" }}>
+            <Button
+              label="Export statement"
+              variant="ghost"
+              small
+              onPress={() =>
+                share(
+                  `CKE statement ${month}`,
+                  csv([
+                    ["CKE monthly statement", month, v.closed ? "closed" : "open"],
+                    ["Online orders", s.online],
+                    ["Walk-in orders", s.walkin],
+                    ["Total sales", s.sales],
+                    ["Delivery fees", s.deliveryFees],
+                    ["Card", s.byMethod.card],
+                    ["Transfer", s.byMethod.transfer],
+                    ["Cash", s.byMethod.cash],
+                    ["Refunds", -s.refunds],
+                    ["Rider pay earned", -s.riderPayEarned],
+                    ["Rider pay paid out", s.riderPayPaid],
+                    ["Cash variances", s.cashVariance],
+                    ["Adjustments", s.adjustments],
+                    ["Net", s.net],
+                  ]),
+                )
+              }
+            />
+            {!v.closed && month === watDay(0).slice(0, 7) ? (
+              <Button
+                label="Add an adjustment"
+                variant="ghost"
+                small
+                onPress={() => {
+                  setAdj({ amount: "", reason: "", minus: false });
+                  setAdjusting(true);
+                }}
+              />
+            ) : null}
+          </Row>
+          <DemoNote text="Simulated money: worked out from the orders, refunds, rider pay, and cash-ups." />
         </>
       ) : null}
 
@@ -121,18 +233,25 @@ export default function Finance() {
           <T muted style={{ marginTop: 14 }}>
             Counted at close by the person on the counter. Sign off each day.
           </T>
-          {cashUps.map((c) => {
+          {!cash.data ? (
+            <T muted style={{ marginTop: 10 }}>
+              {cash.isError ? "Can’t load the cash-ups right now." : "Loading…"}
+            </T>
+          ) : null}
+          {cash.data?.cashUps.map((c) => {
             const diff = c.counted === null ? null : c.counted - c.expected;
-            const signed = c.signedOffBy;
             return (
               <Card key={c.date}>
                 <Row style={{ justifyContent: "space-between", flexWrap: "wrap" }}>
-                  <T v="h3">{c.date}</T>
+                  <T v="h3">
+                    {dayLabel(c.date)}
+                    {c.date === watDay(0) ? " (today)" : ""}
+                  </T>
                   <Badge
                     label={
                       c.counted === null
                         ? "Not counted yet"
-                        : signed
+                        : c.signedOffBy
                           ? "Signed off"
                           : "Waiting for sign-off"
                     }
@@ -144,7 +263,7 @@ export default function Finance() {
                   v={
                     c.counted === null
                       ? "–"
-                      : `${naira(c.counted)}${c.countedBy ? `, by ${nameOf(s, c.countedBy)} (${c.countedBy})` : ""}`
+                      : `${naira(c.counted)}${c.countedBy ? `, by ${c.countedBy}` : ""}`
                   }
                 />
                 <KV
@@ -157,10 +276,10 @@ export default function Finance() {
                         : `${diff > 0 ? "Over" : "Short"} ${naira(Math.abs(diff))}`
                   }
                 />
-                {signed ? (
+                {c.signedOffBy ? (
                   <KV
                     k="Signed off by"
-                    v={`${nameOf(s, signed)} (${signed})${c.signedOffAt ? `, ${when(c.signedOffAt)}` : ""}`}
+                    v={`${c.signedOffBy}${c.signedOffAt ? `, ${when(c.signedOffAt)}` : ""}`}
                   />
                 ) : null}
                 {c.note ? (
@@ -168,155 +287,210 @@ export default function Finance() {
                     Note: {c.note}
                   </T>
                 ) : null}
-                {c.counted !== null && !signed ? (
+                {c.counted !== null && !c.signedOffBy && !c.closed ? (
                   <Button
                     label="Sign off"
                     small
                     style={{ marginTop: 10, alignSelf: "flex-start" }}
-                    onPress={() => (setSigning(c.date), setNote(""))}
+                    onPress={() => {
+                      setNote("");
+                      setSigning(c);
+                    }}
                   />
                 ) : null}
               </Card>
             );
           })}
-          <Button
-            label="Export cash-ups"
-            variant="ghost"
-            small
-            style={{ marginTop: 14, alignSelf: "flex-start" }}
-            onPress={() => exportIt("Cash-ups")}
-          />
+          {cash.data ? (
+            <Button
+              label="Export cash-ups"
+              variant="ghost"
+              small
+              style={{ marginTop: 14, alignSelf: "flex-start" }}
+              onPress={() =>
+                share(
+                  `CKE cash-ups ${month}`,
+                  csv([
+                    ["Date", "Expected", "Counted", "Counted by", "Signed off by", "Note"],
+                    ...cash.data!.cashUps.map((c) => [
+                      c.date,
+                      c.expected,
+                      c.counted,
+                      c.countedBy,
+                      c.signedOffBy,
+                      c.note,
+                    ]),
+                  ]),
+                )
+              }
+            />
+          ) : null}
         </>
       ) : null}
 
       {tab === "audit" ? (
         <>
           <Chips style={{ marginTop: 14 }}>
-            {(["all", "money", "account", "setting", "contact"] as const).map((k) => (
-              <Chip
-                key={k}
-                label={
-                  k === "all"
-                    ? "All"
-                    : k === "money"
-                      ? "Money"
-                      : k === "account"
-                        ? "Accounts and orders"
-                        : k === "setting"
-                          ? "Settings"
-                          : "Customer contact"
-                }
-                selected={kind === k}
-                onPress={() => setKind(k)}
-              />
+            {(
+              [
+                ["all", "All"],
+                ["money", "Money"],
+                ["account", "Accounts and orders"],
+                ["setting", "Settings"],
+                ["contact", "Customer contact"],
+              ] as const
+            ).map(([k, l]) => (
+              <Chip key={k} label={l} selected={kind === k} onPress={() => setKind(k)} />
             ))}
           </Chips>
+          <T v="small" muted style={{ marginTop: 8 }}>
+            The last 30 days, newest first.
+          </T>
           <Card>
-            {s.audit
-              .filter((a) => kind === "all" || a.kind === kind)
-              .map((a, i) => (
+            {!audit.data ? (
+              <T muted>{audit.isError ? "Can’t load the audit trail right now." : "Loading…"}</T>
+            ) : audit.data.entries.length ? (
+              audit.data.entries.map((a, i) => (
                 <View key={i} style={{ paddingVertical: 8 }}>
                   <T v="label">{a.action}</T>
                   <T v="small" muted>
-                    {nameOf(s, a.who)} ({a.who}), {when(a.at)}
+                    {a.name ? `${a.name}${a.who ? ` (${a.who})` : ""}` : "CKE (automatic)"},{" "}
+                    {when(a.at)}
                   </T>
                 </View>
-              ))}
+              ))
+            ) : (
+              <T muted>Nothing in the last 30 days.</T>
+            )}
           </Card>
-          <Button
-            label="Export audit trail"
-            variant="ghost"
-            small
-            style={{ marginTop: 14, alignSelf: "flex-start" }}
-            onPress={() => exportIt("Audit trail")}
-          />
+          {audit.data ? (
+            <Button
+              label="Export audit trail"
+              variant="ghost"
+              small
+              style={{ marginTop: 14, alignSelf: "flex-start" }}
+              onPress={() =>
+                share(
+                  "CKE audit trail",
+                  csv([
+                    ["When", "Kind", "Who", "What"],
+                    ...audit.data!.entries.map((a) => [a.at, a.kind, a.who ?? "CKE", a.action]),
+                  ]),
+                )
+              }
+            />
+          ) : null}
         </>
       ) : null}
 
-      {tab === "close" ? (
+      {tab === "close" && v ? (
         <>
           <Card>
-            <T v="h3">Close {month}</T>
-            {closed ? (
-              <T muted style={{ marginTop: 6 }}>
-                This month is closed and its figures are locked. A correction goes in as an
-                adjustment in the next open month, with a reason.
-              </T>
-            ) : null}
-            {closedRec ? (
-              <KV
-                k="Closed by"
-                v={`${nameOf(s, closedRec.by)} (${closedRec.by}), ${when(closedRec.at)}`}
-              />
-            ) : null}
-            {closed ? null : (
+            <T v="h3">Close {monthLabel(month)}</T>
+            {v.closed ? (
               <>
                 <T muted style={{ marginTop: 6 }}>
-                  Closing locks the month’s figures. Every day’s cash-up must be signed off first.
+                  This month is closed and its figures are locked. A correction goes in as an
+                  adjustment in the current month, with a reason.
                 </T>
-                {unsigned.length ? (
+                <KV k="Closed by" v={`${v.closed.by ?? "–"}, ${when(v.closed.at)}`} />
+                <KV k="Net when closed" v={naira(v.statement.net)} strong />
+              </>
+            ) : (
+              <>
+                <T muted style={{ marginTop: 6 }}>
+                  Closing locks the month’s figures. It can close after its last day, once every day
+                  with walk-in orders has a signed-off cash-up.
+                </T>
+                {v.waiting.length ? (
                   <T style={{ marginTop: 10 }}>
-                    Waiting for sign-off: {unsigned.map((c) => c.date).join(", ")}.
+                    Waiting for sign-off: {v.waiting.map(dayLabel).join(", ")}.
+                  </T>
+                ) : null}
+                {month === watDay(0).slice(0, 7) ? (
+                  <T v="small" muted style={{ marginTop: 10 }}>
+                    This month is still running.
                   </T>
                 ) : null}
                 <Button
-                  label={`Close ${month}`}
+                  label={`Close ${monthLabel(month)}`}
                   style={{ marginTop: 14, alignSelf: "flex-start" }}
-                  disabled={unsigned.length > 0}
-                  onPress={() => {
-                    set((x) => ({
-                      monthCloses: [
-                        ...x.monthCloses,
-                        { month, by: x.userId ?? "System", at: Date.now() },
-                      ],
-                      ...log(x, "money", `Closed ${month}`),
-                    }));
-                    toast(`${month} closed`);
-                  }}
+                  disabled={!v.canClose || busy}
+                  onPress={() =>
+                    void act(() => api!.closeMonth(month), `${monthLabel(month)} closed`)
+                  }
                 />
               </>
             )}
           </Card>
-          <T v="small" muted style={{ marginTop: 10 }}>
-            November is still running, so it can be closed after its last day. October is already
-            closed.
-          </T>
         </>
       ) : null}
 
-      <Sheet visible={!!signing} onClose={() => setSigning(null)} title={`Sign off ${signing}`}>
-        <T muted>
-          Recorded as {nameOf(s, s.userId ?? undefined)} ({s.userId}), with the time.
-        </T>
-        <Field label="Note (needed if there’s a difference)" value={note} onChangeText={setNote} />
+      <Sheet
+        visible={!!signing}
+        onClose={() => setSigning(null)}
+        title={`Sign off ${signing ? dayLabel(signing.date) : ""}`}
+      >
+        <T muted>Recorded with your name and the time.</T>
+        <Field
+          label={
+            signing && signing.counted !== signing.expected
+              ? "Note about the difference (needed)"
+              : "Note (optional)"
+          }
+          value={note}
+          onChangeText={setNote}
+        />
         <Button
           label="Sign off"
+          disabled={busy}
           style={{ marginTop: 16 }}
-          onPress={() => {
-            set((x) => ({
-              // Whoever is signed in, an account officer or a manager, is recorded (ACC-04).
-              today: signing?.includes("today")
-                ? {
-                    ...x.today,
-                    signedOffBy: x.userId ?? undefined,
-                    signedOffAt: Date.now(),
-                    note: note || x.today.note,
-                  }
-                : x.today,
-              cashUps: x.cashUps.map((c) =>
-                c.date === signing
-                  ? {
-                      ...c,
-                      signedOffBy: x.userId ?? undefined,
-                      signedOffAt: Date.now(),
-                      note: note || c.note,
-                    }
-                  : c,
-              ),
-              ...log(x, "money", `Signed off the cash-up for ${signing}`),
-            }));
-            toast("Signed off");
-            setSigning(null);
+          onPress={async () => {
+            if (!signing) return;
+            if (await act(() => api!.signOffCashUp(signing.date, note || null), "Signed off"))
+              setSigning(null);
+          }}
+        />
+      </Sheet>
+
+      <Sheet visible={adjusting} onClose={() => setAdjusting(false)} title="Add an adjustment">
+        <T muted>
+          A correction for a closed month, entered in the current month with a reason (for example,
+          cash found in the drawer later).
+        </T>
+        <Chips style={{ marginTop: 12 }}>
+          <Chip
+            label="Money in (+)"
+            selected={!adj.minus}
+            onPress={() => setAdj((a) => ({ ...a, minus: false }))}
+          />
+          <Chip
+            label="Money out (−)"
+            selected={adj.minus}
+            onPress={() => setAdj((a) => ({ ...a, minus: true }))}
+          />
+        </Chips>
+        <Field
+          label="Amount in naira"
+          value={adj.amount}
+          onChangeText={(amount) => setAdj((a) => ({ ...a, amount }))}
+          keyboardType="number-pad"
+        />
+        <Field
+          label="Reason"
+          value={adj.reason}
+          onChangeText={(reason) => setAdj((a) => ({ ...a, reason }))}
+        />
+        <Button
+          label="Save the adjustment"
+          disabled={
+            busy || !Number(adj.amount.replace(/[^0-9]/g, "")) || adj.reason.trim().length < 3
+          }
+          style={{ marginTop: 16 }}
+          onPress={async () => {
+            const amount = Number(adj.amount.replace(/[^0-9]/g, "")) * (adj.minus ? -1 : 1);
+            if (await act(() => api!.addAdjustment(amount, adj.reason.trim()), "Adjustment saved"))
+              setAdjusting(false);
           }}
         />
       </Sheet>

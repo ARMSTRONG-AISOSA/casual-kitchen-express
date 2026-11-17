@@ -17,7 +17,7 @@ Run these from the repository root:
 | 3c. Add the menu and staff photos (about 5 minutes)                                        | `npm run db:seed-media --workspace @cke/api`  | `23 menu and 10 staff photos stored, …`            |
 | 3d. Add three months of demo history (about 5 seconds; wipes and regenerates the old demo history; refuses if real online orders exist) | `npm run db:seed-history --workspace @cke/api` | `Demo history: … (90 days)` … `Checks passed.` |
 | Run the API for the tablet                                                                 | `npm run dev:lan --workspace @cke/api`        | `Ready on http://0.0.0.0:8787`                     |
-| 4. Run the tests (stop `dev:lan` first: the two share local state and the tests can stall) | `npm run test --workspace @cke/api`           | `Tests 41 passed (41)`                               |
+| 4. Run the tests (stop `dev:lan` first: the two share local state and the tests can stall) | `npm run test --workspace @cke/api`           | `Tests 45 passed (45)`                               |
 | Stop the database (data is kept)                                                           | `npm run db:down --workspace @cke/api`        | `Container cke-db-1 Removed`                       |
 
 The local password (`cke-local-only`) only works on this laptop: the database listens on

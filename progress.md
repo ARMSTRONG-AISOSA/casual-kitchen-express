@@ -1412,3 +1412,22 @@ Append a new dated entry after each work session. Never edit or delete earlier e
 **Decisions:** photos in Workers KV instead of R2 (owner); Neon in Frankfurt; reports computed live in SQL, ReportView tables left as a Proposal.
 
 **Next step:** the owner approves the GitHub workflow permission; then the push and the website; then Finance, Rider pay, Cash-up, and the Dashboard on real data.
+
+## [2026-11-17] Pushed, the website online, the online reset, and the money screens on real data
+
+**What was done:**
+- **GitHub:** the owner approved the workflow permission; `main` is pushed (public repository). GitHub Pages turned on (build from GitHub Actions) and the website published: https://armstrong-aisosa.github.io/casual-kitchen-express/ (Home and Privacy checked, 200).
+- **Online reset:** the repository secrets `DATABASE_URL`, `DEMO_RESET_SECRET`, `OWNER_GOOGLE_EMAIL`, and `OWNER_NAME` set from the laptop without printing them. The first run failed on the Node version (the repository needs Node 24); fixed, and the workflow then rebuilt the online demo data in about a minute, photos included. The in-app button online still needs `GITHUB_RESET_TOKEN` (owner step below).
+- **Money on real data:** `GET /payouts` and `POST /payouts/:code/pay` (MGR-30, ACC-02); `/finance/cash-up/today` (count, kitchen staff, managers, and account officers), `/finance/cash-ups` and sign-off with a note needed for a difference (ACC-04); `/finance/statement` (ACC-03, a closed month shows its saved figures), `/finance/months/:month/close` (after the month’s last day, once every walk-in day is signed off; ACC-07), `/finance/adjustments`, and `/finance/audit` (ACC-05). The Business app’s Rider pay, Cash-up, and Finance (Statement, Cash-ups, Audit trail, Close month, adjustments, CSV exports) use them. The Dashboard already used live data.
+- **Tests:** 45 of 45 API tests pass (new `test/money.test.ts`: reports, payouts once, the cash-up rules, the statement, closed months, adjustments, the audit trail). Checked on the tablet: Rider pay balances and history; November’s statement (₦5,742,100 sales, 840 orders).
+- Deployed the new API version.
+
+**Owner steps still open:**
+1. **Google sign-in screen:** the six steps in the log entry “Step 8: the website” (the site is online now, so the links work).
+2. **Reset demo data online:** create the GitHub token (log entry “Uselu Market pin … Reset demo data”, step 1) and tell Claude; Claude stores it on the API.
+
+**Files created/updated:** `apps/api` (`src/finance/money.ts` new, `src/routes/finance.ts` new, `src/index.ts`, `test/money.test.ts` new, `README.md`), `.github/workflows/reset-demo.yml`, `packages/api-client`, `apps/business` (`app/(app)/rider-pay.tsx`, `cash-up.tsx`, `finance.tsx`), `docs/architecture.md` (v0.56), `progress.md`.
+
+**Decisions:** a payout made in the app covers everything owed up to that day; Finance exports are CSV for now.
+
+**Next step:** release builds: signing keys, signed APKs, and the first GitHub release; then the battery test (pause for the owner).

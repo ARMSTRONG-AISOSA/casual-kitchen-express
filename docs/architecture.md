@@ -1,6 +1,6 @@
 # CKE ARCHITECTURE
 
-**Document Status:** Draft v0.55. Records the functions, features, and decisions for the apps and the website. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day with the backend foundation in progress), and again on 14 November 2026 after sign-in was built.  
+**Document Status:** Draft v0.56. Records the functions, features, and decisions for the apps and the website. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day with the backend foundation in progress), and again on 14 November 2026 after sign-in was built.  
 **Related documents:** `Casual-Kitchen-Express.md` (business and brand, surface level), `design.md` (UI/UX decisions and page flows), and `list-of-areas.md` (delivery areas).
 
 ---
@@ -349,7 +349,7 @@ Account officers also use the reports (MGR-17 to MGR-23, MGR-27, and MGR-34, the
 | MGR-27 | Kitchen staff reports | Per staff member: orders handled (online and walk-in), order value handled, and average preparation time. Shows who was signed in (4.5). | **Built** (17 November 2026, on real data) |
 | MGR-28 | Demo controls | Create orders, auto-play a simulated kitchen and riders, and set the speed (18.4) | Planned |
 | MGR-29 | Reset demo data | Wipes and regenerates the historic mock data (18.3), with confirmation. **Owner decisions (17 November 2026):** a full factory reset: every order goes, including testers’ (they keep their accounts and addresses), with payouts, cash-ups, closed months, alerts, and the audit trail; staff a manager added are removed; the menu, prices, soups, settings, staff, and photos go back to the start; then the three months of history are rebuilt. A tick box confirms it; new orders are refused while it runs; Demo controls shows each step. Because rebuilding takes about 1.2 seconds of processing (measured) and the free plan allows about 10 ms per request, a runner does the work: GitHub Actions online, a small helper on the laptop (18.3). | **Built** (17 November 2026) |
-| MGR-30 | Rider pay and payouts | Each rider's owed balance and per-delivery pay, mark a period as paid (simulated), and payout history. Account officers too (ACC-02). | Planned |
+| MGR-30 | Rider pay and payouts | Each rider's owed balance and per-delivery pay, mark a period as paid (simulated), and payout history. Account officers too (ACC-02). | **Built** (17 November 2026, on real data) |
 | MGR-31 | Pricing and pay settings | The delivery fee (₦1,500 by default) and the rider pay per delivery (₦1,000 by default) are both editable. Changes show in the customer app and rider app straight away, apply to new orders and deliveries only, and are written to the audit log. Rider pay can’t exceed the delivery fee. | **Decided** |
 | MGR-32 | Rider tracking mode setting | Light (default) or milestones only (section 7) | **Decided** |
 | MGR-33 | Channel filter and sort | The order list, dashboard, and reports can be filtered to online, walk-in, or all, and sorted by time placed, amount, staff member, or payment method | **Decided** |
@@ -380,12 +380,12 @@ Decided on 12 November 2026. Managers can do all of this too. Reports are for ru
 | ID | Feature | Notes | Status |
 |---|---|---|---|
 | ACC-01 | Account officer role | Sees Reports, Rider pay, and Finance, as in 3.0 | **Decided** |
-| ACC-02 | Rider payouts | Marks a rider’s owed period as paid (simulated), like MGR-30. Each payout records who paid and when. | **Decided** |
-| ACC-03 | Monthly statement | For any month: sales by channel (online, walk-in) and by payment method (cash, card, transfer), refunds, delivery fees collected, rider pay earned and paid, cash variances, and the net figure. Each line opens the orders behind it. | **Decided** |
-| ACC-04 | Daily cash-up | At close, the person on the counter enters the cash counted in the drawer. The app shows the cash expected from that day’s walk-in cash payments, minus cash refunds, and the difference. The account officer (or a manager) reviews each day and signs it off, with a note for any difference. The sign-off records whichever of them is signed in: an account officer or any manager, including the owner, by name and staff ID, with the time; the cash-up shows it, and the audit trail lists it. | **Decided** |
-| ACC-05 | Audit trail | Every money-related action in one list: refunds, payouts, price and pay changes, cash-ups and sign-offs, and month closes, with who, what, and when. Filter by date, person, and kind. | **Decided** |
-| ACC-06 | Finance export | The monthly statement, the cash-ups, and the audit trail as CSV and PDF | **Decided** |
-| ACC-07 | Close month | Locks a month’s figures once every day is signed off. After that, a correction is entered as an adjustment in the next open month, with a reason, so closed figures never change. The close records who closed the month (an account officer or a manager) and when, shown on the month. | **Decided** |
+| ACC-02 | Rider payouts | Marks a rider’s owed period as paid (simulated), like MGR-30. Each payout records who paid and when. | **Decided**, **built** (17 November 2026) |
+| ACC-03 | Monthly statement | For any month: sales by channel (online, walk-in) and by payment method (cash, card, transfer), refunds, delivery fees collected, rider pay earned and paid, cash variances, and the net figure. Each line opens the orders behind it. | **Decided**, **built** (17 November 2026) |
+| ACC-04 | Daily cash-up | At close, the person on the counter enters the cash counted in the drawer. The app shows the cash expected from that day’s walk-in cash payments, minus cash refunds, and the difference. The account officer (or a manager) reviews each day and signs it off, with a note for any difference. The sign-off records whichever of them is signed in: an account officer or any manager, including the owner, by name and staff ID, with the time; the cash-up shows it, and the audit trail lists it. | **Decided**, **built** (17 November 2026) |
+| ACC-05 | Audit trail | Every money-related action in one list: refunds, payouts, price and pay changes, cash-ups and sign-offs, and month closes, with who, what, and when. Filter by date, person, and kind. | **Decided**, **built** (17 November 2026) |
+| ACC-06 | Finance export | The monthly statement, the cash-ups, and the audit trail as CSV and PDF. **Built as CSV** (17 November 2026), shared from the phone or tablet; PDF is left for later. | **Decided**, **built** (17 November 2026) |
+| ACC-07 | Close month | Locks a month’s figures once every day is signed off. After that, a correction is entered as an adjustment in the next open month, with a reason, so closed figures never change. The close records who closed the month (an account officer or a manager) and when, shown on the month. | **Decided**, **built** (17 November 2026) |
 
 ### 5.4 Website
 
@@ -1233,6 +1233,7 @@ A seed script fills the database with **three months** of history (owner decisio
 
 | Version | Change |
 |---|---|
+| 0.56 | 17 November 2026 (night): rider pay and payouts (MGR-30, ACC-02), the cash-up (ACC-04), the statement (ACC-03), the audit trail (ACC-05), CSV exports (ACC-06), and closing a month with adjustments (ACC-07) on real data: `/payouts` and `/finance/*`. A payout made in the app covers everything owed up to that day. |
 | 0.55 | 17 November 2026 (evening): deployed: Neon project `cke` in Frankfurt (Postgres 17) with Hyperdrive, the Worker at cke-api.casualkitchenexpress.workers.dev, and the photos in Workers KV instead of R2 (owner decision); reports on real data (MGR-17 to MGR-22, MGR-27). |
 | 0.54 | 17 November 2026 (later): Reset demo data built as a full factory reset (owner decisions; MGR-29, 18.3); the kitchen is open every day (owner). |
 | 0.53 | 17 November 2026: WEB-08 adds the Restaurant details on Home and the Search Console and Bing plan. |
