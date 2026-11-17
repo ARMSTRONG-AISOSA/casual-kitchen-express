@@ -928,6 +928,78 @@ describe("demo controls", () => {
   });
 });
 
+describe("reset demo data", () => {
+  // These never start a real reset: the "running" state is set by hand, so the runner isn't called.
+  it("is for managers, refuses orders while running, and accepts only the runner's secret", async () => {
+    expect(
+      (await call("/demo/reset-all", kitchen, { method: "POST", body: { confirm: "RESET" } }))
+        .status,
+    ).toBe(403);
+    expect(
+      (await call("/demo/reset-all", manager, { method: "POST", body: { confirm: "yes" } })).status,
+    ).toBe(400);
+    const notify = (secret?: string) =>
+      exports.default.fetch(
+        new Request("http://cke.test/demo/reset-all/notify", {
+          method: "POST",
+          headers: secret ? { "x-demo-reset-secret": secret } : {},
+        }),
+      );
+    expect((await notify()).status).toBe(403);
+    expect((await notify("wrong")).status).toBe(403);
+
+    const { db, close } = await connect(env);
+    const [before] = await db.select().from(t.demoReset).where(eq(t.demoReset.id, 1));
+    try {
+      const running = { id: 1, status: "running" as const, step: 2, steps: 5, label: "Staff" };
+      await db
+        .insert(t.demoReset)
+        .values({ ...running, startedAt: new Date() })
+        .onConflictDoUpdate({
+          target: t.demoReset.id,
+          set: { ...running, startedAt: new Date(), error: null },
+        });
+      const state = await json<{ reset: { status: string; label: string } }>(
+        await call("/demo", manager),
+      );
+      expect(state.reset).toMatchObject({ status: "running", label: "Staff" });
+      const refused = await call("/demo/orders", manager, {
+        method: "POST",
+        body: { kind: "online" },
+      });
+      expect(refused.status).toBe(503);
+      expect(await refused.json()).toMatchObject({ resetting: true });
+      // A second reset waits for the first.
+      expect(
+        (await call("/demo/reset-all", manager, { method: "POST", body: { confirm: "RESET" } }))
+          .status,
+      ).toBe(409);
+      expect((await notify(env.DEMO_RESET_SECRET)).status).toBe(200);
+      // Photos only go through with the secret, and only to a plain path.
+      const media = (path: string, secret?: string) =>
+        exports.default.fetch(
+          new Request(`http://cke.test/demo/reset-all/media/${path}`, {
+            method: "DELETE",
+            headers: secret ? { "x-demo-reset-secret": secret } : {},
+          }),
+        );
+      expect((await media("menu/x.webp")).status).toBe(403);
+      expect((await media("a/b/c.webp", env.DEMO_RESET_SECRET)).status).toBe(400);
+      // A reset that never finished counts as failed after 30 minutes, so nothing stays stuck.
+      await db
+        .update(t.demoReset)
+        .set({ startedAt: new Date(Date.now() - 31 * 60_000) })
+        .where(eq(t.demoReset.id, 1));
+      const stuck = await json<{ reset: { status: string } }>(await call("/demo", manager));
+      expect(stuck.reset.status).toBe("failed");
+    } finally {
+      if (before) await db.update(t.demoReset).set(before).where(eq(t.demoReset.id, 1));
+      else await db.delete(t.demoReset).where(eq(t.demoReset.id, 1));
+      await close();
+    }
+  });
+});
+
 describe("settings", () => {
   it("lets dispatch pause orders but keeps pricing for managers, and audits price changes", async () => {
     expect(

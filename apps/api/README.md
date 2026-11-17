@@ -17,7 +17,7 @@ Run these from the repository root:
 | 3c. Add the menu and staff photos (about 5 minutes)                                        | `npm run db:seed-media --workspace @cke/api`  | `23 menu and 10 staff photos stored, …`            |
 | 3d. Add three months of demo history (about 5 seconds; wipes and regenerates the old demo history; refuses if real online orders exist) | `npm run db:seed-history --workspace @cke/api` | `Demo history: … (90 days)` … `Checks passed.` |
 | Run the API for the tablet                                                                 | `npm run dev:lan --workspace @cke/api`        | `Ready on http://0.0.0.0:8787`                     |
-| 4. Run the tests (stop `dev:lan` first: the two share local state and the tests can stall) | `npm run test --workspace @cke/api`           | `Tests 40 passed (40)`                               |
+| 4. Run the tests (stop `dev:lan` first: the two share local state and the tests can stall) | `npm run test --workspace @cke/api`           | `Tests 41 passed (41)`                               |
 | Stop the database (data is kept)                                                           | `npm run db:down --workspace @cke/api`        | `Container cke-db-1 Removed`                       |
 
 The local password (`cke-local-only`) only works on this laptop: the database listens on
@@ -57,7 +57,7 @@ check the new file in `drizzle/`, then run step 2 again.
 | `PUT /settings/alerts` | Dispatch and managers: the Alerts section in one save (the beep and the four alert timers, each within its range); audit-logged, with who saved it last and when in `GET /settings` |
 | `/me/addresses` | Customers: the address book (an address outside the range is refused) |
 | `/me/push-token` | Every app: save (`PUT`) or remove (`DELETE`) this device's Expo push token. Each order status is pushed once, through Expo, to the customer, the kitchen (new online orders), riders (a ready order that fits, or one assigned to them), and staff who see Alerts (the beep) |
-| `/demo/*` | Managers: Demo controls (18.4): state, practice orders (`POST /demo/orders`, online or walk-in), auto-play and speed (`PUT /demo/autoplay`), and removing practice orders (`POST /demo/reset`). The simulator (`DemoSim`) only moves practice orders |
+| `/demo/*` | Managers: Demo controls (18.4): state, practice orders (`POST /demo/orders`, online or walk-in), auto-play and speed (`PUT /demo/autoplay`), and removing practice orders (`POST /demo/reset`). The simulator (`DemoSim`) only moves practice orders. **Reset demo data** (MGR-29): `POST /demo/reset-all` with `{ "confirm": "RESET" }` starts the runner; the runner reports through `POST /demo/reset-all/notify` and uploads photos through `/demo/reset-all/media/*` (both signed with `DEMO_RESET_SECRET`). New orders get 503 while it runs. On the laptop, start the helper first: `npm run demo:runner --workspace @cke/api` |
 
 Every change needs a signed-in person with the right role (`docs/architecture.md` 3.0). Sign-in
 needs `BETTER_AUTH_SECRET` in `apps/api/.dev.vars` (copy `.dev.vars.example` and make your own with

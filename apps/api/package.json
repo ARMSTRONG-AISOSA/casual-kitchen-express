@@ -18,7 +18,9 @@
     "dev:lan": "wrangler dev --ip 0.0.0.0 --port 8787",
     "db:seed-media": "tsx scripts/seed-media.ts",
     "db:seed-people": "tsx scripts/seed-people.ts",
-    "db:seed-history": "tsx scripts/seed-history.ts"
+    "db:seed-history": "tsx scripts/seed-history.ts",
+    "demo:reset": "tsx scripts/reset-demo.ts",
+    "demo:runner": "tsx scripts/reset-runner.ts"
   },
   "dependencies": {
     "@better-auth/expo": "1.7.14",

@@ -256,8 +256,9 @@ export type LiveMessage =
   | { type: "alert"; alert: AlertView; version: number; beep?: boolean }
   | { type: "rider"; rider: RiderPanel; version: number }
   | { type: "catalog"; version: number }
-  | { type: "reload" }
-  | { type: "alert-settings"; alerts: AlertSettingsView };
+  | { type: "reload"; reason?: "reset" }
+  | { type: "alert-settings"; alerts: AlertSettingsView }
+  | { type: "demo-reset"; reset: DemoResetState };
 
 /* ---------- riders (build step 6b) ---------- */
 
@@ -322,7 +323,7 @@ export type RiderLiveMessage =
     }
   | { type: "delivery"; delivery: RiderDelivery; removed: boolean; version?: number }
   | { type: "catalog"; version: number }
-  | { type: "reload" };
+  | { type: "reload"; reason?: "reset" };
 
 /* ---------- customers (build step 6c) ---------- */
 
@@ -371,13 +372,30 @@ export type MyOrder = {
 export type RiderPosition = { lat: number; lng: number; at: string };
 
 /** Demo controls: auto-play, its speed, and how many practice orders are still moving. */
-export type DemoState = { auto: boolean; speed: 1 | 5 | 20; open: number };
+/** Reset demo data (MGR-29): the running or last reset, step by step. */
+export type DemoResetState = {
+  status: "idle" | "running" | "failed";
+  step: number;
+  steps: number;
+  label: string | null;
+  startedAt: string | null;
+  finishedAt: string | null;
+  startedBy: string | null;
+  error: string | null;
+};
+export type DemoState = {
+  auto: boolean;
+  speed: 1 | 5 | 20;
+  open: number;
+  reset: DemoResetState;
+};
 
 /** What the customer app hears on the live connection. */
 export type CustomerLiveMessage =
   | { type: "order"; order: MyOrder; version: number }
   | ({ type: "rider-location"; orderId: string } & RiderPosition)
-  | { type: "catalog"; version: number };
+  | { type: "catalog"; version: number }
+  | { type: "reload"; reason?: "reset" };
 
 export type MyAddress = {
   id: string;
@@ -633,6 +651,8 @@ export function createApiClient({ baseUrl, getHeaders, onUnauthorized }: ApiClie
       }),
     /** Removes every practice order; real orders and the history stay. */
     resetPractice: () => post<{ removed: number }>("/demo/reset", {}),
+    /** Reset demo data: every order goes, and everything returns to the start (MGR-29). */
+    resetDemo: () => post<{ reset: DemoResetState }>("/demo/reset-all", { confirm: "RESET" }),
     /* ----- riders ----- */
     riderOnline: (online: boolean) =>
       request<{ online: boolean }>("/rider/online", {

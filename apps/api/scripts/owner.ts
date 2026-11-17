@@ -6,7 +6,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-function devVar(name: string): string | undefined {
+export function devVar(name: string): string | undefined {
   const file = join(import.meta.dirname, "..", ".dev.vars");
   if (!existsSync(file)) return undefined;
   const line = readFileSync(file, "utf8")

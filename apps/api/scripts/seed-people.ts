@@ -23,20 +23,8 @@ export const DEMO_PASSWORD = "cke-demo-2026";
 const managerPasswords = process.env.SEED_MANAGER_PASSWORDS === "1";
 const MANAGER_USERNAMES: Record<string, string> = { "M-001": "owner.m", "M-002": "ivie.m" };
 
-type Gender = "female" | "male";
-type R = "rider" | "kitchen" | "dispatch" | "accounts" | "manager";
-export const PEOPLE: [string, string, R, string, string, Gender, string?][] = [
-  ["M-001", "Efosa Igbinedion", "manager", "Owner", "0803 555 0100", "male"],
-  ["M-002", "Ivie Osagie", "manager", "Operations manager", "0803 555 0101", "female"],
-  ["K-001", "Blessing Okafor", "kitchen", "Head cook", "0806 555 0120", "female", "blessing.k"],
-  ["K-002", "Samuel Eze", "kitchen", "Counter", "0806 555 0121", "male", "samuel.k"],
-  ["D-001", "Osas Edo", "dispatch", "Dispatch officer", "0807 555 0130", "male", "osas.d"],
-  ["A-001", "Ngozi Bello", "accounts", "Account officer", "0809 555 0140", "female", "ngozi.a"],
-  ["R-001", "Musa Abdullahi", "rider", "Delivery rider", "0802 555 0177", "male", "musa.a"],
-  ["R-002", "Chidi Nwosu", "rider", "Delivery rider", "0802 555 0178", "male", "chidi.r"],
-  ["R-003", "Femi Ade", "rider", "Delivery rider", "0802 555 0179", "male", "femi.r"],
-  ["R-004", "Uyi Ogbe", "rider", "Delivery rider", "0802 555 0180", "male", "uyi.r"],
-];
+import { PEOPLE } from "./people";
+export { PEOPLE };
 
 const url = process.env.DATABASE_URL ?? "postgres://cke:cke-local-only@127.0.0.1:5432/cke";
 const client = new Client({ connectionString: url });
@@ -78,7 +66,18 @@ for (const person of PEOPLE) {
     })
     .onConflictDoUpdate({
       target: t.staffProfile.userId,
-      set: owner ? { role, isOwner: true } : { fullName: name, role, jobTitle: job, phone, gender },
+      // Seeded staff go back to how they started (Reset demo data, MGR-29); the owner keeps theirs.
+      set: owner
+        ? { role, isOwner: true, status: "active" }
+        : {
+            fullName: name,
+            role,
+            jobTitle: job,
+            phone,
+            gender,
+            mustChangePassword: false,
+            status: code === "R-004" ? "deactivated" : "active",
+          },
     });
   // The demo password, as a Better Auth "credential" account (PBKDF2, src/auth/password.ts).
   await db

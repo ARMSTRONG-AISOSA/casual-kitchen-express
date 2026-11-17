@@ -1,6 +1,6 @@
 # CKE ARCHITECTURE
 
-**Document Status:** Draft v0.53. Records the functions, features, and decisions for the apps and the website. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day with the backend foundation in progress), and again on 14 November 2026 after sign-in was built.  
+**Document Status:** Draft v0.54. Records the functions, features, and decisions for the apps and the website. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day with the backend foundation in progress), and again on 14 November 2026 after sign-in was built.  
 **Related documents:** `Casual-Kitchen-Express.md` (business and brand, surface level), `design.md` (UI/UX decisions and page flows), and `list-of-areas.md` (delivery areas).
 
 ---
@@ -348,7 +348,7 @@ Account officers also use the reports (MGR-17 to MGR-23, MGR-27, and MGR-34, the
 | MGR-26 | Manager sign-in | Managers continue with Google, so there is no password to recover (section 12.1) | **Decided** |
 | MGR-27 | Kitchen staff reports | Per staff member: orders handled (online and walk-in), order value handled, and average preparation time. Shows who was signed in (4.5). | Planned |
 | MGR-28 | Demo controls | Create orders, auto-play a simulated kitchen and riders, and set the speed (18.4) | Planned |
-| MGR-29 | Reset demo data | Wipes and regenerates the historic mock data (18.3), with confirmation | Planned |
+| MGR-29 | Reset demo data | Wipes and regenerates the historic mock data (18.3), with confirmation. **Owner decisions (17 November 2026):** a full factory reset: every order goes, including testers’ (they keep their accounts and addresses), with payouts, cash-ups, closed months, alerts, and the audit trail; staff a manager added are removed; the menu, prices, soups, settings, staff, and photos go back to the start; then the three months of history are rebuilt. A tick box confirms it; new orders are refused while it runs; Demo controls shows each step. Because rebuilding takes about 1.2 seconds of processing (measured) and the free plan allows about 10 ms per request, a runner does the work: GitHub Actions online, a small helper on the laptop (18.3). | **Built** (17 November 2026) |
 | MGR-30 | Rider pay and payouts | Each rider's owed balance and per-delivery pay, mark a period as paid (simulated), and payout history. Account officers too (ACC-02). | Planned |
 | MGR-31 | Pricing and pay settings | The delivery fee (₦1,500 by default) and the rider pay per delivery (₦1,000 by default) are both editable. Changes show in the customer app and rider app straight away, apply to new orders and deliveries only, and are written to the audit log. Rider pay can’t exceed the delivery fee. | **Decided** |
 | MGR-32 | Rider tracking mode setting | Light (default) or milestones only (section 7) | **Decided** |
@@ -1213,7 +1213,7 @@ A seed script fills the database with **three months** of history (owner decisio
 
 **Quality rules**
 - The script is deterministic (a fixed random seed), so the same day produces the same history.
-- Every row is flagged as demo (fake customers have `demo-customer-` IDs), and running the script wipes and regenerates it (MGR-29). The starting photos are the exception (8.1.1).
+- Every row is flagged as demo (fake customers have `demo-customer-` IDs), and running the script wipes and regenerates it (MGR-29). **Reset demo data (built 17 November 2026):** `scripts/reset-demo.ts` clears every order and money record, removes staff a manager added, and runs the base, people, media, and history seeds in turn, writing each step to the `demo_reset` table and telling the API (`POST /demo/reset-all/notify`, signed with `DEMO_RESET_SECRET`). The API starts it from `POST /demo/reset-all` through `DEMO_RESET_RUNNER`: `github` online (`.github/workflows/reset-demo.yml`, started with `GITHUB_RESET_TOKEN`), or the laptop helper `npm run demo:runner`. Photos go through the API (`/demo/reset-all/media/*`), so the runner needs no Cloudflare key. Measured on the laptop: 1 minute 20 seconds. A reset still running after 30 minutes counts as failed. The starting photos are the exception (8.1.1).
 - It checks its own output before saving and saves nothing if a check fails: every order inside its hours and not in the future; lines, totals, and payments add up; timelines in order and ending in the order’s status; every order attributed to staff; refunds never more than the order, partial refunds at most 99%, and every cancellation refunded; online numbers continuous from O-0001 and walk-ins from W-001 each day; no rider carrying more than three orders at once, and none after leaving; payouts equal to their deliveries’ pay; cash received never less than the total.
 - It refuses to run when real (non-demo) online orders exist, because their numbers would clash.
 - Fake customers use emails on the reserved `example.com` domain and 0800 phone numbers, which aren’t mobile numbers, so nothing can reach a real person.
@@ -1233,6 +1233,7 @@ A seed script fills the database with **three months** of history (owner decisio
 
 | Version | Change |
 |---|---|
+| 0.54 | 17 November 2026 (later): Reset demo data built as a full factory reset (owner decisions; MGR-29, 18.3); the kitchen is open every day (owner). |
 | 0.53 | 17 November 2026: WEB-08 adds the Restaurant details on Home and the Search Console and Bing plan. |
 | 0.52 | 16 November 2026 (late): the website built (WEB-01 to WEB-04 and WEB-06 to WEB-10) in `apps/website/public`, published by a GitHub Actions workflow; 16.1 item 5 note; BDPA estate’s centre is the owner’s pin. |
 | 0.51 | 16 November 2026 (evening): the owner’s kitchen pin and delivery boundary, now checked by the API; Evbogida added to the areas; area centres from OpenStreetMap (4.7, `list-of-areas.md` 3a). |

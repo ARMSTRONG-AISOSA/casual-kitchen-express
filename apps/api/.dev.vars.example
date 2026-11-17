@@ -14,3 +14,13 @@ GOOGLE_CLIENT_SECRET=""
 # M-001 stays the demo owner. For the deployed database, pass both when seeding.
 OWNER_GOOGLE_EMAIL=""
 OWNER_NAME=""
+
+# Reset demo data (MGR-29). The API asks a runner to do the reset, since it is too much work for one
+# request. On the laptop the runner is the local helper (`npm run demo:runner`). DEMO_RESET_SECRET
+# is any random text (openssl rand -base64 32); the helper reads the same file. Deployed:
+#   DEMO_RESET_RUNNER = github   (wrangler secret put DEMO_RESET_RUNNER)
+#   GITHUB_RESET_TOKEN = a fine-grained GitHub token for this repository with Actions: read and write
+#   DEMO_RESET_SECRET = the same value as the GitHub repository secret of that name
+DEMO_RESET_RUNNER="http://127.0.0.1:8790/run"
+DEMO_RESET_SECRET="replace-with-a-random-secret"
+GITHUB_RESET_TOKEN=""

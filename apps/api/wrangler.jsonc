@@ -17,6 +17,8 @@
   ],
   // Image files (architecture.md 8.2). Locally, wrangler keeps the bucket in .wrangler/state.
   "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "cke-media" }],
+  // Reset demo data (MGR-29): the repository whose GitHub Actions run the reset once deployed.
+  "vars": { "GITHUB_REPO": "ARMSTRONG-AISOSA/casual-kitchen-express" },
   // Sign-in rate limiting (architecture.md 12.2) and the live connection every app keeps open
   // (LiveHub, architecture.md 10). The free plan only has SQLite-backed classes.
   "durable_objects": {

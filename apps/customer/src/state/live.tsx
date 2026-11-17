@@ -10,6 +10,7 @@ import { AppState } from "react-native";
 import { api } from "../api";
 import { sessionCookie } from "../auth";
 import { registerPush } from "../push";
+import { refreshCatalog } from "./catalog";
 import { MENU, PROTEINS, SWALLOWS, type ProteinId, type SwallowId } from "../data/menu";
 import { useToast } from "../ui/toast";
 import {
@@ -314,6 +315,14 @@ export function CustomerLive() {
               }
               return { others: [o, ...others], history };
             });
+          } else if (m.type === "reload") {
+            // Reset demo data (MGR-29): orders were cleared and the menu rebuilt, so the basket's
+            // dishes no longer exist. Start the basket again and load what's true now.
+            if (m.reason === "reset") {
+              set({ cart: [] });
+              void refreshCatalog();
+            }
+            void reloadNow().catch(() => {});
           } else if (m.type === "catalog") {
             void api?.bootstrap().then((b) => {
               catalog = b;

@@ -1,0 +1,42 @@
+# Reset demo data (MGR-29) for the deployed app. The API starts this when a manager taps Reset demo
+# data in Demo controls (src/demo/reset.ts), because rebuilding three months of history is too
+# much work for one Worker request on the free plan. It runs apps/api/scripts/reset-demo.ts, which
+# reports each step back to the API. It can also be started by hand from the Actions tab.
+#
+# Repository secrets (Settings → Secrets and variables → Actions):
+#   DATABASE_URL        the Neon connection string (direct, not through Hyperdrive)
+#   DEMO_RESET_SECRET   the same value as the Worker secret of that name
+#   OWNER_GOOGLE_EMAIL  the owner's Google email (M-001)
+#   OWNER_NAME          the owner's name
+name: Reset demo data
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: reset-demo
+  cancel-in-progress: false
+
+jobs:
+  reset:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26
+          cache: npm
+      - name: Install the API's packages only
+        run: npm ci --workspace @cke/api --workspace @cke/validation --include-workspace-root
+      - name: Reset
+        run: npm run demo:reset --workspace @cke/api
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DEMO_RESET_SECRET: ${{ secrets.DEMO_RESET_SECRET }}
+          DEMO_RESET_NOTIFY_URL: https://cke-api.casualkitchenexpress.workers.dev/demo/reset-all/notify
+          OWNER_GOOGLE_EMAIL: ${{ secrets.OWNER_GOOGLE_EMAIL }}
+          OWNER_NAME: ${{ secrets.OWNER_NAME }}

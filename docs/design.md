@@ -1,6 +1,6 @@
 # CKE DESIGN
 
-**Document Status:** Draft v0.40. Records UI and UX decisions, design choices, page flows, and design libraries. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day).  
+**Document Status:** Draft v0.41. Records UI and UX decisions, design choices, page flows, and design libraries. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day).  
 **Related documents:** `Casual-Kitchen-Express.md` (business and brand, surface level), `architecture.md` (functions, features, data, technical decisions), and `list-of-areas.md` (delivery areas).
 
 ---
@@ -755,6 +755,7 @@ Every design question is now decided. Anything that needs checking is listed in 
 
 | Version | Change |
 |---|---|
+| 0.41 | 17 November 2026 (later): Demo controls gains Reset demo data under Reset: a sheet explaining what goes back to the start, a tick box (“I understand everything goes back to the start”), then Reset everything; a progress card shows the step (1 of 5 and its name) or why it stopped; the practice buttons wait while it runs, and every app reloads when it finishes (the customer’s basket starts again, since the menu is rebuilt). |
 | 0.40 | 17 November 2026: the website’s theme switch moved from the footer to the header (owner request): after Get the app on wide screens, an icon beside Menu on phones (8.7). |
 | 0.39 | 16 November 2026 (late): the website built (8.7 lists what changed from the prototype). |
 | 0.38 | 16 November 2026: Use my current location on the address screen (4.3); Demo controls on a live tablet place practice orders, auto-play them, and remove them (7.2); push notifications are only shown while an app is in the background, since the open app already shows the change. |

@@ -1,10 +1,24 @@
-import type { DemoState } from "@cke/api-client";
+import type { DemoResetState, DemoState } from "@cke/api-client";
 import { ApiError } from "@cke/api-client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { View } from "react-native";
 import { api } from "../../src/api";
 import { CUSTOMERS, MENU, type Order } from "../../src/data/seed";
+import { onDemoReset } from "../../src/state/live";
 import { initial, useStore } from "../../src/state/store";
-import { Button, Card, Chip, Chips, Page, Section, Sheet, SwitchRow, T } from "../../src/ui/kit";
+import { useTheme } from "../../src/state/theme";
+import {
+  Button,
+  Card,
+  Chip,
+  Chips,
+  ConfirmTick,
+  Page,
+  Section,
+  Sheet,
+  SwitchRow,
+  T,
+} from "../../src/ui/kit";
 import { TOUR, useTour } from "../../src/ui/tour";
 import { useToast } from "../../src/ui/toast";
 
@@ -140,9 +154,11 @@ export default function Demo() {
           }}
         />
       </Sheet>
-      <T v="small" muted style={{ marginTop: 14 }}>
-        {initial().orders.length} orders in the starting data.
-      </T>
+      {s.live ? null : (
+        <T v="small" muted style={{ marginTop: 14 }}>
+          {initial().orders.length} orders in the starting data.
+        </T>
+      )}
     </Page>
   );
 }
@@ -157,13 +173,33 @@ function LivePractice() {
   const [st, setSt] = useState<DemoState | null>(null);
   const [confirm, setConfirm] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [resetOpen, setResetOpen] = useState(false);
+  const [understood, setUnderstood] = useState(false);
+  const [reset, setReset] = useState<DemoResetState | null>(null);
+  const wasRunning = useRef(false);
+  // Progress arrives on the live connection while Reset demo data runs (MGR-29).
+  useEffect(() => onDemoReset(setReset), []);
+  const resetting = reset?.status === "running";
   const refresh = useCallback(() => {
     void api
       ?.demoState()
-      .then(setSt)
+      .then((d) => {
+        setSt(d);
+        setReset(d.reset);
+      })
       .catch(() => {});
   }, []);
   useEffect(refresh, [refresh]);
+  useEffect(() => {
+    if (!reset) return;
+    if (reset.status === "running") wasRunning.current = true;
+    else if (wasRunning.current) {
+      wasRunning.current = false;
+      toast(reset.status === "idle" ? "Demo data reset" : "The reset stopped");
+      // Auto-play is back to off and the practice count to none.
+      refresh();
+    }
+  }, [reset, toast, refresh]);
 
   const run = async (call: () => Promise<unknown>, done?: (r: never) => string) => {
     setBusy(true);
@@ -188,14 +224,18 @@ function LivePractice() {
     <>
       <Section title="Practice orders">
         <Card style={{ marginTop: 0 }}>
-          <Button label="New online order" disabled={busy} onPress={() => void place("online")} />
+          <Button
+            label="New online order"
+            disabled={busy || resetting}
+            onPress={() => void place("online")}
+          />
           <T v="small" muted style={{ marginTop: 8 }}>
             A pretend customer order on the Board, marked Practice. Riders see it in their queue.
           </T>
           <Button
             label="New walk-in order"
             variant="ghost"
-            disabled={busy}
+            disabled={busy || resetting}
             style={{ marginTop: 12 }}
             onPress={() => void place("walkin")}
           />
@@ -228,12 +268,66 @@ function LivePractice() {
         </Card>
       </Section>
       <Section title="Reset">
-        <Button label="Remove practice orders" variant="ghost" onPress={() => setConfirm(true)} />
+        <Button
+          label="Remove practice orders"
+          variant="ghost"
+          disabled={resetting}
+          onPress={() => setConfirm(true)}
+        />
         <T v="small" muted style={{ marginTop: 8 }}>
           Takes every practice order off the Board and the reports. Real orders and the history
           stay.
         </T>
+        {reset && (resetting || reset.status === "failed") ? <ResetProgress reset={reset} /> : null}
+        <Button
+          label="Reset demo data"
+          variant="ghost"
+          disabled={resetting || busy}
+          style={{ marginTop: 16 }}
+          onPress={() => {
+            setUnderstood(false);
+            setResetOpen(true);
+          }}
+        />
+        <T v="small" muted style={{ marginTop: 8 }}>
+          Back to the start: every order goes, including testers’, and the menu, prices, settings,
+          staff, photos, and three months of history are rebuilt. About 3 minutes.
+          {reset?.finishedAt && reset.status === "idle"
+            ? ` Last reset ${new Date(reset.finishedAt).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}.`
+            : ""}
+        </T>
       </Section>
+      <Sheet visible={resetOpen} onClose={() => setResetOpen(false)} title="Reset demo data?">
+        <T muted>
+          Every order goes, including ones testers placed, with payouts, cash-ups, and closed
+          months. The menu, prices, soups, settings, staff, and photos go back to how they started,
+          and staff added since are removed. Three months of history are then rebuilt. Testers keep
+          their accounts. New orders wait until it’s done, in about 3 minutes.
+        </T>
+        <ConfirmTick
+          checked={understood}
+          onChange={setUnderstood}
+          label="I understand everything goes back to the start"
+        />
+        <Button
+          label="Reset everything"
+          variant="danger"
+          disabled={!understood}
+          style={{ marginTop: 16 }}
+          onPress={() => {
+            setResetOpen(false);
+            void run(async () => {
+              try {
+                setReset((await api!.resetDemo()).reset);
+              } catch (e) {
+                // The server says why (for example, the helper isn't running on the laptop).
+                refresh();
+                throw e;
+              }
+            });
+          }}
+        />
+      </Sheet>
       <Sheet visible={confirm} onClose={() => setConfirm(false)} title="Remove practice orders?">
         <T muted>Every practice order goes, with its alerts and refunds. Real orders stay.</T>
         <Button
@@ -251,5 +345,43 @@ function LivePractice() {
         />
       </Sheet>
     </>
+  );
+}
+
+/** Reset demo data's progress: a bar with the step's name, or why it stopped. */
+function ResetProgress({ reset }: { reset: DemoResetState }) {
+  const t = useTheme();
+  const failed = reset.status === "failed";
+  const share = reset.steps ? Math.min(1, (reset.step + 0.5) / reset.steps) : 0;
+  return (
+    <Card style={{ marginTop: 14 }}>
+      <T v="label">{failed ? "The reset stopped" : "Resetting demo data"}</T>
+      {failed ? (
+        <T muted style={{ marginTop: 6 }}>
+          {reset.error ?? "Try again."}
+        </T>
+      ) : (
+        <>
+          <View
+            accessibilityRole="progressbar"
+            accessibilityValue={{ min: 0, max: reset.steps, now: reset.step }}
+            style={{ height: 8, borderRadius: 4, backgroundColor: t.line, marginTop: 10 }}
+          >
+            <View
+              style={{
+                height: 8,
+                borderRadius: 4,
+                width: `${Math.round(share * 100)}%`,
+                backgroundColor: t.primary,
+              }}
+            />
+          </View>
+          <T v="small" muted style={{ marginTop: 8 }}>
+            Step {Math.min(reset.step + 1, reset.steps)} of {reset.steps}:{" "}
+            {reset.label ?? "Starting"}
+          </T>
+        </>
+      )}
+    </Card>
   );
 }

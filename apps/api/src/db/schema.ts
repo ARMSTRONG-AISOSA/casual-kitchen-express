@@ -697,3 +697,19 @@ export const notification = pgTable("notification", {
   sentAt: at("sent_at").notNull().defaultNow(),
   isDemo: isDemo(),
 });
+
+/**
+ * Reset demo data (MGR-29): the one running or last reset. The reset itself never clears this row.
+ * The script reports each step here, so Demo controls can show progress after a reload.
+ */
+export const demoReset = pgTable("demo_reset", {
+  id: smallint("id").primaryKey().default(1),
+  status: text("status").$type<"idle" | "running" | "failed">().notNull().default("idle"),
+  step: smallint("step").notNull().default(0),
+  steps: smallint("steps").notNull().default(0),
+  label: text("label"),
+  startedAt: at("started_at"),
+  finishedAt: at("finished_at"),
+  startedBy: text("started_by"), // a staff code; no link, since the reset may remove that person
+  error: text("error"),
+});

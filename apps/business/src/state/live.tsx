@@ -1,4 +1,4 @@
-import type { LiveMessage, SettingsView, StaffOrder } from "@cke/api-client";
+import type { DemoResetState, LiveMessage, SettingsView, StaffOrder } from "@cke/api-client";
 import { useCallback, useEffect, useRef } from "react";
 import { AppState } from "react-native";
 import { beep, chime } from "../alert-sound";
@@ -6,7 +6,7 @@ import { api } from "../api";
 import { sessionCookie } from "../auth";
 import { registerPush } from "../push";
 import type { Order } from "../data/seed";
-import { refreshCatalog } from "./catalog";
+import { refreshCatalog, refreshPeople } from "./catalog";
 import { lineName, mapAlert, mapOrder, mapRow } from "./mapping";
 import { myRole, useStore, type Settings, type State } from "./store";
 
@@ -55,6 +55,15 @@ const settingsFrom = (v: SettingsView, prev: Settings): Partial<State> => ({
   },
   areaIds: Object.fromEntries(v.areas.map((a) => [a.name, a.id])),
 });
+
+/** Demo controls listens here for Reset demo data's progress (MGR-29). */
+const demoResetListeners = new Set<(r: DemoResetState) => void>();
+export function onDemoReset(f: (r: DemoResetState) => void) {
+  demoResetListeners.add(f);
+  return () => {
+    demoResetListeners.delete(f);
+  };
+}
 
 /** Loads everything the person's role may see. Shared with actions that need a fresh copy. */
 let reloadNow: () => Promise<void> = async () => {};
@@ -160,8 +169,12 @@ export function LiveSync() {
         if (roleRef.current === "dispatch" || roleRef.current === "manager")
           void api?.settings().then((v) => set((st) => settingsFrom(v, st.settings)));
       } else if (m.type === "reload") {
-        // Practice orders were reset (Demo controls): load what's true now.
+        // Practice orders were removed, or Reset demo data finished (Demo controls): load what's
+        // true now. After a full reset the staff list changed too.
         void load().catch(() => {});
+        if (m.reason === "reset") void refreshPeople();
+      } else if (m.type === "demo-reset") {
+        demoResetListeners.forEach((f) => f(m.reset));
       } else if (m.type === "alert-settings") {
         const v = m.alerts;
         set((st) => ({

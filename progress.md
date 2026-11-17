@@ -1365,3 +1365,32 @@ Append a new dated entry after each work session. Never edit or delete earlier e
 **Open questions:** are there any closed days?
 
 **Next step:** step 9. Search Console and Bing wait until the site is online (after the push).
+
+## [2026-11-17] Uselu Market pin, open every day, the email on the site, and Reset demo data
+
+**What was done:**
+- **Owner decisions:** the kitchen is open every day (website Home, About, FAQ, and the restaurant details; `Casual-Kitchen-Express.md`); Uselu’s starting pin is the owner’s Uselu Market pin (6.374718, 5.613317, inside the boundary); the Osasogie task is dropped (stays an estimate).
+- **Email on the website:** with the owner’s permission in the session, added to every footer’s Contact list and the privacy page’s Questions.
+- **All three apps running** on the tablet (first start took about 11 minutes, building all three at once from a cold cache).
+- **Reset demo data (MGR-29), built.** Owner choices: run without new accounts if possible, measuring first; delete testers’ orders too; a full factory reset.
+  - **Measured first:** rebuilding the history takes about 1.2 seconds of processing (about 13 ms a day of history) against the free plan’s 10 ms per request, so the day-at-a-time idea didn’t fit and, as agreed, a runner does the work: GitHub Actions once deployed, and a small helper on the laptop (`npm run demo:runner`).
+  - **What it does** (`apps/api/scripts/reset-demo.ts`): clears every order and money record (orders with their lines, payments, and events; deliveries, refunds, ratings, requests, alerts, adjustments, payouts, cash-ups, closed months, the audit trail, notifications, hours overrides), puts riders offline, removes staff a manager added, then runs the base, people, media, and history seeds. Seeded staff go back to their starting status. Testers keep their accounts and addresses.
+  - **API:** `POST /demo/reset-all` (managers, `{ "confirm": "RESET" }`), `POST /demo/reset-all/notify` and `/demo/reset-all/media/*` (the runner, signed with `DEMO_RESET_SECRET`), the state in `GET /demo`, a new `demo_reset` table (migration `0009_demo-reset`), new orders refused with 503 while it runs, and a reset older than 30 minutes counted as failed.
+  - **Photos through the API:** the first run took 13 minutes, nearly all of it starting wrangler once per photo; sending them through the API brought the whole reset to **1 minute 20 seconds**, and the GitHub runner needs no Cloudflare key.
+  - **Apps:** Demo controls has Reset demo data (sheet, tick box, Reset everything), a progress card with each step, and the time of the last reset; practice buttons wait while it runs; when it finishes every app reloads (Business: orders, menu, settings, and staff; rider: queue; customer: orders and menu, and the basket starts again). Auto-play goes back to off.
+  - **Tested on the tablet:** pressed the button as the owner; the progress card showed each step; orders were refused during it; it finished in 1 minute 20 seconds with 4,274 orders of history, 10 staff, 22 menu items, and all its checks passed; auto-play back to off.
+  - **Tests:** 41 of 41 API tests pass (new: who may reset, the secret, refusing orders while running, one reset at a time, the 30-minute limit). Typecheck and lint clean.
+
+**Owner steps for Reset demo data once the app is online (with the Neon and Cloudflare deploy, step 9):**
+1. GitHub: **Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token**. Name it `cke-reset`, choose only the **casual-kitchen-express** repository, and under **Repository permissions** set **Actions** to **Read and write**. Copy the token.
+2. Claude stores it on the API (`wrangler secret put GITHUB_RESET_TOKEN`), with `DEMO_RESET_RUNNER` = `github` and a new `DEMO_RESET_SECRET`.
+3. In the repository: **Settings → Secrets and variables → Actions → New repository secret**, four times: `DATABASE_URL` (the Neon connection string), `DEMO_RESET_SECRET` (the same value as step 2), `OWNER_GOOGLE_EMAIL`, and `OWNER_NAME`.
+4. Press Reset demo data once in the app to check it; Claude watches the run in the Actions tab.
+
+**Files created/updated:** `apps/api` (`drizzle/0009_demo-reset.sql`, `src/db/schema.ts`, `src/demo/reset.ts` new, `src/routes/demo.ts`, `src/index.ts`, `scripts/reset-demo.ts` new, `scripts/reset-runner.ts` new, `scripts/people.ts` new, `scripts/seed-people.ts`, `scripts/seed-media.ts`, `scripts/owner.ts`, `wrangler.jsonc`, `worker-configuration.d.ts`, `.dev.vars.example`, `package.json`, `test/lifecycle.test.ts`, `README.md`), `.github/workflows/reset-demo.yml` (new), `packages/api-client`, `apps/business` (`app/(app)/demo.tsx`, `src/state/live.tsx`), `apps/customer/src/state/live.tsx`, `apps/website/public/*.html`, `packages/validation`, `docs/architecture.md` (v0.54), `docs/design.md` (v0.41), `docs/list-of-areas.md`, `docs/Casual-Kitchen-Express.md`, `progress.md`. `.dev.vars` got the reset settings (not committed).
+
+**Decisions:** Reset demo data is a full factory reset (owner); a runner does it (measured); photos go through the API.
+
+**Open questions:** none.
+
+**Next step:** plan the owner’s feature additions and removals together, then step 9.

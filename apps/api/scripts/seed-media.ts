@@ -43,17 +43,47 @@ const client = new Client({ connectionString: url });
 await client.connect();
 const db = drizzle(client, { schema: t, casing: "snake_case" });
 
-// Puts one file into wrangler's local R2.
-const put = (path: string, file: string) =>
+// Where files go. During Reset demo data (MGR-29) they go through the API (MEDIA_UPLOAD_URL, signed
+// with DEMO_RESET_SECRET): one quick request per photo, locally and online, with no Cloudflare key.
+// Otherwise wrangler puts them into its local R2 (or the real bucket with R2_REMOTE=1).
+const uploadUrl = process.env.MEDIA_UPLOAD_URL;
+const resetSecret = process.env.DEMO_RESET_SECRET ?? "";
+const where = process.env.R2_REMOTE === "1" ? "--remote" : "--local";
+
+async function put(path: string, file: string) {
+  if (uploadUrl) {
+    const res = await fetch(`${uploadUrl}/${path}`, {
+      method: "PUT",
+      headers: { "x-demo-reset-secret": resetSecret, "content-type": "image/webp" },
+      body: readFileSync(file),
+    });
+    if (!res.ok) throw new Error(`Uploading ${path} failed (${res.status})`);
+    return;
+  }
   execFileSync(
     "npx",
     ["wrangler", "r2", "object", "put", `cke-media/${path}`, "--file", file].concat([
       "--content-type",
       "image/webp",
-      "--local",
+      where,
     ]),
     { cwd: root, stdio: "ignore" },
   );
+}
+
+async function remove(path: string) {
+  if (uploadUrl) {
+    await fetch(`${uploadUrl}/${path}`, {
+      method: "DELETE",
+      headers: { "x-demo-reset-secret": resetSecret },
+    });
+    return;
+  }
+  execFileSync("npx", ["wrangler", "r2", "object", "delete", `cke-media/${path}`, where], {
+    cwd: root,
+    stdio: "ignore",
+  });
+}
 
 // Start clean: unlink what this script links (and anything still pointing to an earlier seeded
 // photo), then remove the earlier seeded photos, whose files live under menu/ and seed-staff/.
@@ -103,7 +133,7 @@ await db
 const byFile = new Map<string, string>();
 for (const c of credits) {
   const path = `menu/${c.file}`;
-  put(path, join(dir, c.file));
+  await put(path, join(dir, c.file));
   const business = c.sourceKind === "business";
   const [row] = await db
     .insert(t.mediaAsset)
@@ -138,7 +168,7 @@ await db
 for (const file of staffFiles) {
   const code = file.replace(/\.webp$/, "");
   const path = `seed-staff/${file}`;
-  put(path, join(staffDir, file));
+  await put(path, join(staffDir, file));
   const size = webpSize(new Uint8Array(readFileSync(join(staffDir, file))));
   if (!size) throw new Error(`${file} isn't a WebP image`);
   const [row] = await db
@@ -165,11 +195,7 @@ const { rows: orphans } = await client.query<{ path: string }>(`
     and not exists (select 1 from staff_profile where photo_id = m.id)
     and not exists (select 1 from customer_profile where photo_id = m.id)
   returning path`);
-for (const { path } of orphans)
-  execFileSync("npx", ["wrangler", "r2", "object", "delete", `cke-media/${path}`, "--local"], {
-    cwd: root,
-    stdio: "ignore",
-  });
+for (const { path } of orphans) await remove(path);
 // Photos change what customers see, so the catalog version goes up (architecture.md 14.4).
 await client.query("update setting set catalog_version = catalog_version + 1 where id = 1");
 

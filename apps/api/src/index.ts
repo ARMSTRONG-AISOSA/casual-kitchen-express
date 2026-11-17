@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import type { Actor } from "./auth/actor";
 import { createAuth } from "./auth/auth";
 import { connect, type Db } from "./db/client";
+import { resetting } from "./demo/reset";
 import { addresses } from "./routes/addresses";
 import { alerts } from "./routes/alerts";
 import { bootstrap } from "./routes/bootstrap";
@@ -41,6 +42,18 @@ app.use("*", async (c, next) => {
   } finally {
     c.executionCtx.waitUntil(close());
   }
+});
+
+// While Reset demo data runs (MGR-29), new orders are refused: the reset would wipe them.
+const NEW_ORDER = new Set(["/me/orders", "/orders/walk-in", "/demo/orders"]);
+app.use("*", async (c, next) => {
+  if (c.req.method === "POST" && NEW_ORDER.has(new URL(c.req.url).pathname.replace(/\/$/, "")))
+    if (await resetting(c.get("db")))
+      return c.json(
+        { error: "Demo data is being reset. Try again in a few minutes.", resetting: true },
+        503,
+      );
+  await next();
 });
 
 // Sign-in, sign-out, and sessions (Better Auth, architecture.md 12).
