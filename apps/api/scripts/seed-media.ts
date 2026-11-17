@@ -1,6 +1,6 @@
-// Puts the starting photos into R2 and links them: menu photos (seed-media/menu, with credits.json)
+// Puts the starting photos into Workers KV and links them: menu photos (seed-media/menu, with credits.json)
 // to the menu items and soups, and staff photos (seed-media/staff/<code>.webp) to the staff. They
-// ship with the app's starting data, so they aren't flagged as demo. Safe to run again. Locally it writes to wrangler's local R2, the one
+// ship with the app's starting data, so they aren't flagged as demo. Safe to run again. Locally it writes to wrangler's local Workers KV, the one
 // `npm run dev:lan` serves. Run with `npm run db:seed-media --workspace @cke/api`.
 import { execFileSync } from "node:child_process";
 import { readdirSync, readFileSync, statSync } from "node:fs";
@@ -45,10 +45,10 @@ const db = drizzle(client, { schema: t, casing: "snake_case" });
 
 // Where files go. During Reset demo data (MGR-29) they go through the API (MEDIA_UPLOAD_URL, signed
 // with DEMO_RESET_SECRET): one quick request per photo, locally and online, with no Cloudflare key.
-// Otherwise wrangler puts them into its local R2 (or the real bucket with R2_REMOTE=1).
+// Otherwise wrangler puts them into its local Workers KV (or the real one with MEDIA_REMOTE=1).
 const uploadUrl = process.env.MEDIA_UPLOAD_URL;
 const resetSecret = process.env.DEMO_RESET_SECRET ?? "";
-const where = process.env.R2_REMOTE === "1" ? "--remote" : "--local";
+const where = process.env.MEDIA_REMOTE === "1" ? "--remote" : "--local";
 
 async function put(path: string, file: string) {
   if (uploadUrl) {
@@ -62,11 +62,7 @@ async function put(path: string, file: string) {
   }
   execFileSync(
     "npx",
-    ["wrangler", "r2", "object", "put", `cke-media/${path}`, "--file", file].concat([
-      "--content-type",
-      "image/webp",
-      where,
-    ]),
+    ["wrangler", "kv", "key", "put", path, "--path", file, "--binding", "MEDIA", where],
     { cwd: root, stdio: "ignore" },
   );
 }
@@ -79,7 +75,7 @@ async function remove(path: string) {
     });
     return;
   }
-  execFileSync("npx", ["wrangler", "r2", "object", "delete", `cke-media/${path}`, where], {
+  execFileSync("npx", ["wrangler", "kv", "key", "delete", path, "--binding", "MEDIA", where], {
     cwd: root,
     stdio: "ignore",
   });

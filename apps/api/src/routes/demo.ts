@@ -117,7 +117,7 @@ export const demo = new Hono<Ctx>()
       return c.json({ ok: true });
     }
     if (!path.endsWith(".webp")) return c.json({ error: "Only WebP photos" }, 400);
-    await c.env.MEDIA.put(path, c.req.raw.body, { httpMetadata: { contentType: "image/webp" } });
+    await c.env.MEDIA.put(path, await c.req.arrayBuffer());
     return c.json({ ok: true });
   })
 

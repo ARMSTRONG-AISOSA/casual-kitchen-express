@@ -372,6 +372,80 @@ export type MyOrder = {
 export type RiderPosition = { lat: number; lng: number; at: string };
 
 /** Demo controls: auto-play, its speed, and how many practice orders are still moving. */
+/* ----- Reports (MGR-17 to MGR-22, MGR-27, MGR-34) ----- */
+export type ReportChannel = "all" | "online" | "walkin";
+export type ReportSummary = {
+  from: string;
+  to: string;
+  days: number;
+  channel: ReportChannel;
+  orders: {
+    total: number;
+    cancelled: number;
+    online: number;
+    walkin: number;
+    delivery: number;
+    pickup: number;
+    perDay: { date: string; orders: number; sales: number }[];
+    perHour: { hour: number; orders: number }[];
+  };
+  sales: {
+    total: number;
+    average: number;
+    refunds: number;
+    net: number;
+    cash: number;
+    card: number;
+    transfer: number;
+    online: number;
+    walkin: number;
+    deliveryFees: number;
+  };
+  times: {
+    acknowledge: number | null;
+    prep: number | null;
+    waitRider: number | null;
+    delivery: number | null;
+    total: number | null;
+    slowest: { number: string; minutes: number }[];
+  };
+  riders: {
+    code: string;
+    name: string;
+    deliveries: number;
+    minutes: number | null;
+    orderValue: number;
+    fees: number;
+    pay: number;
+  }[];
+  areas: { name: string; deliveries: number; minutes: number | null }[];
+  staff: { code: string; name: string; orders: number; value: number; prep: number | null }[];
+  menu: {
+    items: { name: string; quantity: number; revenue: number }[];
+    categories: { name: string; revenue: number }[];
+    soldOut: number;
+    itemsSold: number;
+  };
+  customers: {
+    customers: number;
+    newCustomers: number;
+    returning: number;
+    ordersEach: number;
+    leaderboard: { code: string; orders: number; spent: number }[];
+  };
+};
+export type RefundRowView = {
+  at: string;
+  orderNo: string;
+  channel: "online" | "walkin";
+  amount: number;
+  kind: "full" | "partial";
+  reason: string;
+  by: string;
+  byName: string;
+  byRole: string;
+};
+
 /** Reset demo data (MGR-29): the running or last reset, step by step. */
 export type DemoResetState = {
   status: "idle" | "running" | "failed";
@@ -639,6 +713,15 @@ export function createApiClient({ baseUrl, getHeaders, onUnauthorized }: ApiClie
         method: "PATCH",
         body: JSON.stringify(a),
       }),
+    /* ----- Reports (managers and account officers) ----- */
+    reportSummary: (from: string, to: string, channel: ReportChannel) =>
+      request<ReportSummary>(
+        `/reports/summary?${new URLSearchParams({ from, to, channel }).toString()}`,
+      ),
+    reportRefunds: (from: string, to: string, channel: ReportChannel) =>
+      request<{ refunds: RefundRowView[] }>(
+        `/reports/refunds?${new URLSearchParams({ from, to, channel }).toString()}`,
+      ),
     /* ----- Demo controls (managers, 18.4) ----- */
     demoState: () => request<DemoState>("/demo"),
     /** A practice order: online (a demo customer) or a walk-in. */

@@ -145,7 +145,7 @@ export const photos = new Hono<Ctx>()
 
     const id = c.req.param("id");
     const path = `${kind}/${crypto.randomUUID()}.webp`;
-    await c.env.MEDIA.put(path, bytes, { httpMetadata: { contentType: "image/webp" } });
+    await c.env.MEDIA.put(path, bytes);
     const actor = c.get("actor");
     const m = meta.data;
     let result: { status: 404 } | { status: 200; id: string; oldPath: string | null };

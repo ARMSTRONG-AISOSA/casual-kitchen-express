@@ -11,12 +11,13 @@
   "hyperdrive": [
     {
       "binding": "HYPERDRIVE",
-      "id": "00000000000000000000000000000000",
+      "id": "93b9a7dd2ebc4d59ab0429bef37117bf",
       "localConnectionString": "postgres://cke:cke-local-only@127.0.0.1:5432/cke",
     },
   ],
   // Image files (architecture.md 8.2). Locally, wrangler keeps the bucket in .wrangler/state.
-  "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "cke-media" }],
+  // Photos (8.1) in Workers KV: free with no card, unlike R2 (owner decision, 17 November 2026).
+  "kv_namespaces": [{ "binding": "MEDIA", "id": "2ec82bb08db345b48fffc7245b74b365" }],
   // Reset demo data (MGR-29): the repository whose GitHub Actions run the reset once deployed.
   "vars": { "GITHUB_REPO": "ARMSTRONG-AISOSA/casual-kitchen-express" },
   // Sign-in rate limiting (architecture.md 12.2) and the live connection every app keeps open

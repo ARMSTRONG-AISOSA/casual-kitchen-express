@@ -9,7 +9,7 @@ import * as t from "../db/schema";
 type Ctx = { Bindings: Env; Variables: { db: Db; actor: Actor } };
 
 /**
- * Image files live in R2 and only their links are in the database (architecture.md 8.2). A media ID
+ * Image files live in Workers KV and only their links are in the database (architecture.md 8.2). A media ID
  * never changes what it points to (replacing a photo makes a new one, 8.3), so phones and Cloudflare
  * can cache each image for a year and fetch it once.
  */
@@ -67,14 +67,14 @@ export const media = new Hono<Ctx>()
       if (!actor || !(actor.id === asset.ownerId || ["manager", "dispatch"].includes(actor.role)))
         return c.json({ error: "This photo is private" }, 401);
     }
-    const file = await c.env.MEDIA.get(asset.path);
+    const file = await c.env.MEDIA.get(asset.path, "stream");
     if (!file) return c.json({ error: "That image’s file is missing" }, 404);
-    return new Response(file.body, {
+    return new Response(file, {
       headers: {
         "Content-Type": `image/${asset.format}`,
         // A staff photo may be kept by the phone, but never by shared caches.
         "Cache-Control": `${isStaffPhoto || isCustomerPhoto ? "private" : "public"}, max-age=31536000, immutable`,
-        ETag: file.httpEtag,
+        ETag: `"${asset.path}"`, // a photo never changes at its address
       },
     });
   });

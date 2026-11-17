@@ -1,35 +1,47 @@
+import type { RefundRowView } from "@cke/api-client";
 import { naira } from "@cke/brand-tokens";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { View } from "react-native";
-import { REFUND_ROWS, type RefundRow, HISTORY_DAYS } from "../data/report-data";
-import { clock, useStore } from "../state/store";
+import { api } from "../api";
+import { clock } from "../state/store";
 import { useTheme } from "../state/theme";
 import { Button, Card, Chip, Chips, Section, Stat, T } from "./kit";
 
 const day = (ms: number) =>
   new Date(ms).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
 
+type RefundRow = Omit<RefundRowView, "at"> & { at: number };
+
 /**
  * Reports, Refunds (MGR-15, MGR-18): every refund in the chosen date range and channel, with who
- * made it. The same filters and export as the other reports. Today's refunds made in this app are
- * included at the top.
+ * made it, from the real records (GET /reports/refunds). Today's refunds are included.
  */
 export function RefundsReport({
-  range,
+  from,
+  to,
   channel,
 }: {
-  range: number;
+  from: string;
+  to: string;
   channel: "all" | "online" | "walkin";
 }) {
-  const { s } = useStore();
   const t = useTheme();
   const [sort, setSort] = useState<"newest" | "largest">("newest");
   const [shown, setShown] = useState(20);
-
-  const today: RefundRow[] = s.refunds.map((r) => ({ ...r, day: HISTORY_DAYS }));
-  const rows = [...today, ...REFUND_ROWS.filter((r) => r.day >= HISTORY_DAYS - range)]
-    .filter((r) => channel === "all" || r.channel === channel)
+  const q = useQuery({
+    queryKey: ["report-refunds", from, to, channel],
+    queryFn: () => api!.reportRefunds(from, to, channel),
+    enabled: !!api,
+    staleTime: 60_000,
+  });
+  // Today's date in West Africa Time, fixed while the report is open.
+  const [todayKey] = useState(() => new Date(Date.now() + 60 * 60_000).toISOString().slice(0, 10));
+  const rows: RefundRow[] = (q.data?.refunds ?? [])
+    .map((r) => ({ ...r, at: Date.parse(r.at) }))
     .sort((a, b) => (sort === "newest" ? b.at - a.at : b.amount - a.amount));
+  const isToday = (ms: number) =>
+    new Date(ms + 60 * 60_000).toISOString().slice(0, 10) === todayKey;
   const total = rows.reduce((a, r) => a + r.amount, 0);
 
   const group = (key: (r: RefundRow) => string) =>
@@ -102,7 +114,7 @@ export function RefundsReport({
         <Card style={{ marginTop: 0, paddingVertical: 4 }}>
           {!rows.length ? (
             <T muted style={{ paddingVertical: 10 }}>
-              No refunds in this range.
+              {q.isLoading ? "Loading…" : "No refunds in this range."}
             </T>
           ) : null}
           {rows.slice(0, shown).map((r, i) => (
@@ -113,7 +125,7 @@ export function RefundsReport({
               <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 10 }}>
                 <T v="label">
                   {r.orderNo}
-                  {r.day === HISTORY_DAYS ? " (today)" : ""}
+                  {isToday(r.at) ? " (today)" : ""}
                 </T>
                 <T bold>
                   {naira(r.amount)}

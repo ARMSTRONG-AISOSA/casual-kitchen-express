@@ -161,7 +161,7 @@ export const me = new Hono<Ctx>()
     const db = c.get("db");
     const profile = await ensureCustomer(db, actor);
     const path = `customer/${crypto.randomUUID()}.webp`;
-    await c.env.MEDIA.put(path, bytes, { httpMetadata: { contentType: "image/webp" } });
+    await c.env.MEDIA.put(path, bytes);
     let result: { id: string; oldPath: string | null };
     try {
       result = await db.transaction(async (tx) => {
