@@ -1443,3 +1443,18 @@ Append a new dated entry after each work session. Never edit or delete earlier e
 - **Power cut (owner’s PC lost power):** the repository checked clean and pushed; the database recovered on its own (all 4,274 orders, staff, and menu intact); the API, the reset helper, and the tablet connection restarted. The release builds that were running are redone from a clean start with the new resumable script `tools/release/build-apks.sh`. The scratch folder in `/tmp` was emptied; nothing in it was needed.
 
 **Next step:** finish the three release APKs, test them on the tablet, publish release v1.0.0 on GitHub, then pause for the battery test (the owner asked for a detailed explanation first).
+
+## [2026-11-18] Release v1.0.0 on GitHub, and paused before the battery test
+
+**What was done:**
+- **Release APKs:** the three apps built from a clean start with `tools/release/build-apks.sh` (commit 3f5836e): customer 80 MB (about 66 minutes, everything native compiled afresh after the power cut), rider 57 MB (28 minutes), business 60 MB (26 minutes). Each is signed with its own release key (checked with `apksigner`), holds only arm64-v8a and armeabi-v7a, and points at the online API.
+- **Tested on the tablet:** the dev builds were uninstalled (a release can’t install over a debug-signed app) and the three release APKs installed. The customer menu and photos load from the online API; the rider app signed in as Musa and the business app as Blessing, both online. No crashes in the log.
+- **GitHub release v1.0.0** (tag on 3f5836e, marked latest) with the three APKs, `SHA256SUMS.txt`, and the release notes plus checksums. The download matches its checksum, and the website’s App page now shows “v1.0.0, 18 November 2026”, 79.8 MB, the SHA-256, and downloads the customer APK directly.
+
+**Found while testing (small fixes, not yet done):**
+- Rider sign-in: the “username and password don’t match” message sits behind the keyboard, so a rider can miss it.
+- Business sign-in: the keyboard covers the Sign in button and the card doesn’t move up; the keyboard has to be closed first.
+
+**Notes:** the tablet now runs the release builds, not dev builds. To develop on it again, uninstall them and reinstall the dev builds (rider and business debug APKs are in `~/cke-release/debug-backup`; the customer one is rebuilt with `npx expo run:android`). The release APKs and checksums stay in `~/cke-release/1.0.0`.
+
+**Next step:** the battery test on a real phone (16.1, architecture 7.5), explained to the owner in detail first; then the two keyboard fixes, and the owner’s feature additions and removals.
