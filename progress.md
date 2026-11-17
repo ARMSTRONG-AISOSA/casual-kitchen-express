@@ -1394,3 +1394,21 @@ Append a new dated entry after each work session. Never edit or delete earlier e
 **Open questions:** none.
 
 **Next step:** plan the owner’s feature additions and removals together, then step 9.
+
+## [2026-11-17] Step 9 begun: the API and database online, reports on real data
+
+**What was done:**
+- **Owner:** happy with every feature and the reset’s downsides; asked for step 9, commits including online (pushing), and to sign in so Claude can do the rest.
+- **History checked before pushing:** 43 commits, no secret patterns and no secret files ever committed. The first push was refused: the laptop’s GitHub sign-in may not change workflow files (`.github/workflows`). `gh auth setup-git` connected git to it; the extra **workflow** permission needs the owner’s approval in the browser (two codes expired; still to do).
+- **Neon (owner signed in on the laptop):** project **cke** (`purple-shadow-15140316`) in Frankfurt (`aws-eu-central-1`), Postgres 17. The owner’s own `my-first-project` (US) is left alone. Migrations 0000 to 0009 applied; base, staff (the owner as M-001 from the laptop’s settings, no manager passwords), photos, and the three months of history seeded: 4,274 orders, all checks passed, 20 MB. The connection string is kept only in Claude’s scratchpad and in Hyperdrive, never in the repository.
+- **Cloudflare:** R2 needs a card, so photos moved to **Workers KV** (owner decision): namespace `cke-media`; Hyperdrive `cke-db` to Neon; the Worker deployed at https://cke-api.casualkitchenexpress.workers.dev with its secrets (a new sign-in secret, the Google client copied from `.dev.vars` without printing, the reset secret, and the runner set to GitHub). Checked: `/health`, the menu (22 items from Neon), and a photo (served from KV).
+- **Reports on real data:** `GET /reports/summary` and `/reports/refunds`; the Business app’s Reports (orders, sales, times, riders, areas, kitchen staff, menu, customers, refunds) use them, with a custom range and CSV export (shared as text). Checked on the tablet: 317 orders in the last 7 days, the riders, areas, and kitchen staff tables.
+- The tablet’s 8:30 pm sign-out signed the Business app out as designed.
+
+**Still to do in step 9:** Finance, Rider pay, Cash-up, and the Dashboard on real data; the owner’s GitHub approval, then the push, GitHub Pages, and the Google consent screen; the reset’s GitHub token and repository secrets; release keystores and signed APKs on GitHub Releases; the battery test on a real phone.
+
+**Files created/updated:** `apps/api` (`src/reports/summary.ts` new, `src/routes/reports.ts` new, `src/index.ts`, `src/routes/media.ts`, `src/routes/me.ts`, `src/routes/photos.ts`, `src/routes/demo.ts`, `scripts/seed-media.ts`, `wrangler.jsonc`, `worker-configuration.d.ts`), `packages/api-client`, `apps/business` (`app/(app)/reports.tsx`, `src/ui/refunds-report.tsx`), `docs/architecture.md` (v0.55), `progress.md`.
+
+**Decisions:** photos in Workers KV instead of R2 (owner); Neon in Frankfurt; reports computed live in SQL, ReportView tables left as a Proposal.
+
+**Next step:** the owner approves the GitHub workflow permission; then the push and the website; then Finance, Rider pay, Cash-up, and the Dashboard on real data.
