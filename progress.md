@@ -143,6 +143,8 @@ Everything is stopped: the API, the three app servers (Metro), the port-forwardi
 
 *Claude, on resume (in this order):* read this file; start the database (`npm run db:up` in `apps/api`); pair and connect the tablet with `adb`; start the API (`npm run dev:lan` in `apps/api`, with `NODE_OPTIONS="--network-family-autoselection-attempt-timeout=2000"`); keep `adb reverse tcp:8787 tcp:8787` up with a small loop; start Metro only for the app being worked on (customer 8081, rider 8082, business 8083); check that `/health` answers before telling the owner it’s ready.
 
+*If the power goes off mid-work (it did on 17 November 2026):* say **resume**. Claude checks the repository (`git fsck`), restarts the database (`npm run db:up` in `apps/api`; Postgres replays its last writes on its own), restarts the API and the reset helper (`npm run demo:runner`), and reruns any release build with `bash tools/release/build-apks.sh`, which keeps the APKs already built from the same code. Claude’s scratch folder is in `/tmp` and is emptied by a restart; nothing there is needed: the signing keys are in `~/cke-keys`, the built APKs in `~/cke-release`, and the online secrets on Cloudflare and GitHub.
+
 *Good to know:* the customer app on the tablet is signed out (its test customer was deleted). To test it again, sign in with a Google account listed under **Audience → Test users** in the Google console (until the consent screen is published). The Business app (`owner.m`) and the rider app (Musa, offline) are still signed in.
 
 **For the owner to attend to (16 November 2026)**
@@ -1431,3 +1433,13 @@ Append a new dated entry after each work session. Never edit or delete earlier e
 **Decisions:** a payout made in the app covers everything owed up to that day; Finance exports are CSV for now.
 
 **Next step:** release builds: signing keys, signed APKs, and the first GitHub release; then the battery test (pause for the owner).
+
+## [2026-11-17] The update notice, the release build, and recovering from a power cut
+
+**What was done:**
+- **Update notice:** each app checks GitHub’s latest release once, a few seconds after opening (release builds only), and offers Download or Later, as the website FAQ promises (`apps/*/src/update.tsx`, `checkForUpdate` in `packages/api-client`).
+- **Release signing:** one key per app made with `keytool` (RSA 4096, PKCS12, valid about 27 years) in `~/cke-keys` (only the owner’s account can read it), with the passwords in `~/cke-keys/README-passwords.txt` and `~/.gradle/gradle.properties`, never in the repository. `tools/expo-plugins/with-release-signing.js` signs release builds with them; a release build without its key stops.
+- **Contrast check (16.1):** all 60 text and colour pairs in the three apps’ light and dark themes measured; five fixed (design.md 3.6).
+- **Power cut (owner’s PC lost power):** the repository checked clean and pushed; the database recovered on its own (all 4,274 orders, staff, and menu intact); the API, the reset helper, and the tablet connection restarted. The release builds that were running are redone from a clean start with the new resumable script `tools/release/build-apks.sh`. The scratch folder in `/tmp` was emptied; nothing in it was needed.
+
+**Next step:** finish the three release APKs, test them on the tablet, publish release v1.0.0 on GitHub, then pause for the battery test (the owner asked for a detailed explanation first).
