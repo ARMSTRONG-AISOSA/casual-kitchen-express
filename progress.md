@@ -148,7 +148,7 @@ Everything is stopped: the API, the three app servers (Metro), the port-forwardi
 **For the owner to attend to (16 November 2026)**
 1. **Pushing to GitHub:** say “push” when ready. Nothing goes online before that.
 2. **After the push: put the website online and publish Google sign-in.** These are the six steps in the log entry “Step 8: the website” (turn on GitHub Pages, then give Google the homepage and privacy links and publish the consent screen).
-3. **Optional: your email on the website.** Run the one-line command in that same log entry, or leave it with WhatsApp and LinkedIn only.
+3. ~~**Optional: your email on the website**~~ **Done 17 November 2026:** with the owner’s permission in the session, Claude added it to every footer’s Contact list and the privacy page’s Questions.
 4. ~~**Osasogie’s pin**~~ **Dropped by the owner (17 November 2026);** it stays an estimate.
 5. **Website additions (owner request, 16 November 2026, to do next session):**
    - ~~**Light and dark mode button at the top**~~ **Done 17 November 2026:** in the header on every page, after Get the app on wide screens and as an icon beside Menu on phones (one tap, not inside Menu).
@@ -169,7 +169,7 @@ Everything is stopped: the API, the three app servers (Metro), the port-forwardi
 4. **Firebase project and Expo account for push notifications: done (16 November 2026).** Firebase project `cke-push`; Expo team `armstrong-aisosas-team` with cke-customer, cke-rider, and cke-business; the FCM V1 key is on Expo for all three (the downloaded key file was deleted by the owner). `google-services.json` is in the project root and kept out of Git.
 5. **Neon account** at deploy time (decided): steps to follow.
 6. **Publishing the website (after the first push):** step-by-step in the log entry of 16 November 2026, “Step 8: the website”: turn on GitHub Pages, then give Google the homepage and privacy links and publish the consent screen.
-7. **Optional contact email on the website:** the footer and privacy page show WhatsApp and LinkedIn. To add the email too, run the one-line command in that log entry yourself (Claude doesn’t write the address into files).
+7. ~~**Optional contact email on the website**~~ **Done 17 November 2026** (footer Contact and the privacy page).
 8. **OpenFreeMap donation (owner, 16 November 2026):** later, once a paid commercial project comes in. Nothing needed now.
 9. **Pushing to GitHub:** `origin` is https://github.com/ARMSTRONG-AISOSA/casual-kitchen-express.git (empty). Nothing is pushed until the owner says so.
 
