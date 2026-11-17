@@ -14,7 +14,7 @@
 
 **Launch Location:** Ugbowo, Benin City, Edo State, close to the University of Benin  
 **Delivery Range:** From Uselu to Oluku Market. CKE does not deliver beyond Oluku Market. All deliveries are handled by CKE's own riders.  
-**Opening Hours:** Online orders and delivery from 8:00 am to 6:00 pm. Walk-in service until 8:30 pm.
+**Opening Hours:** Open every day. Online orders and delivery from 8:00 am to 6:00 pm. Walk-in service until 8:30 pm.
 
 **Business Concept:**
 

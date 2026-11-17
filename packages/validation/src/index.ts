@@ -195,14 +195,14 @@ export const DELIVERY_BOUNDARY: [number, number][] = [
 
 /**
  * Where each area's pin starts when a customer picks it. From OpenStreetMap (16 November 2026),
- * except BDPA estate (the owner's pin) and Osasogie (an estimate; not on the map).
+ * except BDPA estate and Uselu (the owner's pins; Uselu's is Uselu Market) and Osasogie (an estimate).
  */
 export const AREA_CENTRES: Record<string, { lat: number; lng: number }> = {
   Ugbowo: { lat: 6.4003, lng: 5.61009 },
   Ekosodin: { lat: 6.41668, lng: 5.61665 },
   "BDPA estate": { lat: 6.393847, lng: 5.601806 }, // the owner's pin
   Osasogie: { lat: 6.3925, lng: 5.625 },
-  Uselu: { lat: 6.38339, lng: 5.61072 },
+  Uselu: { lat: 6.374718, lng: 5.613317 }, // Uselu Market, the owner's pin
   Uwelu: { lat: 6.38613, lng: 5.58266 },
   // Added by the owner's request (16 November 2026): beside the Ogida barracks, south-west of Uselu.
   Evbogida: { lat: 6.36693, lng: 5.60005 },
