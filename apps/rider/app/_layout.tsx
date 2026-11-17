@@ -13,6 +13,7 @@ import { StoreProvider } from "../src/state/store";
 import { RiderLive } from "../src/state/live";
 import { useTheme } from "../src/state/theme";
 import { ToastProvider } from "../src/ui/toast";
+import { UpdateNotice } from "../src/update";
 import { PushTaps } from "../src/push";
 
 function Shell() {
@@ -46,6 +47,7 @@ export default function RootLayout() {
     <StoreProvider>
       <SessionProvider>
         <ToastProvider>
+          <UpdateNotice />
           <RiderLive />
           <PushTaps />
           <Shell />

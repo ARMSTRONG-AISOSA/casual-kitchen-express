@@ -14,6 +14,7 @@ import { SessionProvider } from "../src/state/session";
 import { StoreProvider } from "../src/state/store";
 import { useTheme } from "../src/state/theme";
 import { ToastProvider } from "../src/ui/toast";
+import { UpdateNotice } from "../src/update";
 
 function Root() {
   // The counter tablet's screen stays on while the app is open (design.md 6.2).
@@ -48,6 +49,7 @@ export default function RootLayout() {
       <CatalogProvider>
         <SessionProvider>
           <ToastProvider>
+            <UpdateNotice />
             <Root />
           </ToastProvider>
         </SessionProvider>

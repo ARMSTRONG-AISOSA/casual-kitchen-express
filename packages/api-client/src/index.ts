@@ -933,3 +933,40 @@ export type PhotoCredit =
       licenceUrl?: string;
       sourceUrl: string;
     };
+
+/* ----- App updates (website FAQ: "How do I get updates?") ----- */
+
+/** The release page every app links to; GitHub shows the newest version's files there. */
+export const RELEASES_PAGE =
+  "https://github.com/ARMSTRONG-AISOSA/casual-kitchen-express/releases/latest";
+
+const newer = (a: string, b: string) => {
+  const pa = a.replace(/^v/, "").split(".").map(Number);
+  const pb = b.replace(/^v/, "").split(".").map(Number);
+  for (let i = 0; i < 3; i++) {
+    const d = (pa[i] ?? 0) - (pb[i] ?? 0);
+    if (d) return d > 0;
+  }
+  return false;
+};
+
+/**
+ * Asks GitHub for the latest release once, when an app opens, and returns it if it's newer than
+ * the running version. Quiet on any failure (offline, no release yet, GitHub's hourly limit).
+ */
+export async function checkForUpdate(
+  current: string,
+): Promise<{ version: string; url: string } | null> {
+  try {
+    const res = await fetch(
+      "https://api.github.com/repos/ARMSTRONG-AISOSA/casual-kitchen-express/releases/latest",
+      { headers: { Accept: "application/vnd.github+json" } },
+    );
+    if (!res.ok) return null;
+    const rel = (await res.json()) as { tag_name?: string; html_url?: string };
+    if (!rel.tag_name || !newer(rel.tag_name, current)) return null;
+    return { version: rel.tag_name.replace(/^v/, ""), url: rel.html_url ?? RELEASES_PAGE };
+  } catch {
+    return null;
+  }
+}
