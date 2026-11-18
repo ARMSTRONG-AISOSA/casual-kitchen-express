@@ -3,7 +3,7 @@
     "name": "CKE Rider",
     "slug": "cke-rider",
     "scheme": "cke-rider",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "icon": "../../brand/cke-logo-package/app-icon/cke-app-icon-1024.png",
@@ -22,7 +22,8 @@
         "android.permission.FOREGROUND_SERVICE_LOCATION",
         "android.permission.POST_NOTIFICATIONS"
       ],
-      "googleServicesFile": "../../google-services.json"
+      "googleServicesFile": "../../google-services.json",
+      "versionCode": 2
     },
     "plugins": [
       "expo-router",

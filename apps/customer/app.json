@@ -3,7 +3,7 @@
     "name": "CKE",
     "slug": "cke-customer",
     "scheme": "cke-customer",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "icon": "../../brand/cke-logo-package/app-icon/cke-app-icon-1024.png",
@@ -14,7 +14,8 @@
         "backgroundColor": "#C83F2D"
       },
       "permissions": ["android.permission.RECORD_AUDIO"],
-      "googleServicesFile": "../../google-services.json"
+      "googleServicesFile": "../../google-services.json",
+      "versionCode": 2
     },
     "plugins": [
       "expo-router",
