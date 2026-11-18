@@ -3,7 +3,7 @@
 The working memory for Casual Kitchen Express (CKE). Read this first, then the documents it points to. The top half (sections 1 to 8) is the current state; the **Log** at the bottom is append-only history.
 
 **Last updated:** 18 November 2026 (release 1.0.1, the README and the GitHub About box, and the documents brought up to date)
-**Stage:** **built and released.** All three apps, the API, and the website are online. Release **1.0.0** went out on GitHub Releases on 18 November 2026 and **1.0.1** (keyboard and rider tracking fixes) the same day. The owner wants **no further features** (18 November 2026). What is left: the battery test and the cold-start timing on a real phone (16.1), and upkeep.
+**Stage:** **built and released.** All three apps, the API, and the website are online. Release **1.0.0** went out on GitHub Releases on 18 November 2026 and **1.0.1** (keyboard and rider tracking fixes) the same day. The owner wants **no further features** (18 November 2026). The battery test passed on 18 November 2026. What is left: the cold-start timing on a real phone (16.1), the memory and CPU check on the next build, and upkeep.
 
 ---
 
@@ -128,7 +128,7 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and thr
 | Business and Kitchen app | Every feature in 5.3 for all four staff roles: the board and walk-ins, sold out and the soup of the day, alerts with the chime, dispatch, the order list, refunds and cancellation requests, menu and photos, people, reports on real data, rider pay, Finance (cash-up, statement, close month, audit), settings, demo controls with practice orders and auto-play, Reset demo data, and the tour guide |
 | API and database | Hono on Cloudflare Workers with Better Auth, Durable Objects for the live connection and the demo simulator, Neon Postgres through Hyperdrive (caching off), photos in Workers KV, Expo push, a role check on every route, and three months of seeded demo history (about 4,266 orders). 45 of 45 API tests pass. |
 | Website | Five pages on GitHub Pages (Home, About, App, FAQ, Privacy) with the light and dark switch, the release’s version, size, and checksum on the App page, search wording, schema.org Restaurant and FAQ data, the sitemap, and Google Search Console and Bing set up. 27 site checks pass. |
-| Checks (16.1) | All done except the battery test and the cold start over mobile data on a real phone. Memory and CPU on the release builds: no leaks, no crashes, 0% in the background. One order end to end through all three apps, with location pinging, passed (18 November 2026). |
+| Checks (16.1) | All done except the cold start over mobile data on a real phone. Memory and CPU on the release builds: no leaks, no crashes, 0% in the background. One order end to end through all three apps, with location pinging, passed (18 November 2026). Battery: passed, about 0.5% an hour for the whole tablet over a two-hour delivery (18 November 2026). |
 | Releases | **1.0.0** and **1.0.1** on GitHub Releases: three signed APKs each (arm64-v8a and armeabi-v7a), checksums, and release notes. Signing keys in `~/cke-keys` (outside the repository). |
 
 ---
@@ -142,7 +142,6 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and thr
 4. **OpenFreeMap donation:** later, once a paid commercial project comes in (owner, 16 November 2026).
 
 **Still to check (16.1, on a real phone)**
-- **The battery and heat test** (`architecture.md` 7.5: about 10% an hour or less during an active delivery). Explained to the owner on 18 November 2026; to be discussed before it is run.
 - **The cold start over mobile data** (16.1 item 13).
 
 **Kept on purpose**
@@ -151,6 +150,7 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and thr
 - **Development builds use the laptop’s API:** the Business and customer apps’ `.env` point at `http://localhost:8787` (Google only returns to `localhost`), which needs `adb reverse tcp:8787 tcp:8787` after every adb connect. Release builds use the online API.
 
 **Notes**
+- **Next build:** the memory and CPU check on the release builds (owner, 18 November 2026), and the update notice seen from the older version.
 - **Build-tool advisories:** four moderate `npm audit` findings (picomatch, minimatch, glob, esbuild in drizzle-kit), all in laptop build tools, none in the apps or the API. No safe upgrade existed on 18 November 2026; the owner chose to leave them for a later version. Check again before the next release.
 - **This laptop and Node.js:** Node tools that reach Cloudflare (Wrangler) need `NODE_OPTIONS="--network-family-autoselection-attempt-timeout=2000"`.
 - **Tests and `dev:lan` share local state:** stop the API’s `dev:lan` before `npm run test --workspace @cke/api`.
@@ -174,7 +174,7 @@ Every build step is done. The order followed `architecture.md` 16, adjusted by t
 | 6 | The screens connected to the API, the map, push, and riders’ location | **Done** (15 and 16 November) |
 | 7 | Capacity, batching, and the demo simulator | **Done** (16 November) |
 | 8 | Website | **Done** (16 November; online 17 November) |
-| 9 | Reports, rider pay, Finance, polish, the 16.1 checks, deploy, and release APKs | **Done** (17 and 18 November): online 17 November; release 1.0.0 and 1.0.1 on 18 November. Left: the battery test and the cold start on a real phone. |
+| 9 | Reports, rider pay, Finance, polish, the 16.1 checks, deploy, and release APKs | **Done** (17 and 18 November): online 17 November; release 1.0.0 and 1.0.1 on 18 November. Left: the cold start on a real phone. |
 
 ### 8.1 Resuming after a break
 
@@ -1456,3 +1456,14 @@ Append a new dated entry after each work session. Never edit or delete earlier e
 - **Temporary tablet setting:** stay awake while charging, turned on for the update test and turned off again (checked: 0).
 
 **Next step:** the battery test discussion and the cold start on a real phone; the owner backs up `~/cke-keys` and checks Search Console around 25 November.
+
+## [2026-11-18] The battery test, and test results in the README
+
+**What was done:**
+- **Battery and heat test (`architecture.md` 7.5): passed.** The owner couldn't go out, so it ran on the tablet with a moving test location (no second phone needed). Release 1.0.1, a practice online order (O-3233) accepted and picked up by Musa, then two hours unplugged with the screen off: the test location moved every 10 seconds at 30 km/h along a loop near the kitchen (at least 686 m from the drop-off), and a script on the laptop sampled the battery every minute and the rider's position in the online database. Results: battery 100% to 99%; Android's count 53 mAh for the whole tablet in 2 hours (about 0.5% an hour of 5,308 mAh); the rider app 2.0 mAh (Wi-Fi 1.4, wake locks 0.5, CPU 0.1) and Google Play services 2.3 mAh; 33.8 °C at the start, 31.9 °C at the end; 88 positions reached the server (about one every 80 seconds, Android batching with the screen off). Moving the location to the door turned on "Arriving soon"; the code entered in the rider app delivered it (₦1,000 to Musa) and the "Delivery in progress" notification went away. Limits: the GPS chip stayed off and the tablet used Wi-Fi, so a real phone will use more (estimate 1 to 2% an hour, still far below 10%).
+- **Tablet cleaned up:** test location providers removed, mock location denied to adb, deep doze back on, stay awake off (checked).
+- **README:** a "Tested on a real device" section (owner's yes), with the memory, CPU, smoothness, end-to-end, and battery results for release 1.0.1, dated, and saying what was simulated.
+- **Not checked:** the order's row in the online database after delivery (Neon's sign-in server wasn't answering); the rider app showed "Delivered", which only appears after the server accepts the code.
+- **Files:** `README.md`, `docs/architecture.md` (v0.61: 7.5, 16.1 item 4, the status line), this file.
+
+**Next step:** the cold start over mobile data on a real phone; the memory and CPU check on the next build; the owner backs up `~/cke-keys` and checks Search Console around 25 November.

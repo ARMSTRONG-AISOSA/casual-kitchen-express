@@ -28,6 +28,20 @@ The customer app is the one on the website. The rider and business apps are on t
 
 A new version installs over the old one, and you stay signed in. The apps tell you when one is out.
 
+## Tested on a real device
+
+Release 1.0.1, tested on 18 November 2026 on a budget Android tablet (Unisoc T310, 4 GB of memory, Android 12), using the release APKs.
+
+| Check | Result |
+|---|---|
+| Memory | No leaks after about 40 minutes of tapping through every screen of all three apps. Memory levels off at 104 to 154 MB per app. |
+| CPU | 9 to 14% of one core in use, 0% in the background. |
+| Smoothness | Screens draw in 12 to 16 ms, and taps respond well within 100 ms. Opening a screen costs a few slow frames (up to about 40 ms). |
+| End to end | One order through all three apps: placed and paid, cooked, picked up, followed live on the map, and delivered with the code. Every push notification arrived. |
+| Rider battery | Two-hour delivery shift, screen off: 100% to 99%. The whole tablet used about 0.5% an hour, the rider app about 1 mAh an hour, and it ended cooler than it started (33.8 to 31.9 °C). The target is 10% an hour or less. |
+
+The rider’s movement was simulated with a test location over Wi-Fi, so the GPS chip and mobile data were not used. A real phone on a real shift will use more, an estimated 1 to 2% an hour. Full figures are in [`docs/architecture.md`](docs/architecture.md), sections 7.5 and 16.1.
+
 ## How it’s built
 
 | Part | Technology |
