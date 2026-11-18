@@ -1,6 +1,6 @@
 # CKE DESIGN
 
-**Document Status:** Draft v0.42. Records UI and UX decisions, design choices, page flows, and design libraries. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day).  
+**Document Status:** Draft v0.43. Records UI and UX decisions, design choices, page flows, and design libraries. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day).  
 **Related documents:** `Casual-Kitchen-Express.md` (business and brand, surface level), `architecture.md` (functions, features, data, technical decisions), and `list-of-areas.md` (delivery areas).
 
 ---
@@ -310,7 +310,7 @@ Menu photography follows the brand's photography direction. Images are shown in 
 
 | Screen | Purpose |
 |---|---|
-| Sign in | Username and password from the manager. A line says "Forgot your password? Ask your manager." Other staff are told "This app is for riders. Kitchen, dispatch, and managers use CKE Kitchen." The rider stays signed in, even when the app opens without signal. |
+| Sign in | Username and password from the manager. A line says "Forgot your password? Ask your manager." Other staff are told "This app is for riders. Kitchen, dispatch, and managers use CKE Kitchen." The rider stays signed in, even when the app opens without signal. A failed sign-in’s message sits just above the Sign in button, so the keyboard never hides it (18 November 2026). |
 | Set a new password | Shown at the first sign-in, and after a manager resets the password |
 | My profile | A read-only view of the rider's own details and staff ID. No photo is shown, to keep the app image-free. |
 | Settings | Theme (light, dark, or follow the phone), and sound and vibration |
@@ -411,7 +411,7 @@ The top bar shows the screen title, the Demo chip on manager screens, the signed
 
 | Screen | Purpose |
 |---|---|
-| Sign in | Managers: Continue with Google. Kitchen staff, dispatch officers, and account officers: username and password from a manager. A Google account no manager added is told "That Google account isn’t a CKE manager. Ask the owner to add you in People." |
+| Sign in | Managers: Continue with Google. Kitchen staff, dispatch officers, and account officers: username and password from a manager. A Google account no manager added is told "That Google account isn’t a CKE manager. Ask the owner to add you in People." When the keyboard opens, the page moves up so the error line and the Sign in button stay in sight (18 November 2026). |
 | Order board | The main working screen |
 | Ticket detail | Items, notes, delivery or pickup, checklist by station |
 | Sold-out list | **Soup of the day** at the top (one tap picks today’s soup, and the customer app shows it straight away), then every item to switch on or off |
@@ -668,6 +668,7 @@ There is no menu page, delivery-area page, or contact page. The delivery area si
 
 - What is Casual Kitchen Express?
 - Where do you deliver, and where do you stop? (From Uselu to Oluku Market.)
+- Do you deliver to UNIBEN? (Yes: the Ugbowo campus and the student areas around it. Added 18 November 2026 for search.)
 - How much does delivery cost? (A flat ₦1,500 per order, and pickup is free.)
 - What are your opening hours? (Online orders and delivery from 8:00 am to 6:00 pm. Walk-in service until 8:30 pm.)
 - Do you take walk-ins? (Yes, at the counter until 8:30 pm, paying by cash or online.)
@@ -700,9 +701,9 @@ There is no menu page, delivery-area page, or contact page. The delivery area si
 - A prominent download button on Home and App: Golden Yellow on the dark hero and in Tomato Red elsewhere.
 - Fast loading and responsive from small phones upward, with compressed images.
 - Accessible: contrast, focus states, and the FAQ built with native expandable sections.
-- Social sharing previews and search titles set for each page.
+- Social sharing previews and search titles set for each page. **18 November 2026:** each title and description names what people search for (food delivery, Ugbowo, Benin City, UNIBEN, the dishes) within Google’s lengths, and Home’s first line reads “Home-style Nigerian meals from our kitchen in Ugbowo, Benin City, near UNIBEN, ordered in a few taps and delivered from Uselu to Oluku Market.”
 - GitHub Pages limits (published site about 1 GB, soft 100 GB a month, soft 10 builds an hour) are well within a small static site.
-- **Built 16 November 2026** from the prototype, with these changes: the logo files from the logo package; real menu photos with their credits under each; the hero’s speed lines sit above the headline rather than across it; the footer fits a 360-pixel phone; the App feature list adds notifications and Use my current location (and, as 8.2 says, doesn’t mention cancelling); the delivery-area sketch is labelled as a sketch, not to scale; the App page shows the latest release’s version, size, and checksum from GitHub. The App page’s phone pictures are drawn until real screenshots come with the first release. **17 November 2026 (owner request):** the theme switch (follow device, light, dark) is in the header on every page, not the footer: after Get the app on wide screens, and an icon button beside Menu on phones so it stays one tap.
+- **Built 16 November 2026** from the prototype, with these changes: the logo files from the logo package; real menu photos with their credits under each; the hero’s speed lines sit above the headline rather than across it; the footer fits a 360-pixel phone; the App feature list adds notifications and Use my current location (and, as 8.2 says, doesn’t mention cancelling); the delivery-area sketch is labelled as a sketch, not to scale; the App page shows the latest release’s version, size, and checksum from GitHub. The App page’s phone pictures are drawn, not screenshots; real screenshots can replace them later. **17 November 2026 (owner request):** the theme switch (follow device, light, dark) is in the header on every page, not the footer: after Get the app on wide screens, and an icon button beside Menu on phones so it stays one tap.
 
 ---
 
@@ -755,6 +756,7 @@ Every design question is now decided. Anything that needs checking is listed in 
 
 | Version | Change |
 |---|---|
+| 0.43 | 18 November 2026: the website’s search wording and the FAQ’s UNIBEN question (8.4, 8.7); the sign-in screens keep the error and the Sign in button above the keyboard (rider and business). |
 | 0.42 | 17 November 2026 (night): contrast checked in all three apps; five colour pairs fixed (3.6). |
 | 0.41 | 17 November 2026 (later): Demo controls gains Reset demo data under Reset: a sheet explaining what goes back to the start, a tick box (“I understand everything goes back to the start”), then Reset everything; a progress card shows the step (1 of 5 and its name) or why it stopped; the practice buttons wait while it runs, and every app reloads when it finishes (the customer’s basket starts again, since the menu is rebuilt). |
 | 0.40 | 17 November 2026: the website’s theme switch moved from the footer to the header (owner request): after Get the app on wide screens, an icon beside Menu on phones (8.7). |

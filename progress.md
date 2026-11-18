@@ -2,8 +2,8 @@
 
 The working memory for Casual Kitchen Express (CKE). Read this first, then the documents it points to. The top half (sections 1 to 8) is the current state; the **Log** at the bottom is append-only history.
 
-**Last updated:** 15 November 2026 (alert timers and beep, load budget 9, 90-day reports)
-**Stage:** all three apps’ screens are built on demo data. The **backend foundation and sign-in are done**: Postgres and R2 hold the menu, soups, areas, staff, and photos; sign-in works in all three apps (usernames for staff, Continue with Google for managers and customers, tested on the tablet), with a role check on every route. **Next: the orders backend** (section 8, step 4c). Local commits only, nothing pushed.
+**Last updated:** 18 November 2026 (release 1.0.1, the README and the GitHub About box, and the documents brought up to date)
+**Stage:** **built and released.** All three apps, the API, and the website are online. Release **1.0.0** went out on GitHub Releases on 18 November 2026 and **1.0.1** (keyboard and rider tracking fixes) the same day. The owner wants **no further features** (18 November 2026). What is left: the battery test and the cold-start timing on a real phone (16.1), and upkeep.
 
 ---
 
@@ -27,16 +27,22 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and thr
 | File | What it is | Authority |
 |---|---|---|
 | `progress.md` | This file: status, rules, next steps, log | Start here |
-| `docs/architecture.md` (v0.48) | Functions, 129 feature IDs (CUS, RID, KIT, MGR, DSP, ACC, WEB), order lifecycle, data model, the API routes built so far, decisions, free-tier limits, **locked versions (section 15)**, build order (16), **16.1 to verify at build**, seed data | Wins on anything technical |
-| `docs/design.md` (v0.37) | UI rules per app, screens, page flows, colours, components | Wins on anything visual or UX |
+| `README.md` | The public front page: what CKE is, the apps, install steps, the stack, the layout, getting started | For visitors to the repository |
+| `docs/architecture.md` (v0.60) | Functions, feature IDs (CUS, RID, KIT, MGR, DSP, ACC, WEB) with their status, order lifecycle, data model, the API routes, decisions, free-tier limits, **locked versions (section 15)**, build order (16), **16.1 to verify at build**, seed data | Wins on anything technical |
+| `docs/design.md` (v0.43) | UI rules per app, screens, page flows, colours, components, the website | Wins on anything visual or UX |
 | `docs/Casual-Kitchen-Express.md` (v1.10) | Brand and business, surface level only | Wins on brand (name, colours, logo, tone, menu, packaging) |
-| `docs/list-of-areas.md` | Delivery areas, boundary, landmarks, neighbourhood list | Areas still to confirm on a map |
+| `docs/list-of-areas.md` | Delivery areas, boundary, landmarks, neighbourhood list | The delivery area |
 | `docs/photo-credits.md` | Every starting menu photo’s author, licence, and source, and the staff photos | The record the brand document asks for |
-| `apps/api/README.md` | Database, seed, test, and run commands, with what each should print, and the routes so far | How to run the backend |
+| `apps/api/README.md` | Database, seed, test, and run commands, with what each should print; every route; the online setup and its secrets | How to run the backend |
 | `design/prototypes/*.html` | Clickable prototypes of every screen (open in a browser) | Illustrations only. If they disagree with the docs, **the docs win.** |
 | `brand/cke-logo-package/` | Logo SVG and PNG files, app icons, favicons, brand tokens (CSS and JSON), web snippet, build script | Use these files, never redraw the logo |
 
-**Online copies** (private to the owner's claude.ai account):
+**Online**
+- Website: https://armstrong-aisosa.github.io/casual-kitchen-express/ (GitHub Pages, deployed by `.github/workflows/website.yml` on each push that changes it)
+- API: https://cke-api.casualkitchenexpress.workers.dev (Cloudflare Worker `cke-api`, Neon project `cke` through Hyperdrive, photos in Workers KV)
+- Releases: https://github.com/ARMSTRONG-AISOSA/casual-kitchen-express/releases (APKs, `SHA256SUMS.txt`, release notes)
+
+**Online copies of the prototypes** (private to the owner's claude.ai account):
 - Customer app prototype: https://claude.ai/artifact/RXfsSGhjbwigTZW2ceEzEx
 - Rider app prototype: https://claude.ai/artifact/BSwcoPXourynJSCubLaQLu
 - Kitchen and manager app prototype: https://claude.ai/artifact/FMjuLN4uQ2iGMxxiUHpF3e
@@ -59,7 +65,7 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and thr
 10. **Ask before adding scope.** Record proposals as "Proposal" until the owner confirms.
 11. **Use only the locked versions** in `docs/architecture.md`, section 15. Install Expo packages with `npx expo install`, commit the lockfile, and ask the owner before upgrading anything.
 12. **Android builds are arm64-v8a only.** Release builds add armeabi-v7a. Never build x86 or x86_64 (`architecture.md` 17.2).
-13. **Git:** the owner tests each piece first; ask before each commit, and don’t push until the owner says so. Commit messages carry no Co-Authored-By line.
+13. **Git:** commit and push where it makes sense (owner, 18 November 2026; until then each commit and push was asked first). Commit messages carry no Co-Authored-By line.
 14. **Owner-side instructions are fully detailed:** exact keys, commands, expected output, and how to check the result.
 
 ---
@@ -75,7 +81,7 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and thr
 | Database | Neon Postgres, through Cloudflare Hyperdrive with `pg` 8.23.1, and Drizzle ORM 0.45.4 (Drizzle Kit 0.31.11 for migrations). Development uses Postgres 17.10 in Docker on the laptop. |
 | Real-time | Cloudflare Durable Objects (WebSockets with hibernation) |
 | Background jobs | Cron Triggers and Durable Object alarms |
-| Images | Cloudflare R2. Files in object storage, links in the database. Compressed on the device before upload. |
+| Images | Workers KV (chosen over R2 on 17 November 2026: R2 needs a card even on its free plan). Files in KV, links in the database. Compressed on the device before upload. |
 | Auth | Better Auth 1.7.14 in the Worker, with its Expo plugin. Customers and managers use Google sign-in. Riders, kitchen staff, dispatch officers, and account officers use a username and password set by a manager (PBKDF2 at 30,000 iterations, rate-limited). No forgot-password anywhere. |
 | Maps | Customer app only: MapLibre with OpenFreeMap tiles. The rider app has no map and hands off to the phone's navigation app. |
 | Push | Expo push service with Firebase for Android. No email or SMS. |
@@ -116,126 +122,68 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and thr
 | Logo | The forward-leaning pot with speed lines, plus a simplified small-size icon, delivered as a production package |
 | Typography | Nunito for headings, Inter for body and interface. Fraunces is used in the logo artwork only. |
 | Packaging | Kraft and red print: delivery bag, compartment rice box, cylindrical soup bowls (short for takeaway, tall sealed for delivery), wrapped swallow |
-| Technical plan | The full architecture, verified against free tiers on 10 November 2026, including an auth compatibility check |
-| Design plan | Philosophy per app (customer expressive, kitchen practical, rider functional and black-and-white), screens, and flows |
-| Areas | Scouted area list, with the boundary at Oluku Market (the road there is reported clear) |
-| Prototypes | 22 customer screens, 16 rider screens, 19 kitchen and manager screens, and 5 website pages, all automatically click-tested |
-| Repository | npm workspaces and Turborepo monorepo with the three apps, the API Worker, shared packages, and a placeholder website. Typecheck and lint pass (11 of 11 tasks), Prettier is clean, and 35 of 35 API tests pass. Local commits only, not pushed (the latest is in the log). |
-| Android | JDK 17 and the Android SDK installed. arm64-v8a debug builds of all three apps on the owner’s tablet. Rebuilt on 14 November 2026: the Business app (sign-in libraries), the rider app (56 minutes), and the customer app (24 minutes, with sign-in libraries and expo-image). |
-| Customer app | Every screen built on demo data. Reads the menu, soups, today’s soup, and photos from the API (with a 304 when nothing changed), and shows Photo credits. Continue with Google (checkout and Profile) signs in for real (tested 14 November 2026; a staff Google account is refused), and photos use expo-image. Profile is real: the customer ID, name, and gender come from the API and save, the profile photo is taken or chosen, cropped, compressed on the phone, and uploaded (a Profile photo section and a camera badge on the photo), and a Sign out section sits between Theme and Help. Ordering, addresses, and the map are still demo stand-ins. |
-| Rider app | Every screen built on demo data. Real sign-in (username and password, with a show-password eye), the new-password screen, staying signed in (even when it opens without signal), Sign out, and the Me tab’s details from the API. Deliveries are still demo data. |
-| Business and Kitchen app | Every screen for all four staff roles built on demo data. Real sign-in (usernames for staff with a show-password eye, Continue with Google for managers, tested 14 November 2026), Your profile with Sign out from the photo in the top bar, the managers’ tour guide on Demo controls (MGR-39, tested in landscape and portrait 15 November 2026), People connected to the API, and the tablet sign-out. Connected to the API for: the soup of the day and the soup rotation, photo upload for dishes, soups, and staff (crop, compression, credits; replacing deletes the old photo), and staff photos. Refund confirmation ticks with the refunder recorded, the Refunds report, View profile, and Back to Orders work on demo data. |
-| API and database | Postgres 17.10 in Docker (local). 30-table schema and four migrations (`0000` to `0003`). Seeds: the menu (22 items, options), 3 soups, 10 areas, settings, 10 staff, and 33 photos (23 menu, 10 staff) in local R2. Routes: health, bootstrap (ETag and 304), soups, soup of the day, photos (upload, replace, remove), media (image and credits), staff photos, sign-in (Better Auth: usernames and Google), `/me` (with the customer’s profile, name, gender, and private photo), and People. **The orders backend (step 4c, 15 November 2026):** menu management, checkout, the customer’s orders and tracking, walk-ins, the kitchen’s steps, the board, the order list, cancelling and refunds, ratings, the rider queue and deliveries, alerts, settings, the address book, `GET /changes`, and the live connection (`GET /live`, the `LiveHub` Durable Object, with the alert check on its alarm). The owner is M-001 from `OWNER_GOOGLE_EMAIL`. Every change route checks the role. Hono 4.13.16. |
-| Photos | All 23 starting menu photos are in: 19 freely licensed from Wikimedia Commons and Flickr, and 4 made by the owner with Google Gemini (credited “Casual Kitchen Express (made with Gemini)”). 10 staff headshots made with Gemini, with no credit. None are flagged as demo (`docs/photo-credits.md`). |
+| Planning and design | The full architecture (free tiers verified), the design plan per app, the delivery area with its boundary at Oluku Market, and clickable prototypes of every screen |
+| Customer app | Every feature in `architecture.md` 5.1 on the live API: the menu without an account, one-screen checkout, Google sign-in, demo payment, live tracking with the rider on the map (MapLibre and OpenFreeMap), the 4-digit code, push notifications, reorder, the address book with a map pin and the delivery range check, profile and photo, cancelling, ratings, deactivate and delete, and the update notice |
+| Rider app | Every feature in 5.2: sign-in, online and offline, the queue (first to accept wins), batching up to three orders, pickup, hand-off to navigation, the delivery code, help, release, earnings, and light background location with the “Delivery in progress” notification (shared until the last delivery, fixed in 1.0.1) |
+| Business and Kitchen app | Every feature in 5.3 for all four staff roles: the board and walk-ins, sold out and the soup of the day, alerts with the chime, dispatch, the order list, refunds and cancellation requests, menu and photos, people, reports on real data, rider pay, Finance (cash-up, statement, close month, audit), settings, demo controls with practice orders and auto-play, Reset demo data, and the tour guide |
+| API and database | Hono on Cloudflare Workers with Better Auth, Durable Objects for the live connection and the demo simulator, Neon Postgres through Hyperdrive (caching off), photos in Workers KV, Expo push, a role check on every route, and three months of seeded demo history (about 4,266 orders). 45 of 45 API tests pass. |
+| Website | Five pages on GitHub Pages (Home, About, App, FAQ, Privacy) with the light and dark switch, the release’s version, size, and checksum on the App page, search wording, schema.org Restaurant and FAQ data, the sitemap, and Google Search Console and Bing set up. 27 site checks pass. |
+| Checks (16.1) | All done except the battery test and the cold start over mobile data on a real phone. Memory and CPU on the release builds: no leaks, no crashes, 0% in the background. One order end to end through all three apps, with location pinging, passed (18 November 2026). |
+| Releases | **1.0.0** and **1.0.1** on GitHub Releases: three signed APKs each (arm64-v8a and armeabi-v7a), checksums, and release notes. Signing keys in `~/cke-keys` (outside the repository). |
 
 ---
 
 ## 7. Open items
 
-**When the owner comes back (paused 16 November 2026, late)**
+**For the owner (any time)**
+1. **Back up `~/cke-keys`** (the three app signing keys) to storage off the laptop that only the owner controls. Without them, future updates can’t install over the current apps.
+2. **Search Console, about 25 November 2026:** check **Indexing → Pages** for which pages Google has added. The sitemap may keep saying “Couldn’t fetch”, a known problem with `github.io` sites (log of 18 November 2026); Bing reads it fine.
+3. **The GitHub token `cke-reset` expires on 18 November 2027.** GitHub emails a week before. Then make a new one the same way (Actions read and write, this repository only) and run `cd apps/api && NODE_OPTIONS=--network-family-autoselection-attempt-timeout=2000 npx wrangler secret put GITHUB_RESET_TOKEN`.
+4. **OpenFreeMap donation:** later, once a paid commercial project comes in (owner, 16 November 2026).
 
-Everything is stopped: the API, the three app servers (Metro), the port-forwarding loop, the database container (`cke-db-1`; its data is kept in the Docker volume), the Gradle build process, and the tablet’s adb connection. The working tree is clean and nothing is pushed.
+**Still to check (16.1, on a real phone)**
+- **The battery and heat test** (`architecture.md` 7.5: about 10% an hour or less during an active delivery). Explained to the owner on 18 November 2026; to be discussed before it is run.
+- **The cold start over mobile data** (16.1 item 13).
 
-*Owner, to restart:*
-1. On the tablet: **Settings → Developer options → Wireless debugging** → turn it on. Send Claude the **IP address and port** shown on that screen.
-2. Tap **Pair device with pairing code** and send Claude the **six-digit code** and the **IP address and port** shown in that box (the port differs from step 1). Both ports change every time, so send fresh ones.
-3. Say **resume**.
+**Kept on purpose**
+- **Manager usernames on the laptop only** (`owner.m`, `ivie.m`, from `SEED_MANAGER_PASSWORDS=1`), because the API tests sign in as the owner. Never seed them into the online database; online, managers use Google.
+- **Shared demo staff accounts online** (riders, kitchen, dispatch, and account officers with the password `cke-demo-2026`), so anyone can try the staff apps. Release builds don’t show the demo hints; development builds do.
+- **Development builds use the laptop’s API:** the Business and customer apps’ `.env` point at `http://localhost:8787` (Google only returns to `localhost`), which needs `adb reverse tcp:8787 tcp:8787` after every adb connect. Release builds use the online API.
 
-*Claude, on resume (in this order):* read this file; start the database (`npm run db:up` in `apps/api`); pair and connect the tablet with `adb`; start the API (`npm run dev:lan` in `apps/api`, with `NODE_OPTIONS="--network-family-autoselection-attempt-timeout=2000"`); keep `adb reverse tcp:8787 tcp:8787` up with a small loop; start Metro only for the app being worked on (customer 8081, rider 8082, business 8083); check that `/health` answers before telling the owner it’s ready.
-
-*If the power goes off mid-work (it did on 17 November 2026):* say **resume**. Claude checks the repository (`git fsck`), restarts the database (`npm run db:up` in `apps/api`; Postgres replays its last writes on its own), restarts the API and the reset helper (`npm run demo:runner`), and reruns any release build with `bash tools/release/build-apks.sh`, which keeps the APKs already built from the same code. If a native build was cut off, its half-written C++ files stay inside `node_modules` (each library’s `android/.cxx` and `android/build`) and the next build fails to link (it did on 17 November 2026); deleting those generated folders fixes it. Claude’s scratch folder is in `/tmp` and is emptied by a restart; nothing there is needed: the signing keys are in `~/cke-keys`, the built APKs in `~/cke-release`, and the online secrets on Cloudflare and GitHub.
-
-*Good to know:* the customer app on the tablet is signed out (its test customer was deleted). To test it again, sign in with a Google account listed under **Audience → Test users** in the Google console (until the consent screen is published). The Business app (`owner.m`) and the rider app (Musa, offline) are still signed in.
-
-**For the owner to attend to (16 November 2026)**
-1. **Pushing to GitHub:** say “push” when ready. Nothing goes online before that.
-2. **After the push: put the website online and publish Google sign-in.** These are the six steps in the log entry “Step 8: the website” (turn on GitHub Pages, then give Google the homepage and privacy links and publish the consent screen).
-3. ~~**Optional: your email on the website**~~ **Done 17 November 2026:** with the owner’s permission in the session, Claude added it to every footer’s Contact list and the privacy page’s Questions.
-4. ~~**Osasogie’s pin**~~ **Dropped by the owner (17 November 2026);** it stays an estimate.
-5. **Website additions (owner request, 16 November 2026, to do next session):**
-   - ~~**Light and dark mode button at the top**~~ **Done 17 November 2026:** in the header on every page, after Get the app on wide screens and as an icon beside Menu on phones (one tap, not inside Menu).
-   - ~~**SEO**~~ **Done 17 November 2026:** titles, descriptions, and headings checked; Home now carries restaurant details for search engines (name, Ugbowo in Benin City, Nigerian food, prices, payments, the eleven delivery areas, and hours). The kitchen’s exact pin is left off the public site. Hours: every day, 8:00 am to 8:30 pm (**owner confirmed 17 November 2026: the kitchen is open every day**).
-   - **Google Search Console (needs the site online):** add a **URL-prefix** property for `https://armstrong-aisosa.github.io/casual-kitchen-express/`. Choose the **HTML file** check, download the file, and send it to Claude. Claude adds it to the site and pushes. Then press **Verify** and, under **Sitemaps**, submit `sitemap.xml`. (A Domain property isn’t possible on a github.io address.)
-   - **Bing Webmaster Tools (after Search Console):** sign in at bing.com/webmasters and choose **Import from Google Search Console**. That brings the site and its sitemap across, with nothing to verify again.
-6. **Step 9, the next build stage:** reports on real data, rider payouts, Finance, polish, the remaining checks (battery on a real phone, performance, contrast), Neon and Cloudflare deploy, and signed APKs on GitHub Releases.
-7. **Memory and CPU check:** available whenever you want it; Claude only runs it with your yes.
-
-- ~~**Temporary test customer `tablet.test`**~~ **Deleted 16 November 2026** after the owner finished testing: the account, its profile, address, session, push token, and all seven of its orders (O-3225 to O-3230 and O-3233) with their deliveries, ratings, refunds, requests, alerts, and audit entries, in one transaction. Checked: no user or orders left.
-- ~~**Test orders on the tablet**~~ **Deleted 16 November 2026:** O-3233 went with the test customer; the practice orders O-3231 and O-3232 were already removed with Demo controls.
-- ~~**Tablet test settings (16 November 2026)**~~ **Removed 16 November 2026:** the test location providers, the shell’s mock-location permission, and stay-awake while charging are undone on the tablet.
-
-**Owner actions, in the order they will be needed**
-1. **Cloudflare account: done (14 November 2026).** Wrangler is logged in on the laptop (`npx wrangler whoami` shows the account). The early 16.1 checks are done (items 2 and 3). The workers.dev subdomain is `casualkitchenexpress`, and staff passwords use 30,000 iterations (owner, 14 November 2026).
-2. **Google sign-in: done (14 November 2026).** Project `cke-project-514706` (no card), Google Auth Platform set up (External, in testing), and one **Web application** client “CKE API” with the redirect addresses `http://localhost:8787/api/auth/callback/google` and `https://cke-api.casualkitchenexpress.workers.dev/api/auth/callback/google`. The client ID and secret are in `apps/api/.dev.vars` (not committed); the downloaded JSON is in the owner’s Downloads folder, keep it private. Still to do with the website (step 8): the privacy policy link, then publishing the consent screen. While it is in testing, add any Google account that will test the apps under **Audience → Test users** if Google blocks it.
-3. **Delivery boundary and the kitchen’s pin:** draw the polygon from map pins (Uselu to Oluku Market), drop the kitchen’s exact pin (the API uses an approximate point in Ugbowo for the queue’s distances until then), and confirm the spellings of area names (`list-of-areas.md` section 9). Needed when addresses are connected (step 6).
-4. **Firebase project and Expo account for push notifications: done (16 November 2026).** Firebase project `cke-push`; Expo team `armstrong-aisosas-team` with cke-customer, cke-rider, and cke-business; the FCM V1 key is on Expo for all three (the downloaded key file was deleted by the owner). `google-services.json` is in the project root and kept out of Git.
-5. **Neon account** at deploy time (decided): steps to follow.
-6. **Publishing the website (after the first push):** step-by-step in the log entry of 16 November 2026, “Step 8: the website”: turn on GitHub Pages, then give Google the homepage and privacy links and publish the consent screen.
-7. ~~**Optional contact email on the website**~~ **Done 17 November 2026** (footer Contact and the privacy page).
-8. **OpenFreeMap donation (owner, 16 November 2026):** later, once a paid commercial project comes in. Nothing needed now.
-9. **Pushing to GitHub:** `origin` is https://github.com/ARMSTRONG-AISOSA/casual-kitchen-express.git (empty). Nothing is pushed until the owner says so.
-
-**Temporary things to remove later (don’t forget)**
-- ~~**Throwaway Cloudflare test Worker `cke-check-temp`**~~ **Deleted 14 November 2026** (confirmed: Cloudflare reports “This Worker does not exist on your account”, and its address returns 404; the local test files are deleted too). It was a tiny separate program put online only to measure two free-plan limits (16.1 items 2 and 3: PBKDF2 password-hash timing at about 50,000 iterations, and Durable Object alarms and hibernation). Its code stays in Claude’s scratchpad, never in the repository. When the measurements are recorded in `architecture.md` 16.1, delete it with `npx wrangler delete --name cke-check-temp` (from `apps/api`), check that it is gone from the Cloudflare dashboard (**Workers & Pages**), and mark this item done in the log. Deleting the Worker also deletes its Durable Object storage. Keep: the Wrangler login and the workers.dev subdomain (the real API uses them).
-- ~~**workers.dev subdomain named `cke-check-temp`**~~ **Renamed 14 November 2026 to `casualkitchenexpress`** (owner’s choice; deleted and re-registered through the Cloudflare API while no Worker was deployed, and confirmed). It was: the first deploy registered the account’s workers.dev subdomain automatically, named after the test Worker, so every Worker on the account would live at `<name>.cke-check-temp.workers.dev`. Rename it to a lasting name before the real API is deployed (owner to choose; Cloudflare dashboard, **Workers & Pages**, the subdomain setting, or Claude through the API).
-- ~~**Temporary write guard `ALLOW_UNSIGNED_WRITES`**~~ **Removed 14 November 2026** with sign-in, together with the open `GET /staff/photos`; every change now needs a signed-in person with the right role.
-- **Manager usernames on the laptop only** (`owner.m` for the owner M-001 and `ivie.m`, from `SEED_MANAGER_PASSWORDS=1`): kept on purpose after Google sign-in worked (14 November 2026), because the API tests sign in as the owner. Never seed them into the deployed database.
-- ~~**Owner’s Google sign-in for the deployed database**~~ **Settled 14 November 2026:** the owner is ammycan6@gmail.com as M-001 (owner decision). On the laptop it is set in `apps/api/.dev.vars` (`OWNER_GOOGLE_EMAIL`, `OWNER_NAME`); when seeding the deployed database, pass both as environment variables.
-- **Business and customer app `.env` files point at `http://localhost:8787`** (14 November 2026), because Google only returns to `http://localhost` and not to the laptop’s network address. It needs `adb reverse tcp:8787 tcp:8787` after every adb reconnect. Goes away when the API is deployed (an `https://…workers.dev` address).
-- ~~**Test image on the tablet**~~ **Deleted 16 November 2026** (`/sdcard/Pictures/cke-test-photo.png`; checked gone).
-- **Demo sign-in hints in development builds:** the Business app’s sign-in screen lists the demo accounts and the demo password only in development builds (`__DEV__`); release builds don’t show them. The rider app’s sign-in screen fills in `musa.a` and the demo password, in development builds only. Decide before release whether the public demo keeps shared demo staff accounts at all.
-
-**Known gaps and notes (no decision needed unless the owner wants one)**
-- **Alert timers (decided, 15 November 2026):** set in Settings, Alerts by dispatch officers and managers: waiting for a rider 5 to 15 minutes (usually 10), not acknowledged 1 to 5 (usually 5), in the kitchen 10 to 30 (usually 15), on the road 10 to 45 (usually 30), a beep switch, and a new-order chime switch. On the demo history the usual times flag about 1 delivery in 10 as waiting for a rider and about 11% of orders as running late.
-- **The alert beep needs the rebuilt Business app** (expo-notifications is native, 15 November 2026). The customer and rider apps didn’t change natively.
-- **Memory and CPU Proposals** (`architecture.md` 13.1): left for later (owner, 15 November 2026).
-- ~~**Hono security advisories**~~ **Done 14 November 2026:** upgraded to Hono 4.13.16 (owner approved it a day early). `npm audit` is down to 14 moderate findings, all in development tools.
-- **“Other area in range”** is a choice in the customer app’s area picker, but not a seeded area in the database. Settle how it is stored when addresses are connected (step 6).
-- **This laptop’s connection and Node.js:** Node gives each IPv4 or IPv6 connection attempt only 250 ms. The laptop has no IPv6 and Cloudflare takes longer than that over IPv4 here, so Node tools (Wrangler login and deploy) time out with `ETIMEDOUT` while curl works. Fix: run them with `NODE_OPTIONS="--network-family-autoselection-attempt-timeout=2000"` (tested 14 November 2026), or add that export to `~/.bashrc` to make it permanent. The laptop also uses the router’s DNS (192.168.0.1), which timed out on some names during setup.
-- **Tests and `dev:lan` share local state:** stop the API’s `dev:lan` before `npm run test --workspace @cke/api` (`apps/api/README.md`).
-- **Prototypes lag the docs** on the 11 and 12 November decisions. The docs win, and the prototypes are not being updated.
-- **Rider alert sounds** come with push notifications (decided); alerts only vibrate for now.
-- **Versions:** all locked in `architecture.md` 15. Re-check them for security advisories just before installing anything new.
-
-**To verify at build** (the full list is in `architecture.md`, 16.1)
-- Background location and the rider battery target (about 10% an hour or less).
-- Google sign-in: the privacy page is built (`privacy.html`); giving Google its link and publishing the consent screen wait for the site to go online (owner action 6).
-- Hyperdrive caching (off for live order data) and Neon's free storage.
-- OpenFreeMap usage terms and the map credit.
-- Re-check every free allowance just before deploying.
+**Notes**
+- **Build-tool advisories:** four moderate `npm audit` findings (picomatch, minimatch, glob, esbuild in drizzle-kit), all in laptop build tools, none in the apps or the API. No safe upgrade existed on 18 November 2026; the owner chose to leave them for a later version. Check again before the next release.
+- **This laptop and Node.js:** Node tools that reach Cloudflare (Wrangler) need `NODE_OPTIONS="--network-family-autoselection-attempt-timeout=2000"`.
+- **Tests and `dev:lan` share local state:** stop the API’s `dev:lan` before `npm run test --workspace @cke/api`.
+- **Metro started with `CI=1` doesn’t watch files;** restart it after code changes.
+- **Prototypes lag the docs** on later decisions. The docs win, and the prototypes are not being updated.
+- **Possible future update:** compare with the previous period in reports (`architecture.md` 14.0). Not planned.
 
 ---
 
-## 8. Where we are and what is left
+## 8. Where we are
 
-**Rough progress:** planning, brand, design, and prototypes are complete. The app screens are built on demo data (about 90% of the screens; the map and push are stand-ins; sign-in is real). The backend is about 70% done: the foundation, catalog, photos, sign-in with roles, the whole order lifecycle (orders, cancelling and refunds, riders and deliveries, alerts, settings, addresses), and the live connection work; the seed history, push notifications, and the report summaries are left. Counting everything to a released APK, the project is roughly **50% done**. The largest remaining part is connecting every screen to the API (6).
-
-The order below follows `architecture.md` 16, adjusted by the owner’s frontend-first decision (12 November 2026).
+Every build step is done. The order followed `architecture.md` 16, adjusted by the owner’s frontend-first decision (12 November 2026).
 
 | Step | What | Status |
 |---|---|---|
-| 1 | Repository setup (monorepo, three apps, API Worker, shared packages, website placeholder, licence, README) | **Done** (11 November) |
-| 2 | Customer app screens on demo data | **Done** (`0c4bcee`) |
-| 3 | Rider app screens on demo data | **Done** (`cd8284c`) |
-| 3b | Business and Kitchen app screens on demo data, all four staff roles | **Done** (`e2fe3c5`, `d4d2032`) |
-| 4a | Backend foundation: local database, schema, migrations, base, staff, and photo seeds, bootstrap with versions, soup rotation, photo upload and credits | **Done** (`5c088de`, `9a916f6`) |
-| 4b | Sign-in and roles: Better Auth in the Worker (usernames for staff, Google for managers and customers), sessions in all three apps, a role check on every route (3.0), first-sign-in password change, manager password reset, deactivation signs a person out, the tablet’s 8:30 pm sign-out, Your profile and Sign out, the show-password eye. The early 16.1 checks (PBKDF2 timing, Durable Object alarms). | **Done** (`c694fb1` and the 14 November commit) |
-| 4c | **Orders backend:** menu management (items, prices, sold out, options), orders and status events (online and walk-in), simulated payments, refunds with the tick and refunder, cancellation requests, alerts, deliveries, the rider queue (first to accept wins), delivery codes, Durable Objects for live updates, and “only what changed” on reconnect (14.4). Split into five parts: (1) menu management and the core orders, (2) cancellations and refunds, (3) the rider queue and deliveries, (4) alerts, (5) the live connection; plus the address book and settings that checkout needs. | **Done** (15 November 2026) |
-| 5 | **Seed script:** three months of demo history (18.3), with its own checks | **Done** (15 November 2026) |
-| 6 | **Connect the screens to the API** in all three apps, replacing the demo data: (a) the Business app, (b) the rider app, (c) the customer app, (d) the real map (MapLibre) with the delivery boundary, push notifications (Expo and Firebase), and background location for riders | **6a, 6b, and 6c done** (15 November 2026); **6d done** (16 November 2026): the map, riders’ location, and push notifications |
-| 7 | Capacity rules, batching, and the demo simulator (18.4) | **Done** (16 November 2026): capacity and batching were built with the orders backend (4c); the live simulator with practice orders built on 16 November 2026 |
-| 8 | Website: turn `design/prototypes/cke-website.html` into the static GitHub Pages site | **Done** (16 November; goes online after the first push) |
-| 9 | Reports on real data (pre-computed summaries), rider payouts, Finance, polish, the remaining 16.1 checks (battery, performance, contrast), Neon at deploy, signed release APKs (arm64-v8a and armeabi-v7a) on GitHub Releases | To do |
-
-The prototypes are the visual reference for every screen. Reuse their copy, layout, and flows, but write production code fresh rather than copying prototype code.
+| 1 | Repository setup | **Done** (11 November) |
+| 2, 3, 3b | The customer, rider, and Business app screens on demo data | **Done** (12 November) |
+| 4a, 4b | Backend foundation, sign-in and roles | **Done** (14 November) |
+| 4c | Orders backend (menu, orders, refunds, riders, alerts, live connection) | **Done** (15 November) |
+| 5 | Three months of demo history | **Done** (15 November) |
+| 6 | The screens connected to the API, the map, push, and riders’ location | **Done** (15 and 16 November) |
+| 7 | Capacity, batching, and the demo simulator | **Done** (16 November) |
+| 8 | Website | **Done** (16 November; online 17 November) |
+| 9 | Reports, rider pay, Finance, polish, the 16.1 checks, deploy, and release APKs | **Done** (17 and 18 November): online 17 November; release 1.0.0 and 1.0.1 on 18 November. Left: the battery test and the cold start on a real phone. |
 
 ### 8.1 Resuming after a break
 
 1. Start Docker, then the database: `npm run db:up --workspace @cke/api` (expect `Container cke-db-1 Healthy`). The data and photos are kept between runs.
-2. Start the API for the tablet: `npm run dev:lan --workspace @cke/api` (expect `Ready on http://0.0.0.0:8787`). Sign-in needs `BETTER_AUTH_SECRET` in `apps/api/.dev.vars` (copied from `.dev.vars.example`, not committed). Demo staff sign in with the password `cke-demo-2026` (managers `owner.m` and `ivie.m` on the laptop only). The owner signs in with Google as M-001 (`OWNER_GOOGLE_EMAIL` in `.dev.vars`).
-3. Start the app development servers, each in its app folder: `npx expo start --dev-client --lan --port 8081` (customer), `8082` (rider), `8083` (business). Each app reads the API address from its own `.env` (`.env.example` is committed): the rider app uses `http://192.168.0.154:8787`, and the Business and customer apps use `http://localhost:8787` for Google sign-in, which needs `adb reverse tcp:8787 tcp:8787` after every adb connect (it is lost on each reconnect).
-4. Tablet testing (ASTRO 10R, Android 12): turn on Wireless debugging and read out the IP address and port. Pairing is already done; `adb connect <ip>:<port>` reconnects. If it says “failed to connect” although the port is right, restart adb (`adb kill-server`, then connect again). If the laptop gets “No route to host” (14 November 2026), turn Developer options off and on, allow Wireless debugging again, forget the old computer under Wireless debugging, and pair again with a new code (`adb pair <ip>:<pairing port> <code>`, then `adb connect <ip>:<port>`).
-5. If something looks wrong in the database, steps 2 to 3c in `apps/api/README.md` rebuild it from scratch.
+2. Start the API for the tablet: `NODE_OPTIONS="--network-family-autoselection-attempt-timeout=2000" npm run dev:lan --workspace @cke/api` (expect `Ready on http://0.0.0.0:8787`), and the reset helper with `npm run demo:runner --workspace @cke/api`. Demo staff sign in with `cke-demo-2026` (managers `owner.m` and `ivie.m` on the laptop only).
+3. Tablet (ASTRO 10R, Android 12): turn on Wireless debugging and read out the IP address and port; `adb connect <ip>:<port>`. If it fails although the port is right, `adb kill-server` and connect again; if the laptop gets “No route to host”, pair again (`adb pair <ip>:<pairing port> <code>`). Then `adb reverse tcp:8787 tcp:8787` (and 8081 to 8083 for the development servers).
+4. Development builds: start each app’s server in its folder, `npx expo start --dev-client --port 8081` (customer), `8082` (rider), `8083` (business). The development APKs are backed up in `~/cke-release/debug-backup`; the tablet currently has the release builds, so uninstall those first (different signing keys).
+5. Release builds: `bash tools/release/build-apks.sh` (about 2 hours for all three; it keeps APKs already built from the same code, so it can be rerun after a power cut). The APKs and `SHA256SUMS.txt` go to `~/cke-release/<version>`. If a native build was cut off, delete each library’s `android/.cxx` and `android/build` inside `node_modules` before rebuilding.
+6. If something looks wrong in the local database, steps 2 to 3d in `apps/api/README.md` rebuild it, or press Reset demo data.
 
 ---
 

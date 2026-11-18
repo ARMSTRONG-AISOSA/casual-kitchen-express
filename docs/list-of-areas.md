@@ -156,11 +156,13 @@ The customer picks one of these when adding an address, then drops a pin and add
 
 ## 9. To confirm
 
-1. Check each place on a map and place the Oluku Market boundary pin.
+1. ~~Check each place on a map and place the Oluku Market boundary pin.~~ Done: the boundary was drawn from the owner’s pins on 16 November 2026 (section 1, `architecture.md` 4.7).
 2. ~~Decide whether Isihor, Iguosa, and the villages near Oluku are inside the range.~~ Done: all in range up to Oluku Market (11 November 2026).
 3. Confirm the spelling to use for each name in the apps.
 4. Add any streets or estates your riders already know.
 5. Research more landmarks between Uselu and Oluku Market for map pins and landmark text. Each new landmark needs the owner’s approval before it is added here.
+
+Items 3 to 5 are optional, for when CKE runs on the ground; the apps ship with the names and pins above.
 
 ---
 

@@ -1,8 +1,8 @@
 # CKE Photo Credits
 
-**Last updated:** 12 November 2026
+**Last updated:** 18 November 2026
 
-The 23 starting menu photos used in the apps (and later the website), with where each came from, as the brand document asks (`Casual-Kitchen-Express.md`, Food Imagery). The customer app shows the same list under More, Photo credits. The files are in `apps/api/seed-media/menu/`, and `credits.json` there holds the same details for the seed script.
+The 23 starting menu photos used in the apps and the website (Home shows three, Jollof rice, Egusi soup, and Meat pie, each with its credit underneath), with where each came from, as the brand document asks (`Casual-Kitchen-Express.md`, Food Imagery). The customer app shows the same list under More, Photo credits. The files are in `apps/api/seed-media/menu/`, and `credits.json` there holds the same details for the seed script.
 
 **How the 19 internet photos were chosen (12 November 2026):** searched Wikimedia Commons and Openverse (which includes Flickr) for each dish, kept only licences that allow commercial use and changes, rejected photos that didn’t match the dish or showed brand logos, and checked each one by eye. Each photo was cropped to 4:3, resized to at most 1200 px on the longest edge, and saved as WebP at quality 78 (all under 250 KB, most under 130 KB), with location and camera data removed (`architecture.md` 8.1). CC BY-SA photos stay under CC BY-SA after these changes.
 

@@ -26,7 +26,7 @@ The local password (`cke-local-only`) only works on this laptop: the database li
 After changing `src/db/schema.ts`, run `npm run db:generate --workspace @cke/api -- --name what-changed`,
 check the new file in `drizzle/`, then run step 2 again.
 
-## Routes so far
+## Routes
 
 | Route                                                               | Purpose                                                                                                                                       |
 | ------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -58,6 +58,10 @@ check the new file in `drizzle/`, then run step 2 again.
 | `/me/addresses` | Customers: the address book (an address outside the range is refused) |
 | `/me/push-token` | Every app: save (`PUT`) or remove (`DELETE`) this device's Expo push token. Each order status is pushed once, through Expo, to the customer, the kitchen (new online orders), riders (a ready order that fits, or one assigned to them), and staff who see Alerts (the beep) |
 | `/demo/*` | Managers: Demo controls (18.4): state, practice orders (`POST /demo/orders`, online or walk-in), auto-play and speed (`PUT /demo/autoplay`), and removing practice orders (`POST /demo/reset`). The simulator (`DemoSim`) only moves practice orders. **Reset demo data** (MGR-29): `POST /demo/reset-all` with `{ "confirm": "RESET" }` starts the runner; the runner reports through `POST /demo/reset-all/notify` and uploads photos through `/demo/reset-all/media/*` (both signed with `DEMO_RESET_SECRET`). New orders get 503 while it runs. On the laptop, start the helper first: `npm run demo:runner --workspace @cke/api` |
+| `POST /demo/reset-all`, `/demo/reset-all/notify`, `/demo/reset-all/media/*` | Managers: Reset demo data (MGR-29). Starts the runner (GitHub Actions online, `npm run demo:runner` on the laptop), which reports each step back and uploads the starting photos through the API, signed with `DEMO_RESET_SECRET` |
+| `GET /reports/summary`, `GET /reports/refunds` | Account officers and managers: the reports for 7, 30, 60, or 90 days or any date range, computed in SQL, and the Refunds report |
+| `GET /payouts`, `POST /payouts/:code/pay` | Account officers and managers: what each rider is owed, and paying a rider out (simulated) |
+| `/finance/*` | Today's cash-up (counted by the counter, signed off by an account officer or a manager), past cash-ups, the monthly statement, closing a month, adjustments, and the audit trail |
 
 Every change needs a signed-in person with the right role (`docs/architecture.md` 3.0). Sign-in
 needs `BETTER_AUTH_SECRET` in `apps/api/.dev.vars` (copy `.dev.vars.example` and make your own with
@@ -77,3 +81,16 @@ are in `.dev.vars` (a "Web application" client in the Google Cloud project, with
 address `http://localhost:8787/api/auth/callback/google`). Google returns only to `localhost` over
 plain `http`, so the tablet reaches the laptop with `adb reverse tcp:8787 tcp:8787` and the app uses
 `EXPO_PUBLIC_API_URL=http://localhost:8787`. Deployed, the secrets go in with `wrangler secret put`.
+
+## Online (deployed)
+
+| Part | Where |
+| --- | --- |
+| The API | `https://cke-api.casualkitchenexpress.workers.dev` (Worker `cke-api`, deployed with `npm run deploy --workspace @cke/api`) |
+| Database | Neon project `cke` (Postgres 17, Frankfurt), reached through Hyperdrive with caching off |
+| Photos | Workers KV (`MEDIA`) |
+| Secrets on the Worker (`wrangler secret put …`) | `BETTER_AUTH_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `OWNER_GOOGLE_EMAIL`, `OWNER_NAME`, `DEMO_RESET_RUNNER` (`github`), `DEMO_RESET_SECRET`, `GITHUB_RESET_TOKEN` (a fine-grained token with Actions read and write on this repository only; it expires on 18 November 2027, then make a new one and put it again) |
+| Reset demo data online | `.github/workflows/reset-demo.yml`, with the repository secrets `DATABASE_URL`, `DEMO_RESET_SECRET`, `OWNER_GOOGLE_EMAIL`, and `OWNER_NAME` |
+
+Run Wrangler on this laptop with `NODE_OPTIONS=--network-family-autoselection-attempt-timeout=2000`
+(Node gives up on Cloudflare too quickly otherwise).

@@ -1,6 +1,6 @@
 # CKE ARCHITECTURE
 
-**Document Status:** Draft v0.59. Records the functions, features, and decisions for the apps and the website. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day with the backend foundation in progress), and again on 14 November 2026 after sign-in was built.  
+**Document Status:** Draft v0.60. Records the functions, features, and decisions for the apps and the website. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day with the backend foundation in progress), and again on 14 November 2026 after sign-in was built.  
 **Related documents:** `Casual-Kitchen-Express.md` (business and brand, surface level), `design.md` (UI/UX decisions and page flows), and `list-of-areas.md` (delivery areas).
 
 ---
@@ -33,7 +33,7 @@ Website ───────┤
 Rider app ─────┼──►  Custom API (Hono on Cloudflare Workers)
 Kitchen and ───┘            │
 Business app                ├──►  Neon (Postgres database)
-                            ├──►  Cloudflare R2 (image files)
+                            ├──►  Workers KV (image files; R2 was the first plan)
                             ├──►  Real-time channel (Durable Objects)
                             ├──►  Simulated payments (no real money)
                             ├──►  Map tiles (customer map only)
@@ -232,61 +232,61 @@ Kitchen staff enter walk-in orders at the counter. They are kept separate from o
 
 | ID | Feature | Notes | Status |
 |---|---|---|---|
-| CUS-01 | Browse the menu without an account | Menu is open to everyone | Planned |
-| CUS-02 | Menu by category, with search | Rice meals first | Planned |
-| CUS-03 | Item detail with defaults pre-selected | One tap adds the default | Planned |
-| CUS-04 | Sticky order bar with running total | Always visible on menu screens | Planned |
-| CUS-05 | Single-screen checkout | Delivery or pickup, address, the flat delivery fee (₦1,500 by default, none for pickup), and pay | Planned |
-| CUS-06 | Sign-up at checkout | Continue with Google (the email comes from the Google account), then a delivery address and an optional gender | Planned |
-| CUS-07 | Simulated payment | Card and bank transfer screens with a demo confirmation. No real money moves, and no real card details are collected or stored. A saved demo payment method keeps repeat payment to one tap. | Planned |
-| CUS-08 | Order tracking timeline | Statuses in section 4, from acknowledged to delivered | Planned |
-| CUS-09 | Rider location on a map | Shown after pickup, updated at a low frequency (section 7) | Planned |
-| CUS-10 | Delivery code display | Shown on the tracking screen | Planned |
-| CUS-11 | Push notifications | Per section 4 | Planned |
-| CUS-12 | Reorder last order | Two taps to repeat | Planned |
-| CUS-13 | Orders screen with two tabs | **In progress** for live orders and **Order history** for past orders, including cancelled ones. Any past order can be reordered. | **Decided** |
-| CUS-14 | Address book | Label, neighbourhood, street or landmark, contact phone, map pin, default. No address search is required (section 14.3). | Planned |
-| CUS-15 | Profile | Photo (upload, change, remove), name, email, gender | Planned |
-| CUS-16 | Profile photo with crop and compression | See section 8 | Planned |
-| CUS-17 | Account deletion (high friction) | In a red Danger zone at the bottom of Profile. The customer must tick a box and type DELETE ACCOUNT exactly before the button works. Deactivating is offered as the gentler choice. | **Decided** |
-| CUS-18 | Rating after delivery | One tap | Planned |
-| CUS-19 | Contact the restaurant | A button that opens the WhatsApp chat. The number comes from a manager setting (MGR-36), https://wa.me/2349095466063 by default. | **Decided** |
-| CUS-20 | Order cancellation (with friction) | Rules in 4.6. The option is a quiet text link, shown only while cancelling is allowed. The customer must pick a reason and tick a confirmation before Cancel or Send request works. | **Decided** |
-| CUS-21 | Demo payment notice | A small, clear label on payment screens ("Demo payment. No money is taken.") | Planned |
-| CUS-22 | Sign-in | Continue with Google. No passwords (section 12.1). | **Decided** |
-| CUS-23 | Delivery range check | An address outside the delivery range cannot be used for delivery. The app says so and offers pickup (4.7). | **Decided** |
-| CUS-24 | Closed and paused states | After 6:00 pm, or while new orders are paused, the customer can browse and see when online orders open (8:00 am), but cannot check out (4.7) | Planned |
-| CUS-25 | Deactivate account | Above the Danger zone in Profile, with one confirmation tick. Signs the customer out and keeps everything. Signing in again with Google offers to reactivate. | **Decided** |
-| CUS-26 | More tab and text pages | A fourth tab, More, listing Terms and conditions, Privacy policy, About us, Support us, Partner with us, and FAQs. Each is a text page with a back button. A **Photo credits** page lists each menu photo’s author and licence, opening its source (12 November 2026). | **Decided** |
-| CUS-27 | Customer ID | Every customer account has a unique ID (for example C-00418), shown in Profile and used in reports and the leaderboard | **Decided** |
+| CUS-01 | Browse the menu without an account | Menu is open to everyone | **Built** (release 1.0.0) |
+| CUS-02 | Menu by category, with search | Rice meals first | **Built** (release 1.0.0) |
+| CUS-03 | Item detail with defaults pre-selected | One tap adds the default | **Built** (release 1.0.0) |
+| CUS-04 | Sticky order bar with running total | Always visible on menu screens | **Built** (release 1.0.0) |
+| CUS-05 | Single-screen checkout | Delivery or pickup, address, the flat delivery fee (₦1,500 by default, none for pickup), and pay | **Built** (release 1.0.0) |
+| CUS-06 | Sign-up at checkout | Continue with Google (the email comes from the Google account), then a delivery address and an optional gender | **Built** (release 1.0.0) |
+| CUS-07 | Simulated payment | Card and bank transfer screens with a demo confirmation. No real money moves, and no real card details are collected or stored. A saved demo payment method keeps repeat payment to one tap. | **Built** (release 1.0.0) |
+| CUS-08 | Order tracking timeline | Statuses in section 4, from acknowledged to delivered | **Built** (release 1.0.0) |
+| CUS-09 | Rider location on a map | Shown after pickup, updated at a low frequency (section 7) | **Built** (release 1.0.0) |
+| CUS-10 | Delivery code display | Shown on the tracking screen | **Built** (release 1.0.0) |
+| CUS-11 | Push notifications | Per section 4 | **Built** (release 1.0.0) |
+| CUS-12 | Reorder last order | Two taps to repeat | **Built** (release 1.0.0) |
+| CUS-13 | Orders screen with two tabs | **In progress** for live orders and **Order history** for past orders, including cancelled ones. Any past order can be reordered. | **Decided**, **built** (release 1.0.0) |
+| CUS-14 | Address book | Label, neighbourhood, street or landmark, contact phone, map pin, default. No address search is required (section 14.3). | **Built** (release 1.0.0) |
+| CUS-15 | Profile | Photo (upload, change, remove), name, email, gender | **Built** (release 1.0.0) |
+| CUS-16 | Profile photo with crop and compression | See section 8 | **Built** (release 1.0.0) |
+| CUS-17 | Account deletion (high friction) | In a red Danger zone at the bottom of Profile. The customer must tick a box and type DELETE ACCOUNT exactly before the button works. Deactivating is offered as the gentler choice. | **Decided**, **built** (release 1.0.0) |
+| CUS-18 | Rating after delivery | One tap | **Built** (release 1.0.0) |
+| CUS-19 | Contact the restaurant | A button that opens the WhatsApp chat. The number comes from a manager setting (MGR-36), https://wa.me/2349095466063 by default. | **Decided**, **built** (release 1.0.0) |
+| CUS-20 | Order cancellation (with friction) | Rules in 4.6. The option is a quiet text link, shown only while cancelling is allowed. The customer must pick a reason and tick a confirmation before Cancel or Send request works. | **Decided**, **built** (release 1.0.0) |
+| CUS-21 | Demo payment notice | A small, clear label on payment screens ("Demo payment. No money is taken.") | **Built** (release 1.0.0) |
+| CUS-22 | Sign-in | Continue with Google. No passwords (section 12.1). | **Decided**, **built** (release 1.0.0) |
+| CUS-23 | Delivery range check | An address outside the delivery range cannot be used for delivery. The app says so and offers pickup (4.7). | **Decided**, **built** (release 1.0.0) |
+| CUS-24 | Closed and paused states | After 6:00 pm, or while new orders are paused, the customer can browse and see when online orders open (8:00 am), but cannot check out (4.7) | **Built** (release 1.0.0) |
+| CUS-25 | Deactivate account | Above the Danger zone in Profile, with one confirmation tick. Signs the customer out and keeps everything. Signing in again with Google offers to reactivate. | **Decided**, **built** (release 1.0.0) |
+| CUS-26 | More tab and text pages | A fourth tab, More, listing Terms and conditions, Privacy policy, About us, Support us, Partner with us, and FAQs. Each is a text page with a back button. A **Photo credits** page lists each menu photo’s author and licence, opening its source (12 November 2026). | **Decided**, **built** (release 1.0.0) |
+| CUS-27 | Customer ID | Every customer account has a unique ID (for example C-00418), shown in Profile and used in reports and the leaderboard | **Decided**, **built** (release 1.0.0) |
 
 ### 5.2 Rider and Delivery app
 
 | ID | Feature | Notes | Status |
 |---|---|---|---|
-| RID-01 | Sign in with a manager-created account | No public sign-up | Planned |
-| RID-02 | Online and offline toggle | One tap. Going offline is blocked while the rider carries an order (**Decided**, 12 November 2026); Release order (RID-12) hands an order back first. | Planned |
-| RID-03 | Order queue | Ready orders with order number, pickup point, drop-off neighbourhood, estimated distance, and the order's load against the rider's budget (for example "Load 5 of 9", section 6) | Planned |
-| RID-04 | Accept order (first to accept wins) | Order disappears from other riders' queues | Planned |
-| RID-05 | Capacity rules | One order by default, up to three if loads fit (section 6) | Planned |
-| RID-06 | Active deliveries list | Stops in order, one primary action at a time | Planned |
-| RID-07 | Pickup confirmation | Match order number, tap "Picked up" | Planned |
-| RID-08 | Navigation to the customer | Opens the rider's installed navigation app (no map inside the rider app, section 7) | Planned |
-| RID-09 | Call the customer | From the app, using the contact phone | Planned |
-| RID-10 | Delivery code entry | Completes the delivery | Planned |
-| RID-11 | Need help | Contacts dispatch, meaning a dispatch officer or a manager (unreachable customer, code problem). Handled under DSP-04. | Planned |
-| RID-12 | Release order | Returns an order to the queue | Planned |
-| RID-13 | Day summary | Completed deliveries for the day | Planned |
-| RID-14 | Sound and vibration alerts | New orders in the queue, status changes. Vibration from the first build; the sound plays through push notifications, so it arrives with push (**Decided**, 12 November 2026). | Planned |
-| RID-15 | Screen stays awake only on pickup and code entry | Short windows only, to save battery | Planned |
-| RID-16 | Poor-network tolerance | Queue actions retried, last known state shown | Planned |
-| RID-17 | Light location tracking | Only during an active delivery, low frequency, balanced accuracy (section 7) | Planned |
-| RID-18 | Earnings | Today, this week, this month, and all time; an Owed list of everything not paid out yet (by day, with the total); today’s deliveries with each one’s pay; and the payout history (18.2) | **Decided** |
-| RID-19 | Lean by design | No maps, images, or animation in the app; power rules in section 7 | Planned |
-| RID-20 | Password handled by the manager | No forgot-password screen. The sign-in screen tells the rider to ask the manager, who resets the password. After a reset, the rider must set a new password at the next sign-in. | **Decided** |
-| RID-21 | My profile | A read-only view of their own details and staff ID. No photo is shown, to keep the app image-free. | Planned |
-| RID-22 | Settings | Theme (light, dark, or follow the phone), and sound and vibration | Planned |
-| RID-23 | Order assigned by dispatch | When a dispatch officer assigns an order (DSP-05), it joins the rider’s deliveries with a strong alert and a yellow “Assigned to you by dispatch” banner. The rider can release it like any order (RID-12). | **Decided** |
+| RID-01 | Sign in with a manager-created account | No public sign-up | **Built** (release 1.0.0) |
+| RID-02 | Online and offline toggle | One tap. Going offline is blocked while the rider carries an order (**Decided**, 12 November 2026); Release order (RID-12) hands an order back first. | **Built** (release 1.0.0) |
+| RID-03 | Order queue | Ready orders with order number, pickup point, drop-off neighbourhood, estimated distance, and the order's load against the rider's budget (for example "Load 5 of 9", section 6) | **Built** (release 1.0.0) |
+| RID-04 | Accept order (first to accept wins) | Order disappears from other riders' queues | **Built** (release 1.0.0) |
+| RID-05 | Capacity rules | One order by default, up to three if loads fit (section 6) | **Built** (release 1.0.0) |
+| RID-06 | Active deliveries list | Stops in order, one primary action at a time | **Built** (release 1.0.0) |
+| RID-07 | Pickup confirmation | Match order number, tap "Picked up" | **Built** (release 1.0.0) |
+| RID-08 | Navigation to the customer | Opens the rider's installed navigation app (no map inside the rider app, section 7) | **Built** (release 1.0.0) |
+| RID-09 | Call the customer | From the app, using the contact phone | **Built** (release 1.0.0) |
+| RID-10 | Delivery code entry | Completes the delivery | **Built** (release 1.0.0) |
+| RID-11 | Need help | Contacts dispatch, meaning a dispatch officer or a manager (unreachable customer, code problem). Handled under DSP-04. | **Built** (release 1.0.0) |
+| RID-12 | Release order | Returns an order to the queue | **Built** (release 1.0.0) |
+| RID-13 | Day summary | Completed deliveries for the day | **Built** (release 1.0.0) |
+| RID-14 | Sound and vibration alerts | New orders in the queue, status changes. Vibration from the first build; the sound plays through push notifications, so it arrives with push (**Decided**, 12 November 2026). | **Built** (release 1.0.0) |
+| RID-15 | Screen stays awake only on pickup and code entry | Short windows only, to save battery | **Built** (release 1.0.0) |
+| RID-16 | Poor-network tolerance | Queue actions retried, last known state shown | **Built** (release 1.0.0) |
+| RID-17 | Light location tracking | Only during an active delivery, low frequency, balanced accuracy (section 7) | **Built** (release 1.0.0) |
+| RID-18 | Earnings | Today, this week, this month, and all time; an Owed list of everything not paid out yet (by day, with the total); today’s deliveries with each one’s pay; and the payout history (18.2) | **Decided**, **built** (release 1.0.0) |
+| RID-19 | Lean by design | No maps, images, or animation in the app; power rules in section 7 | **Built** (release 1.0.0) |
+| RID-20 | Password handled by the manager | No forgot-password screen. The sign-in screen tells the rider to ask the manager, who resets the password. After a reset, the rider must set a new password at the next sign-in. | **Decided**, **built** (release 1.0.0) |
+| RID-21 | My profile | A read-only view of their own details and staff ID. No photo is shown, to keep the app image-free. | **Built** (release 1.0.0) |
+| RID-22 | Settings | Theme (light, dark, or follow the phone), and sound and vibration | **Built** (release 1.0.0) |
+| RID-23 | Order assigned by dispatch | When a dispatch officer assigns an order (DSP-05), it joins the rider’s deliveries with a strong alert and a yellow “Assigned to you by dispatch” banner. The rider can release it like any order (RID-12). | **Decided**, **built** (release 1.0.0) |
 
 ### 5.3 Business and Kitchen app
 
@@ -296,23 +296,23 @@ One app for four staff roles: kitchen staff, dispatch officers, account officers
 
 | ID | Feature | Notes | Status |
 |---|---|---|---|
-| KIT-01 | Order board | New, Preparing, Ready columns on the tablet | Planned |
-| KIT-02 | New order alert | Sound and visual alert. **Sound built 15 November 2026:** a pleasant double chime, made for CKE, once per new online order, on the Business app's own notification channel; turned on or off in Settings, Alerts (on by default). | Planned |
-| KIT-03 | Acknowledge ticket | One tap; moves the order forward | Planned |
-| KIT-04 | Item checklist by station | Rice, soups and swallows, snacks and drinks | Planned |
-| KIT-05 | Mark ready | One tap; delivery orders enter the rider queue | Planned |
-| KIT-06 | Handoff view | Shows which rider accepted, clears on pickup | Planned |
-| KIT-07 | Pickup orders | "Ready for collection" and "Collected" | Planned |
-| KIT-08 | Sold-out toggle | One tap from the board or menu list | Planned |
-| KIT-09 | Item unavailable on an order | Flags the manager | Planned |
+| KIT-01 | Order board | New, Preparing, Ready columns on the tablet | **Built** (release 1.0.0) |
+| KIT-02 | New order alert | Sound and visual alert. **Sound built 15 November 2026:** a pleasant double chime, made for CKE, once per new online order, on the Business app's own notification channel; turned on or off in Settings, Alerts (on by default). | **Built** (release 1.0.0) |
+| KIT-03 | Acknowledge ticket | One tap; moves the order forward | **Built** (release 1.0.0) |
+| KIT-04 | Item checklist by station | Rice, soups and swallows, snacks and drinks | **Built** (release 1.0.0) |
+| KIT-05 | Mark ready | One tap; delivery orders enter the rider queue | **Built** (release 1.0.0) |
+| KIT-06 | Handoff view | Shows which rider accepted, clears on pickup | **Built** (release 1.0.0) |
+| KIT-07 | Pickup orders | "Ready for collection" and "Collected" | **Built** (release 1.0.0) |
+| KIT-08 | Sold-out toggle | One tap from the board or menu list | **Built** (release 1.0.0) |
+| KIT-09 | Item unavailable on an order | Flags the manager | **Built** (release 1.0.0) |
 | KIT-10 | Packing guide | Shows the packaging rule for each item type | Later |
-| KIT-11 | Staff attribution | Each action is recorded against whoever is signed in on the tablet or phone (4.5) | **Decided** |
-| KIT-12 | On-shift sign-in on the tablet | Staff sign in with their own username and password, the top bar shows who is signed in, "Switch person" hands over, and the tablet signs out at 8:30 pm once every order placed before then is finished; managers can turn the automatic sign-out off (Settings, owner decisions, 14 November 2026) | **Decided** |
-| KIT-13 | Walk-in order entry | Staff enter an order at the counter with big item tiles by category, choose eat in or take away, add an optional name, and see the order number to call out (4.8) | **Decided** |
-| KIT-14 | Walk-in payment at the counter | Cash (amount received, change due; the amount is **Exact** or typed into an **Other amount** box, which can’t be less than the total) or online (card or transfer), all simulated, taken at the point of placing the order | **Decided** |
-| KIT-15 | Walk-in tickets on the board | A "Walk-in" badge, eat in or take away shown, and the steps Preparing, Ready, and Collected | **Decided** |
-| KIT-16 | Board filter | Filter the board to All, Online, or Walk-in | **Decided** |
-| KIT-17 | Soup of the day | Kitchen staff pick today’s soup (for example egusi, efo riro, or ogbono) on the Sold out screen each morning, and managers (including the owner) can also pick it there or on the Menu screen. The change is written to the audit log. The customer app shows it straight away on the menu and the dish screen, and only today’s soup can be ordered. Managers also **add and remove soups in the rotation** on the Menu screen (owner decision, 12 November 2026). A removed soup is archived, not erased, because past orders point to it; adding the name again brings it back. Today’s soup can’t be removed, and at least one soup stays. Each change raises the catalog version, so the customer app picks it up (14.4). The soup dishes carry the soup: “Soup of the day: Egusi”, “Extra egusi”, and Home Plate’s description, and the soup and extra soup show **that soup’s own photo**, so the picture changes with the soup. Each line in an order keeps the soup it was ordered with. | **Decided** |
+| KIT-11 | Staff attribution | Each action is recorded against whoever is signed in on the tablet or phone (4.5) | **Decided**, **built** (release 1.0.0) |
+| KIT-12 | On-shift sign-in on the tablet | Staff sign in with their own username and password, the top bar shows who is signed in, "Switch person" hands over, and the tablet signs out at 8:30 pm once every order placed before then is finished; managers can turn the automatic sign-out off (Settings, owner decisions, 14 November 2026) | **Decided**, **built** (release 1.0.0) |
+| KIT-13 | Walk-in order entry | Staff enter an order at the counter with big item tiles by category, choose eat in or take away, add an optional name, and see the order number to call out (4.8) | **Decided**, **built** (release 1.0.0) |
+| KIT-14 | Walk-in payment at the counter | Cash (amount received, change due; the amount is **Exact** or typed into an **Other amount** box, which can’t be less than the total) or online (card or transfer), all simulated, taken at the point of placing the order | **Decided**, **built** (release 1.0.0) |
+| KIT-15 | Walk-in tickets on the board | A "Walk-in" badge, eat in or take away shown, and the steps Preparing, Ready, and Collected | **Decided**, **built** (release 1.0.0) |
+| KIT-16 | Board filter | Filter the board to All, Online, or Walk-in | **Decided**, **built** (release 1.0.0) |
+| KIT-17 | Soup of the day | Kitchen staff pick today’s soup (for example egusi, efo riro, or ogbono) on the Sold out screen each morning, and managers (including the owner) can also pick it there or on the Menu screen. The change is written to the audit log. The customer app shows it straight away on the menu and the dish screen, and only today’s soup can be ordered. Managers also **add and remove soups in the rotation** on the Menu screen (owner decision, 12 November 2026). A removed soup is archived, not erased, because past orders point to it; adding the name again brings it back. Today’s soup can’t be removed, and at least one soup stays. Each change raises the catalog version, so the customer app picks it up (14.4). The soup dishes carry the soup: “Soup of the day: Egusi”, “Extra egusi”, and Home Plate’s description, and the soup and extra soup show **that soup’s own photo**, so the picture changes with the soup. Each line in an order keeps the soup it was ordered with. | **Decided**, **built** (release 1.0.0) |
 
 **Manager**
 
@@ -320,45 +320,45 @@ Account officers also use the reports (MGR-17 to MGR-23, MGR-27, and MGR-34, the
 
 | ID | Feature | Notes | Status |
 |---|---|---|---|
-| MGR-01 | Live dashboard | Today's orders and sales with the online and walk-in split, and orders in progress | Planned |
-| MGR-02 | Rider overview | Who is online, who is delivering what. Built as the Riders screen (DSP-03). | Planned |
-| MGR-03 | Create, edit, deactivate, and reactivate rider accounts | Username and password, plus the profile in 3.1 (name, role, job title, gender, phone, home address, photo). The manager enters everything and can edit it later. | **Decided** |
-| MGR-04 | Create, edit, deactivate, and reactivate kitchen staff, dispatch officer, account officer, and manager accounts | The same profile fields. Kitchen staff, dispatch officers, and account officers use a username and password, and managers use Google. The owner account can’t be deactivated. | **Decided** |
-| MGR-05 | Menu management | Add, edit, delete items | Planned |
-| MGR-06 | Item images with compression | Take or choose a photo, crop it (4:3 for dishes and soups, square for staff), compress it on the tablet (8.1), and upload it with its **credit** in one call: “Our own photo” (credited to Casual Kitchen Express, with an optional photographer and link) or “From the internet” (who took it, the licence, and the link are needed; the licence link is optional). The same steps are used everywhere a photo is added: dishes (Menu and the item editor), soups (when added, or later), and staff (People). Staff photos skip the credit questions: they save as CKE’s own and show no credit anywhere (owner, 12 November 2026). **Replacing a photo deletes the old one**, its file and its record, so every app shows the new photo and the credits follow; removing works the same way. Built 12 November 2026. | **Decided** |
-| MGR-07 | Prices and availability | Edit prices, mark sold out | Planned |
-| MGR-08 | Categories and options | Proteins, sides, extras | Planned |
-| MGR-09 | Opening hours | Online order hours (8:00 am to 6:00 pm) and walk-in hours (8:00 am to 8:30 pm), with overrides | **Decided** |
-| MGR-10 | Pause new orders | One switch | Planned |
-| MGR-11 | Delivery area settings | The neighbourhood list, with each area flagged in or out of range. The boundary is Oluku Market in the north and Uselu on the city side (4.7). | Planned |
-| MGR-12 | Rider capacity settings | Load values and capacity budget (section 6) | Planned |
-| MGR-13 | Order list and search | Today, yesterday, or **any date range back to the first order**. Search by order number or customer ID. Filter by channel (online or walk-in), status, staff member, and payment method. Sort by time placed or amount. Shows the count and total value, and loads long ranges in pages. | **Decided** |
-| MGR-14 | Alerts | Order unaccepted by riders, order stuck, item unavailable, a rider’s help request, and a customer’s cancellation request (the Alert record in section 9). **Alert timers and beep (Decided, 15 November 2026):** dispatch officers and managers set, in Settings, Alerts, how many minutes an order can wait at each stage before an alert opens, each within a range: waiting for a rider 5 to 15 (usually 10), not acknowledged 1 to 5 (usually 5), too long in the kitchen 10 to 30 (usually 15), and too long on the road 10 to 45 (usually 30); whether the Business app beeps when one opens; and whether it chimes for a new online order (KIT-02). Both sounds are on by default. The usual times were 5 for a rider and 25 for the road until later on 15 November 2026, when the owner raised them after seeing how often they flagged the demo history. The section saves with one tap, confirms in a dialog, is audit-logged, and shows who changed it last and when. The beep plays once per alert on every device that shows Alerts (kitchen, dispatch, managers), as a local notification, so it sounds with the screen off. | Planned |
-| MGR-15 | Cancellations and refunds | Rules in 4.6, with simulated refunds. Every refund (a manager’s refund, a dispatch officer’s or manager’s approval of a cancellation request, and kitchen staff cancelling a walk-in) needs an **“I’m sure I want to refund ₦… for …” tick** first, and is recorded with the **name, role, and staff ID** of the person signed in, and the time (shown on the order and in the audit trail). Owner decision, 12 November 2026. **Partial refunds (owner decision, 15 November 2026):** everyone who can make a refund can make it partial. The amount is typed into a field, never fixed, and can never be more than **99% of what the customer paid** (nor more than what is left after earlier refunds); a full refund is a separate one-tap choice. | **Decided** |
-| MGR-16 | Manual completion approval | For delivery-code problems. Dispatch officers can approve too (DSP-04). | Planned |
+| MGR-01 | Live dashboard | Today's orders and sales with the online and walk-in split, and orders in progress | **Built** (release 1.0.0) |
+| MGR-02 | Rider overview | Who is online, who is delivering what. Built as the Riders screen (DSP-03). | **Built** (release 1.0.0) |
+| MGR-03 | Create, edit, deactivate, and reactivate rider accounts | Username and password, plus the profile in 3.1 (name, role, job title, gender, phone, home address, photo). The manager enters everything and can edit it later. | **Decided**, **built** (release 1.0.0) |
+| MGR-04 | Create, edit, deactivate, and reactivate kitchen staff, dispatch officer, account officer, and manager accounts | The same profile fields. Kitchen staff, dispatch officers, and account officers use a username and password, and managers use Google. The owner account can’t be deactivated. | **Decided**, **built** (release 1.0.0) |
+| MGR-05 | Menu management | Add, edit, delete items | **Built** (release 1.0.0) |
+| MGR-06 | Item images with compression | Take or choose a photo, crop it (4:3 for dishes and soups, square for staff), compress it on the tablet (8.1), and upload it with its **credit** in one call: “Our own photo” (credited to Casual Kitchen Express, with an optional photographer and link) or “From the internet” (who took it, the licence, and the link are needed; the licence link is optional). The same steps are used everywhere a photo is added: dishes (Menu and the item editor), soups (when added, or later), and staff (People). Staff photos skip the credit questions: they save as CKE’s own and show no credit anywhere (owner, 12 November 2026). **Replacing a photo deletes the old one**, its file and its record, so every app shows the new photo and the credits follow; removing works the same way. Built 12 November 2026. | **Decided**, **built** (release 1.0.0) |
+| MGR-07 | Prices and availability | Edit prices, mark sold out | **Built** (release 1.0.0) |
+| MGR-08 | Categories and options | Proteins, sides, extras | **Built** (release 1.0.0) |
+| MGR-09 | Opening hours | Online order hours (8:00 am to 6:00 pm) and walk-in hours (8:00 am to 8:30 pm), with overrides | **Decided**, **built** (release 1.0.0) |
+| MGR-10 | Pause new orders | One switch | **Built** (release 1.0.0) |
+| MGR-11 | Delivery area settings | The neighbourhood list, with each area flagged in or out of range. The boundary is Oluku Market in the north and Uselu on the city side (4.7). | **Built** (release 1.0.0) |
+| MGR-12 | Rider capacity settings | Load values and capacity budget (section 6) | **Built** (release 1.0.0) |
+| MGR-13 | Order list and search | Today, yesterday, or **any date range back to the first order**. Search by order number or customer ID. Filter by channel (online or walk-in), status, staff member, and payment method. Sort by time placed or amount. Shows the count and total value, and loads long ranges in pages. | **Decided**, **built** (release 1.0.0) |
+| MGR-14 | Alerts | Order unaccepted by riders, order stuck, item unavailable, a rider’s help request, and a customer’s cancellation request (the Alert record in section 9). **Alert timers and beep (Decided, 15 November 2026):** dispatch officers and managers set, in Settings, Alerts, how many minutes an order can wait at each stage before an alert opens, each within a range: waiting for a rider 5 to 15 (usually 10), not acknowledged 1 to 5 (usually 5), too long in the kitchen 10 to 30 (usually 15), and too long on the road 10 to 45 (usually 30); whether the Business app beeps when one opens; and whether it chimes for a new online order (KIT-02). Both sounds are on by default. The usual times were 5 for a rider and 25 for the road until later on 15 November 2026, when the owner raised them after seeing how often they flagged the demo history. The section saves with one tap, confirms in a dialog, is audit-logged, and shows who changed it last and when. The beep plays once per alert on every device that shows Alerts (kitchen, dispatch, managers), as a local notification, so it sounds with the screen off. | **Built** (release 1.0.0) |
+| MGR-15 | Cancellations and refunds | Rules in 4.6, with simulated refunds. Every refund (a manager’s refund, a dispatch officer’s or manager’s approval of a cancellation request, and kitchen staff cancelling a walk-in) needs an **“I’m sure I want to refund ₦… for …” tick** first, and is recorded with the **name, role, and staff ID** of the person signed in, and the time (shown on the order and in the audit trail). Owner decision, 12 November 2026. **Partial refunds (owner decision, 15 November 2026):** everyone who can make a refund can make it partial. The amount is typed into a field, never fixed, and can never be more than **99% of what the customer paid** (nor more than what is left after earlier refunds); a full refund is a separate one-tap choice. | **Decided**, **built** (release 1.0.0) |
+| MGR-16 | Manual completion approval | For delivery-code problems. Dispatch officers can approve too (DSP-04). | **Built** (release 1.0.0) |
 | MGR-17 | Order volume reports | Orders by hour, day, week, and month; peak times; delivery and pickup split; online and walk-in split; completed and cancelled | **Built** (17 November 2026, on real data) |
 | MGR-18 | Sales reports | Total sales, average order value, payment method split (cash, card, transfer), online and walk-in split, refunds. Each split shows the amount first, then its share, for example “Card ₦735,730 (51%)”. | **Built** (17 November 2026, on real data) |
 | MGR-19 | Timing reports | Time the order was placed, time to acknowledge, preparation time, wait for a rider, delivery time, and total time; averages and slowest orders | **Built** (17 November 2026, on real data) |
-| MGR-20 | Rider and area reports | Separate tables. **Riders:** every rider is listed, even with no deliveries: deliveries, share of all deliveries, and average delivery time. **Areas:** every area (neighbourhood) is listed with its deliveries, share, and average delivery time. A total row ends each table. Every figure is worked out from the deliveries in the chosen date range and channel (walk-ins have no deliveries). The kitchen staff table (MGR-27) sits below them. Order value, delivery fees, and rider pay per rider stay in the CSV export. | **Decided** |
+| MGR-20 | Rider and area reports | Separate tables. **Riders:** every rider is listed, even with no deliveries: deliveries, share of all deliveries, and average delivery time. **Areas:** every area (neighbourhood) is listed with its deliveries, share, and average delivery time. A total row ends each table. Every figure is worked out from the deliveries in the chosen date range and channel (walk-ins have no deliveries). The kitchen staff table (MGR-27) sits below them. Order value, delivery fees, and rider pay per rider stay in the CSV export. | **Decided**, **built** (release 1.0.0) |
 | MGR-21 | Menu reports | Top items, revenue by item and category, how often items sell out | **Built** (17 November 2026, on real data) |
 | MGR-22 | Customer reports | New and returning customers, order frequency (online orders only) | **Built** (17 November 2026, on real data) |
-| MGR-23 | Historic data | 7, 30, 60, or 90 days (90 added by the owner, 15 November 2026, to show the three months of history in one tap), or a **custom range** of dates; CSV export; order history is kept permanently | **Decided** |
-| MGR-24 | Order-level detail | Full timeline of every order with each status timestamp | Planned |
-| MGR-25 | Reset a rider or staff password | Shows a temporary password once. The person must change it at the next sign-in. | **Decided** |
-| MGR-26 | Manager sign-in | Managers continue with Google, so there is no password to recover (section 12.1) | **Decided** |
+| MGR-23 | Historic data | 7, 30, 60, or 90 days (90 added by the owner, 15 November 2026, to show the three months of history in one tap), or a **custom range** of dates; CSV export; order history is kept permanently | **Decided**, **built** (release 1.0.0) |
+| MGR-24 | Order-level detail | Full timeline of every order with each status timestamp | **Built** (release 1.0.0) |
+| MGR-25 | Reset a rider or staff password | Shows a temporary password once. The person must change it at the next sign-in. | **Decided**, **built** (release 1.0.0) |
+| MGR-26 | Manager sign-in | Managers continue with Google, so there is no password to recover (section 12.1) | **Decided**, **built** (release 1.0.0) |
 | MGR-27 | Kitchen staff reports | Per staff member: orders handled (online and walk-in), order value handled, and average preparation time. Shows who was signed in (4.5). | **Built** (17 November 2026, on real data) |
-| MGR-28 | Demo controls | Create orders, auto-play a simulated kitchen and riders, and set the speed (18.4) | Planned |
+| MGR-28 | Demo controls | Create orders, auto-play a simulated kitchen and riders, and set the speed (18.4) | **Built** (release 1.0.0) |
 | MGR-29 | Reset demo data | Wipes and regenerates the historic mock data (18.3), with confirmation. **Owner decisions (17 November 2026):** a full factory reset: every order goes, including testers’ (they keep their accounts and addresses), with payouts, cash-ups, closed months, alerts, and the audit trail; staff a manager added are removed; the menu, prices, soups, settings, staff, and photos go back to the start; then the three months of history are rebuilt. A tick box confirms it; new orders are refused while it runs; Demo controls shows each step. Because rebuilding takes about 1.2 seconds of processing (measured) and the free plan allows about 10 ms per request, a runner does the work: GitHub Actions online, a small helper on the laptop (18.3). | **Built** (17 November 2026) |
 | MGR-30 | Rider pay and payouts | Each rider's owed balance and per-delivery pay, mark a period as paid (simulated), and payout history. Account officers too (ACC-02). | **Built** (17 November 2026, on real data) |
-| MGR-31 | Pricing and pay settings | The delivery fee (₦1,500 by default) and the rider pay per delivery (₦1,000 by default) are both editable. Changes show in the customer app and rider app straight away, apply to new orders and deliveries only, and are written to the audit log. Rider pay can’t exceed the delivery fee. | **Decided** |
-| MGR-32 | Rider tracking mode setting | Light (default) or milestones only (section 7) | **Decided** |
-| MGR-33 | Channel filter and sort | The order list, dashboard, and reports can be filtered to online, walk-in, or all, and sorted by time placed, amount, staff member, or payment method | **Decided** |
-| MGR-34 | Customer leaderboard | Customers ranked by customer ID for any report period, sortable by total spent or number of orders. Managers and account officers (account officers added by the owner on 12 November 2026), online orders only. | **Decided** |
-| MGR-35 | Cancellation limit setting | The number of cancellations in 7 days after which a customer can only request a cancellation. 3 by default, adjustable from 3 to 7. Changes are written to the audit log. (4.6) | **Decided** |
-| MGR-36 | Restaurant contact number | The WhatsApp number behind “Contact the restaurant” in the customer app (CUS-19). One editable number, managers only. The change shows straight away and is written to the audit log. | **Decided** |
-| MGR-37 | Refunds report | A Refunds tab in Reports, with the same date range, channel filter, and CSV export as the other reports: count, total, and average; refunds by reason and by person; and every refund (order, amount, full or partial, reason, time, and who made it: name, role, staff ID), newest or largest first. Managers and account officers. Owner decision, 12 November 2026. | **Decided** |
-| MGR-38 | View profile | On People, each person has View profile: everything from the editor (role, staff ID, status, job title, username or Google email, phone, gender, home address) and their photo, or their initials until a photo is added. The photo also shows in the top bar when they sign in. Owner decision, 12 November 2026. | **Decided** |
-| MGR-39 | Tour guide | Managers only. **Start tour** in the Tour guide section of Demo controls (the only place it starts) walks the manager’s side rail from top to bottom in one straight tour of 14 steps. Each step opens that screen, dims the app, rings its menu item, and shows a card beside the rail: “Step 3 of 14”, a progress bar, the screen’s name, a short explanation of what it gets done, **Skip tour**, **Back**, and **Next** (**Finish** on the last step). The tablet’s back button goes back a step. Skip and Finish return to Demo controls. The tour only moves between screens and never changes data; it is never shown on its own at first launch. Owner decision, 15 November 2026. | **Decided** |
+| MGR-31 | Pricing and pay settings | The delivery fee (₦1,500 by default) and the rider pay per delivery (₦1,000 by default) are both editable. Changes show in the customer app and rider app straight away, apply to new orders and deliveries only, and are written to the audit log. Rider pay can’t exceed the delivery fee. | **Decided**, **built** (release 1.0.0) |
+| MGR-32 | Rider tracking mode setting | Light (default) or milestones only (section 7) | **Decided**, **built** (release 1.0.0) |
+| MGR-33 | Channel filter and sort | The order list, dashboard, and reports can be filtered to online, walk-in, or all, and sorted by time placed, amount, staff member, or payment method | **Decided**, **built** (release 1.0.0) |
+| MGR-34 | Customer leaderboard | Customers ranked by customer ID for any report period, sortable by total spent or number of orders. Managers and account officers (account officers added by the owner on 12 November 2026), online orders only. | **Decided**, **built** (release 1.0.0) |
+| MGR-35 | Cancellation limit setting | The number of cancellations in 7 days after which a customer can only request a cancellation. 3 by default, adjustable from 3 to 7. Changes are written to the audit log. (4.6) | **Decided**, **built** (release 1.0.0) |
+| MGR-36 | Restaurant contact number | The WhatsApp number behind “Contact the restaurant” in the customer app (CUS-19). One editable number, managers only. The change shows straight away and is written to the audit log. | **Decided**, **built** (release 1.0.0) |
+| MGR-37 | Refunds report | A Refunds tab in Reports, with the same date range, channel filter, and CSV export as the other reports: count, total, and average; refunds by reason and by person; and every refund (order, amount, full or partial, reason, time, and who made it: name, role, staff ID), newest or largest first. Managers and account officers. Owner decision, 12 November 2026. | **Decided**, **built** (release 1.0.0) |
+| MGR-38 | View profile | On People, each person has View profile: everything from the editor (role, staff ID, status, job title, username or Google email, phone, gender, home address) and their photo, or their initials until a photo is added. The photo also shows in the top bar when they sign in. Owner decision, 12 November 2026. | **Decided**, **built** (release 1.0.0) |
+| MGR-39 | Tour guide | Managers only. **Start tour** in the Tour guide section of Demo controls (the only place it starts) walks the manager’s side rail from top to bottom in one straight tour of 14 steps. Each step opens that screen, dims the app, rings its menu item, and shows a card beside the rail: “Step 3 of 14”, a progress bar, the screen’s name, a short explanation of what it gets done, **Skip tour**, **Back**, and **Next** (**Finish** on the last step). The tablet’s back button goes back a step. Skip and Finish return to Demo controls. The tour only moves between screens and never changes data; it is never shown on its own at first launch. Owner decision, 15 November 2026. | **Decided**, **built** (release 1.0.0) |
 
 ### 5.3.1 Dispatch officer (Business and Kitchen app)
 
@@ -366,12 +366,12 @@ Decided on 12 November 2026. Managers can do all of this too.
 
 | ID | Feature | Notes | Status |
 |---|---|---|---|
-| DSP-01 | Dispatch officer role | Sees Alerts, Orders, Riders, and Settings (without Pricing and pay and Restaurant contact), as in 3.0 | **Decided** |
-| DSP-02 | Customer contact on online orders | The order detail shows the customer’s name, customer ID, phone, and delivery address (label, neighbourhood, landmark), with **Call** and **WhatsApp** buttons. Walk-in orders show only the optional name. | **Decided** |
-| DSP-03 | Live riders panel | Riders online now, what each is carrying, their load against the budget, and a Call rider button. It also covers the manager’s rider overview (MGR-02). | **Decided** |
-| DSP-04 | Rider help requests | Takes riders’ “Need help” requests from Alerts, contacts the rider or customer, and approves a manual completion or keeps the order open (MGR-16) | **Decided** |
-| DSP-05 | Assign an order to a rider | An order waiting for a rider can be assigned to a chosen online rider whose remaining capacity fits it (section 6). It goes straight into that rider’s deliveries (RID-23), and the assignment is recorded. | **Decided** |
-| DSP-06 | Cancellation requests | Approves or declines customers’ cancellation requests. An approved request refunds under the rules in 4.6. Other refunds stay with managers. | **Decided** |
+| DSP-01 | Dispatch officer role | Sees Alerts, Orders, Riders, and Settings (without Pricing and pay and Restaurant contact), as in 3.0 | **Decided**, **built** (release 1.0.0) |
+| DSP-02 | Customer contact on online orders | The order detail shows the customer’s name, customer ID, phone, and delivery address (label, neighbourhood, landmark), with **Call** and **WhatsApp** buttons. Walk-in orders show only the optional name. | **Decided**, **built** (release 1.0.0) |
+| DSP-03 | Live riders panel | Riders online now, what each is carrying, their load against the budget, and a Call rider button. It also covers the manager’s rider overview (MGR-02). | **Decided**, **built** (release 1.0.0) |
+| DSP-04 | Rider help requests | Takes riders’ “Need help” requests from Alerts, contacts the rider or customer, and approves a manual completion or keeps the order open (MGR-16) | **Decided**, **built** (release 1.0.0) |
+| DSP-05 | Assign an order to a rider | An order waiting for a rider can be assigned to a chosen online rider whose remaining capacity fits it (section 6). It goes straight into that rider’s deliveries (RID-23), and the assignment is recorded. | **Decided**, **built** (release 1.0.0) |
+| DSP-06 | Cancellation requests | Approves or declines customers’ cancellation requests. An approved request refunds under the rules in 4.6. Other refunds stay with managers. | **Decided**, **built** (release 1.0.0) |
 
 ### 5.3.2 Account officer and Finance (Business and Kitchen app)
 
@@ -379,7 +379,7 @@ Decided on 12 November 2026. Managers can do all of this too. Reports are for ru
 
 | ID | Feature | Notes | Status |
 |---|---|---|---|
-| ACC-01 | Account officer role | Sees Reports, Rider pay, and Finance, as in 3.0 | **Decided** |
+| ACC-01 | Account officer role | Sees Reports, Rider pay, and Finance, as in 3.0 | **Decided**, **built** (release 1.0.0) |
 | ACC-02 | Rider payouts | Marks a rider’s owed period as paid (simulated), like MGR-30. Each payout records who paid and when. | **Decided**, **built** (17 November 2026) |
 | ACC-03 | Monthly statement | For any month: sales by channel (online, walk-in) and by payment method (cash, card, transfer), refunds, delivery fees collected, rider pay earned and paid, cash variances, and the net figure. Each line opens the orders behind it. | **Decided**, **built** (17 November 2026) |
 | ACC-04 | Daily cash-up | At close, the person on the counter enters the cash counted in the drawer. The app shows the cash expected from that day’s walk-in cash payments, minus cash refunds, and the difference. The account officer (or a manager) reviews each day and signs it off, with a note for any difference. The sign-off records whichever of them is signed in: an account officer or any manager, including the owner, by name and staff ID, with the time; the cash-up shows it, and the audit trail lists it. | **Decided**, **built** (17 November 2026) |
@@ -397,7 +397,7 @@ A static website (plain HTML, CSS, and JavaScript, with no packages) on GitHub P
 | WEB-02 | About page | The business, its food, the delivery area (Uselu to Oluku Market), and the brand's values. Carries one small attribution line (section 17.4). | **Built** (16 November 2026) |
 | WEB-03 | App page | More detail and the full feature list for the customer app, screenshots, install steps for Android, system requirement (Android 10 or newer), the latest version, and the download | **Built** (16 November 2026) |
 | WEB-04 | FAQ page | Common questions, including the delivery area and fee, opening hours, how to install, and why the app is not on the Play Store | **Built** (16 November 2026) |
-| WEB-05 | Footer contact links | LinkedIn (https://www.linkedin.com/in/armstrong-omoregie-02367a271/), Google (email: ammycan6@gmail.com), and WhatsApp (https://wa.me/2349095466063). There is no separate contact page. | **Decided** |
+| WEB-05 | Footer contact links | LinkedIn (https://www.linkedin.com/in/armstrong-omoregie-02367a271/), Google (email: ammycan6@gmail.com), and WhatsApp (https://wa.me/2349095466063). There is no separate contact page. | **Decided**, **built** (release 1.0.0) |
 | WEB-06 | Footer developer credit | A link to the developer's site (https://bossstrong-dev.vercel.app/) and to GitHub (https://github.com/ARMSTRONG-AISOSA) | **Built** (16 November 2026) |
 | WEB-07 | App download | Links to the latest release on GitHub Releases (https://github.com/ARMSTRONG-AISOSA/casual-kitchen-express/releases/latest), with a checksum and the install guide. When GitHub answers, the App page shows the latest version, size, and SHA-256 checksum and the button downloads the customer APK directly. | **Built** (16 November 2026) |
 | WEB-08 | SEO and sharing previews | Titles, descriptions, and social previews for each page. Home also carries schema.org Restaurant details (17 November 2026), without the kitchen’s exact pin; the sitemap goes to Google Search Console and Bing Webmaster Tools once the site is online. **18 November 2026:** titles and descriptions name what people search for (food delivery, Ugbowo, Benin City, UNIBEN, the dishes) and fit Google’s result lengths; the FAQ adds “Do you deliver to UNIBEN?” and carries schema.org FAQPage data built from the visible questions; the sitemap has last-changed dates; Home carries the Search Console verification tag. | **Built** (16 November 2026) |
@@ -733,7 +733,7 @@ Entities and key fields, as a starting point for the Drizzle schema. Better Auth
 | Authentication | Better Auth run inside the Worker | With its Expo plugin and Drizzle adapter. Neon's managed version is not used, so there is one API (12.2). | **Decided** |
 | Staff password hashing | PBKDF2 at about 50,000 iterations with rate limiting; Google sign-in for staff too | PBKDF2 with rate limiting, at 30,000 iterations, measured on CKE’s account (12.2) | **Decided** (30,000 iterations, owner, 14 November 2026, after measuring) |
 | Real-time | Durable Objects (WebSockets with hibernation) | Verified available on the free plan, SQLite-backed (14.2) | **Decided** |
-| Background jobs | Cron Triggers for scheduled work; Durable Object alarms for per-order timers (the alert check runs from the live hub’s alarm, only while orders are open, built 15 November 2026); Queues only if needed | Cron Triggers are free (5 per account). Alarms on the free plan are to be verified. | **Decided** (direction) |
+| Background jobs | Cron Triggers for scheduled work; Durable Object alarms for per-order timers (the alert check runs from the live hub’s alarm, only while orders are open, built 15 November 2026); Queues only if needed | Cron Triggers are free (5 per account). Alarms work on the free plan (verified 14 November 2026, 16.1 item 3). | **Decided** (direction) |
 | Image file storage provider | Cloudflare R2; Workers KV | **Workers KV** (owner decision, 17 November 2026): R2 can only be turned on after adding a card or PayPal, even within its free 10 GB, and KV needs none. KV's free plan holds 1 GB (the photos are about 3 MB) and allows 1,000 saves a day, far above photo uploads. Each photo has its own address, so KV's short delay in spreading a change never shows an old photo. | **Decided** |
 | Mobile apps | React Native with Expo | All three apps are built with React Native and Expo | **Decided** |
 | App structure | Three separate Expo apps in one repository, with shared packages | Different users and store listings, shared code | **Decided** |
@@ -837,7 +837,7 @@ Checked against Cloudflare, Neon, and Expo pages on 10 November 2026. Daily Clou
 | Real-time | Cloudflare Durable Objects (SQLite-backed, the only kind on the free plan) | 100,000 requests a day, 13,000 GB-seconds a day, 5 million rows read and 100,000 rows written a day, 5 GB storage. WebSocket messages count toward requests at a 20-to-1 ratio. |
 | Database connection | Cloudflare Hyperdrive | 100,000 queries a day |
 | Database | Neon Postgres | 100 CU-hours a month per project, 1 GB storage per project, 5 GB transfer a month per project, 6-hour restore window, sleeps after 5 minutes idle |
-| Image files | Cloudflare R2 | 10 GB storage, 1 million writes and 10 million reads a month, no charge for downloads |
+| Image files | Workers KV (chosen over R2 on 17 November 2026, 14) | 1 GB storage, 100,000 reads and 1,000 writes a day |
 | Scheduled jobs | Cloudflare Cron Triggers | 5 triggers per account |
 | Authentication | Better Auth, run inside the Worker | No extra service or cost |
 | Push notifications | Expo's push service, with Firebase for Android | No charge. iOS remote push needs a paid Apple membership. |
@@ -1080,6 +1080,8 @@ The website uses **no packages**. It is plain HTML, CSS, and JavaScript.
 
 **Changed on 12 November 2026 (owner decision): frontend first.** The app screens are built first on demo data held in each app, so the owner can see and review them. The customer app came first, then the rider app, then the Kitchen and Business app (all three built on demo data by 12 November 2026). The backend foundation (step 1) is built: the database, catalog, soup rotation, photos, and sign-in with roles (14 November 2026). Orders and statuses come next. The seed script (step 2) follows, and then each app’s demo data is replaced with real API calls. The rest of the order is unchanged. `progress.md` section 8 has the step-by-step status.
 
+**Status, 18 November 2026:** every step is done. Release **1.0.0** (all three apps) went out on GitHub Releases on 18 November 2026, and release **1.0.1** the same day with the keyboard and rider tracking fixes. The battery test on a real phone and timing the cold start over mobile data are what is left of 16.1.
+
 **Platform:** every step targets Android first. iOS is added later.
 
 **Development setup:** each app runs as a development build (`expo-dev-client`) installed on a real Android device, connected over the local network to the development server (`npx expo start --dev-client --lan` in the app’s folder). Expo Router’s optional typed routes are switched off: its CLI couldn’t load them with `expo-router` 58.0.28 in this workspace.
@@ -1101,12 +1103,12 @@ These checks were either not possible during planning or depend on the live setu
 1. Better Auth's username plugin, its admin features for creating users, and its custom password-hash setting. **Done 14 November 2026:** the username plugin and the custom PBKDF2 hash work in the Worker. Staff accounts are created by the API’s own People routes rather than the admin plugin.
 2. The real PBKDF2 timing at about 50,000 iterations on a deployed Worker, to confirm it fits the 10 ms CPU limit. **Done 14 November 2026:** a median of 9.5 ms at 50,000, right at the limit (figures in 12.2). The owner chose 30,000 iterations (12.2).
 3. Durable Object alarms and WebSocket hibernation on the free plan, and the daily request counts they use. **Done 14 November 2026:** on the free plan, a SQLite-backed Durable Object’s alarm set for 5 seconds ahead fired 1 ms after its time, and a WebSocket accepted with the hibernation API answered after 12 seconds idle. The daily request counts are checked once the real traffic exists (Workers Logs).
-4. Background location, the Android foreground-service notification, and the battery and heat target (7.5) on a mid-range phone. **Partly done 16 November 2026:** background location, the “Delivery in progress” foreground-service notification, the two-step permission, and the arrival geofence work on the test tablet (with test positions, since it has no fix indoors). The battery and heat target still needs a real phone on a real shift. **End-to-end test, 18 November 2026:** one order on the test tablet through all three apps (laptop database, a temporary test customer, test positions): placed and paid, acknowledged and marked ready by the kitchen, accepted and picked up by Musa, the two-step permission and the foreground service, positions every move within about a second (also with the rider app in the background and after restarting it mid-delivery), the customer’s map with the rider’s marker, “Arriving soon” from 300 metres, a wrong code refused, the right code delivered, ₦1,000 to the rider, and tracking stopped with the position cleared. Every push arrived. **Fixed:** the rider app stopped sending its position once its orders were arriving, so the customer’s map froze for the last 300 metres; it now shares until the last delivery, as 7.1 says.
-5. The Google sign-in console setup: consent screen, the client, and the privacy policy link. **Mostly done 14 November 2026:** Google Auth Platform (branding, External audience in testing, one Web application client with the localhost and workers.dev redirect addresses) is set up, and Continue with Google works on the tablet in the Business app (a manager) and the customer app (a customer; a staff Google account is refused). The browser-based flow needs no package name or key fingerprint. Still to do: the privacy policy link and publishing the consent screen, with the website (step 7). **The privacy page is built (16 November 2026);** the owner gives Google its link and publishes once the site is online (`progress.md`, log of 16 November 2026).
+4. Background location, the Android foreground-service notification, and the battery and heat target (7.5) on a mid-range phone. **Partly done 16 November 2026:** background location, the “Delivery in progress” foreground-service notification, the two-step permission, and the arrival geofence work on the test tablet (with test positions, since it has no fix indoors). The battery and heat target still needs a real phone on a real shift. **End-to-end test, 18 November 2026:** one order on the test tablet through all three apps (laptop database, a temporary test customer, test positions): placed and paid, acknowledged and marked ready by the kitchen, accepted and picked up by Musa, the two-step permission and the foreground service, positions every move within about a second (also with the rider app in the background and after restarting it mid-delivery), the customer’s map with the rider’s marker, “Arriving soon” from 300 metres, a wrong code refused, the right code delivered, ₦1,000 to the rider, and tracking stopped with the position cleared. Every push arrived. **Fixed:** the rider app stopped sending its position once its orders were arriving, so the customer’s map froze for the last 300 metres; it now shares until the last delivery, as 7.1 says. The fix ships in release 1.0.1.
+5. The Google sign-in console setup: consent screen, the client, and the privacy policy link. **Mostly done 14 November 2026:** Google Auth Platform (branding, External audience in testing, one Web application client with the localhost and workers.dev redirect addresses) is set up, and Continue with Google works on the tablet in the Business app (a manager) and the customer app (a customer; a staff Google account is refused). The browser-based flow needs no package name or key fingerprint. Still to do: the privacy policy link and publishing the consent screen, with the website (step 7). **The privacy page is built (16 November 2026).** **Done 18 November 2026:** the owner gave Google the homepage and privacy links and published the consent screen, so any Google account can sign in, not only listed test users.
 6. The Hyperdrive caching settings (off for live order data), and Neon's current free-plan storage allowance. **Done 18 November 2026:** Hyperdrive caching was found on (Cloudflare's default) and turned off, so every read sees the latest orders; the optional cached configuration for reports isn't needed, since reports are computed in SQL and answer quickly. Neon's free plan is 1 GB per project (20 GB across projects), 100 CU-hours a month, and 5 GB transfer; the database uses 49 MB and about 15 minutes of compute so far.
 7. OpenFreeMap's current usage terms, and the required map credit. **Done 16 November 2026:** no account or key, no limits on map views (offline downloads are limited, and the apps don’t download offline), commercial use allowed, no uptime guarantee, and whoever integrates it must be 18 or over. Attribution: “© OpenStreetMap contributors” visible on or next to the map and linked to openstreetmap.org/copyright, and “© OpenMapTiles” linked to openmaptiles.org; each credit under the map now opens its own page.
 8. A re-check of every free allowance (Cloudflare, Neon, and Expo) just before building. **Done 18 November 2026:** Workers (100,000 requests a day, 10 ms CPU, 50 subrequests), Durable Objects (100,000 requests, 13,000 GB-s, 5 million rows read and 100,000 written a day, 5 GB, WebSocket messages at 20 to 1), Workers KV (100,000 reads and 1,000 writes a day, 1 GB; a demo reset writes about 30 photos), Neon (as in item 6), and Expo push (free, 600 a second per project) all match the table in 14.
-9. The Android install flow, unknown-source and Play Protect prompts, and the release signing key, on real Android 10 and newer phones.
+9. The Android install flow, unknown-source and Play Protect prompts, and the release signing key, on real Android 10 and newer phones. **Done 18 November 2026:** the owner downloaded the APKs from the GitHub release page and installed them on a phone and on the test tablet (Android 12). Android asked to allow the browser to install apps; Play Protect asked to scan the app first (**Install without sending** installs it; the App page’s steps cover the warning). A build signed with a different key (an older development build) has to be uninstalled first, as expected; release 1.0.1 installs over 1.0.0 because both use the same release key.
 10. A quick check that Android 10 and above suits the target users' phones. **Done 18 November 2026:** in Nigeria, Android 10 to 15 make up about 81% of Android phones and tablets (Statcounter, June 2026: 13 at 17.7%, 12 at 16.5%, 11 at 13%, 14 at 12.4%, 15 at 11.7%, 10 at 9.7%), plus Android 16. Android 10 and above stays.
 11. The seed script's own checks (18.3), including the separate online and walk-in hours. **Done 15 November 2026:** built into `scripts/seed-history.ts`; they all pass.
 12. The delivery boundary polygon, drawn from map pins from Uselu to Oluku Market. **Done 16 November 2026:** from the owner’s pins (4.7, `list-of-areas.md` 1).
@@ -1124,7 +1126,7 @@ These checks were either not possible during planning or depend on the live setu
 
 What this means:
 - Background location uses Android 10's separate permission, and from Android 11 the person is asked in two steps. A visible notification is required while background tracking runs (section 7.3).
-- Phones older than Android 10 cannot install the apps. A quick check of the target users' phones before launch would confirm this suits the delivery area.
+- Phones older than Android 10 cannot install the apps. Checked 18 November 2026: Android 10 and above covers about 81% of Android devices in Nigeria (16.1 item 10).
 - The minimum version is set in the build configuration.
 
 ### 17.2 Distribution: no Play Store for now
@@ -1139,7 +1141,7 @@ What this means:
 | Package IDs (decided) | `com.armstrongaisosa.casualkitchenexpress.customer`, `.rider`, and `.business`. They can’t change after the first release. |
 | Signing | One signing key per app, kept safe and backed up. The same key must be used for every update. (Google sign-in uses the browser-based flow, so it isn’t tied to the key’s fingerprint, 12.2.) |
 | Versions | Each release has a version number, release notes, and a checksum on the release page |
-| Updates | The app checks for a newer release and shows an "Update available" message that opens the release page. Expo EAS Update can send JavaScript-only changes without a new installer. |
+| Updates | A few seconds after opening, each release build asks GitHub for the latest release and, if it is newer, shows “A new version is ready” with **Download**, which opens the release page; the new APK installs over the old one and the person stays signed in. Expo EAS Update (JavaScript-only updates without a new installer) is not set up. |
 | Push notifications | Work without the Play Store (Firebase handles delivery) |
 | Install friction | People must allow installs from the browser they used, and may see a warning that the app is from an unknown source. The App page and the FAQ explain each step. |
 | Limits | GitHub Releases files are free for public repositories, and each release is capped at 2 GB, far above an app's size. The GitHub Pages site limits are in 5.4. |
@@ -1233,6 +1235,7 @@ A seed script fills the database with **three months** of history (owner decisio
 
 | Version | Change |
 |---|---|
+| 0.60 | 18 November 2026 (night): documents brought up to date after release: every built feature marked **Built** (release 1.0.0), the build order’s status, 16.1 items 5 (consent screen published) and 9 (install flow), the update notice as built, Workers KV in the overview and the limits table, and the Android coverage note in 17.1. |
 | 0.59 | 18 November 2026 (evening): WEB-08 search titles, descriptions, the FAQ’s UNIBEN question and FAQPage data, sitemap dates, and the Search Console tag. |
 | 0.58 | 18 November 2026 (later): the end-to-end order test on the tablet and the rider tracking fix (16.1 item 4), and the memory and CPU results on the release builds (16.1 item 13). |
 | 0.57 | 18 November 2026: 16.1 checks: Hyperdrive caching turned off as decided (it was on by default), free allowances re-checked (all match 14), Android 10 and above confirmed for Nigeria, and Node.js 24 with JDK 17 confirmed by the release builds. |
