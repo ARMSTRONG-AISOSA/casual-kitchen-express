@@ -1,6 +1,6 @@
 # CKE ARCHITECTURE
 
-**Document Status:** Draft v0.56. Records the functions, features, and decisions for the apps and the website. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day with the backend foundation in progress), and again on 14 November 2026 after sign-in was built.  
+**Document Status:** Draft v0.57. Records the functions, features, and decisions for the apps and the website. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day with the backend foundation in progress), and again on 14 November 2026 after sign-in was built.  
 **Related documents:** `Casual-Kitchen-Express.md` (business and brand, surface level), `design.md` (UI/UX decisions and page flows), and `list-of-areas.md` (delivery areas).
 
 ---
@@ -1103,15 +1103,15 @@ These checks were either not possible during planning or depend on the live setu
 3. Durable Object alarms and WebSocket hibernation on the free plan, and the daily request counts they use. **Done 14 November 2026:** on the free plan, a SQLite-backed Durable Object’s alarm set for 5 seconds ahead fired 1 ms after its time, and a WebSocket accepted with the hibernation API answered after 12 seconds idle. The daily request counts are checked once the real traffic exists (Workers Logs).
 4. Background location, the Android foreground-service notification, and the battery and heat target (7.5) on a mid-range phone. **Partly done 16 November 2026:** background location, the “Delivery in progress” foreground-service notification, the two-step permission, and the arrival geofence work on the test tablet (with test positions, since it has no fix indoors). The battery and heat target still needs a real phone on a real shift.
 5. The Google sign-in console setup: consent screen, the client, and the privacy policy link. **Mostly done 14 November 2026:** Google Auth Platform (branding, External audience in testing, one Web application client with the localhost and workers.dev redirect addresses) is set up, and Continue with Google works on the tablet in the Business app (a manager) and the customer app (a customer; a staff Google account is refused). The browser-based flow needs no package name or key fingerprint. Still to do: the privacy policy link and publishing the consent screen, with the website (step 7). **The privacy page is built (16 November 2026);** the owner gives Google its link and publishes once the site is online (`progress.md`, log of 16 November 2026).
-6. The Hyperdrive caching settings (off for live order data), and Neon's current free-plan storage allowance.
+6. The Hyperdrive caching settings (off for live order data), and Neon's current free-plan storage allowance. **Done 18 November 2026:** Hyperdrive caching was found on (Cloudflare's default) and turned off, so every read sees the latest orders; the optional cached configuration for reports isn't needed, since reports are computed in SQL and answer quickly. Neon's free plan is 1 GB per project (20 GB across projects), 100 CU-hours a month, and 5 GB transfer; the database uses 49 MB and about 15 minutes of compute so far.
 7. OpenFreeMap's current usage terms, and the required map credit. **Done 16 November 2026:** no account or key, no limits on map views (offline downloads are limited, and the apps don’t download offline), commercial use allowed, no uptime guarantee, and whoever integrates it must be 18 or over. Attribution: “© OpenStreetMap contributors” visible on or next to the map and linked to openstreetmap.org/copyright, and “© OpenMapTiles” linked to openmaptiles.org; each credit under the map now opens its own page.
-8. A re-check of every free allowance (Cloudflare, Neon, and Expo) just before building.
+8. A re-check of every free allowance (Cloudflare, Neon, and Expo) just before building. **Done 18 November 2026:** Workers (100,000 requests a day, 10 ms CPU, 50 subrequests), Durable Objects (100,000 requests, 13,000 GB-s, 5 million rows read and 100,000 written a day, 5 GB, WebSocket messages at 20 to 1), Workers KV (100,000 reads and 1,000 writes a day, 1 GB; a demo reset writes about 30 photos), Neon (as in item 6), and Expo push (free, 600 a second per project) all match the table in 14.
 9. The Android install flow, unknown-source and Play Protect prompts, and the release signing key, on real Android 10 and newer phones.
-10. A quick check that Android 10 and above suits the target users' phones.
+10. A quick check that Android 10 and above suits the target users' phones. **Done 18 November 2026:** in Nigeria, Android 10 to 15 make up about 81% of Android phones and tablets (Statcounter, June 2026: 13 at 17.7%, 12 at 16.5%, 11 at 13%, 14 at 12.4%, 15 at 11.7%, 10 at 9.7%), plus Android 16. Android 10 and above stays.
 11. The seed script's own checks (18.3), including the separate online and walk-in hours. **Done 15 November 2026:** built into `scripts/seed-history.ts`; they all pass.
 12. The delivery boundary polygon, drawn from map pins from Uselu to Oluku Market. **Done 16 November 2026:** from the owner’s pins (4.7, `list-of-areas.md` 1).
 13. The performance targets (13) and the contrast ratios in `design.md` (3.2 and 3.9), in the design tools.
-14. Tool support for Node.js 24 LTS and JDK 17 with Expo SDK 58.
+14. Tool support for Node.js 24 LTS and JDK 17 with Expo SDK 58. **Done 18 November 2026:** the three signed release APKs built with Node.js 24.19.0 and OpenJDK 17.0.21.
 15. Before installing, re-check each locked version in section 15 for security advisories.
 
 ---
@@ -1233,6 +1233,7 @@ A seed script fills the database with **three months** of history (owner decisio
 
 | Version | Change |
 |---|---|
+| 0.57 | 18 November 2026: 16.1 checks: Hyperdrive caching turned off as decided (it was on by default), free allowances re-checked (all match 14), Android 10 and above confirmed for Nigeria, and Node.js 24 with JDK 17 confirmed by the release builds. |
 | 0.56 | 17 November 2026 (night): rider pay and payouts (MGR-30, ACC-02), the cash-up (ACC-04), the statement (ACC-03), the audit trail (ACC-05), CSV exports (ACC-06), and closing a month with adjustments (ACC-07) on real data: `/payouts` and `/finance/*`. A payout made in the app covers everything owed up to that day. |
 | 0.55 | 17 November 2026 (evening): deployed: Neon project `cke` in Frankfurt (Postgres 17) with Hyperdrive, the Worker at cke-api.casualkitchenexpress.workers.dev, and the photos in Workers KV instead of R2 (owner decision); reports on real data (MGR-17 to MGR-22, MGR-27). |
 | 0.54 | 17 November 2026 (later): Reset demo data built as a full factory reset (owner decisions; MGR-29, 18.3); the kitchen is open every day (owner). |
