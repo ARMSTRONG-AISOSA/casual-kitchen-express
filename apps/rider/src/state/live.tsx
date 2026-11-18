@@ -184,6 +184,8 @@ export function RiderLive() {
         .map((c) => `${c.id}:${c.pin!.lat},${c.pin!.lng}`)
         .join("|")
     : "";
+  // Shared until the last delivery, arriving included (7.1); only geofences skip arriving orders.
+  const onTheWay = s.live && s.carrying.some((c) => c.picked && c.id);
   // This phone's push token, with the Sound setting choosing the channel (RID-14).
   useEffect(() => {
     if (on) void registerPush(s.sound);
@@ -200,14 +202,14 @@ export function RiderLive() {
           return { orderId: orderId!, lat: lat!, lng: lng! };
         })
       : [];
-    void syncTracking(stops, s.tracking, AppState.currentState === "active")
+    void syncTracking(stops, onTheWay, s.tracking, AppState.currentState === "active")
       .then((r) =>
         set((st) =>
           st.locationDenied === (r === "denied") ? {} : { locationDenied: r === "denied" },
         ),
       )
       .catch(() => {});
-  }, [stopsKey, s.tracking, set]);
+  }, [stopsKey, onTheWay, s.tracking, set]);
 
   useEffect(() => {
     if (!on) {

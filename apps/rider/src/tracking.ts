@@ -108,7 +108,7 @@ TaskManager.defineTask<{ locations: Location.LocationObject[] }>(
     }
     // The battery changed enough to switch speed: start again with the other settings.
     const low = await lowPower();
-    if (saving !== null && low !== saving && stops.length) {
+    if (saving !== null && low !== saving) {
       await stopMoving();
       await startMoving().catch(() => {});
     }
@@ -127,14 +127,21 @@ TaskManager.defineTask<{
 export type TrackingResult = "on" | "off" | "denied";
 
 /**
- * Starts, updates, or stops tracking for the orders on the way. `stops` are the picked-up orders
- * not yet arriving. Permission is asked once, in two steps (17.1): while using the app, then all
- * the time (for the arrival geofence). Called again whenever the deliveries change.
+ * Starts, updates, or stops tracking for the orders on the way. `onTheWay` is true while any order
+ * is picked up or arriving: the position is shared until the last delivery (7.1), including the
+ * last few hundred metres after "Arriving soon". `next` are the picked-up orders not yet arriving,
+ * which get an arrival geofence. Permission is asked once, in two steps (17.1): while using the
+ * app, then all the time (for the arrival geofence). Called again whenever the deliveries change.
  */
-export async function syncTracking(next: Stop[], mode: "light" | "milestones", canAsk: boolean) {
+export async function syncTracking(
+  next: Stop[],
+  onTheWay: boolean,
+  mode: "light" | "milestones",
+  canAsk: boolean,
+) {
   stops = next;
   for (const id of [...arrived]) if (!next.some((s) => s.orderId === id)) arrived.delete(id);
-  if (!next.length) {
+  if (!onTheWay) {
     await Promise.all([stopMoving(), stopGeofence()]);
     return "off" as TrackingResult;
   }
@@ -155,7 +162,7 @@ export async function syncTracking(next: Stop[], mode: "light" | "milestones", c
       await startMoving();
   } else await stopMoving();
 
-  if (bg.granted) {
+  if (bg.granted && next.length) {
     // Starting again replaces the regions with the current stops.
     await Location.startGeofencingAsync(
       ARRIVE_TASK,
@@ -174,4 +181,4 @@ export async function syncTracking(next: Stop[], mode: "light" | "milestones", c
 }
 
 /** Signing out or going offline: everything stops. */
-export const stopTracking = () => syncTracking([], "light", false);
+export const stopTracking = () => syncTracking([], false, "light", false);
