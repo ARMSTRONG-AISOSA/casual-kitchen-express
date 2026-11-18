@@ -1471,6 +1471,6 @@ Append a new dated entry after each work session. Never edit or delete earlier e
 
 **Notes:** Metro started with `CI=1` doesn’t watch files; restart it after code changes. The tablet runs the dev builds again (customer debug APK rebuilt and backed up in `~/cke-release/debug-backup`). The rider fix and the keyboard fixes are not in release 1.0.0; they go into the next release.
 
-**Open for the owner:** security advisories in build tools (picomatch, minimatch, glob, esbuild in drizzle-kit; none in the apps or the API) need package upgrades, which need the owner’s yes.
+**Build-tool advisories (owner said go ahead, 18 November 2026):** no safe upgrade exists yet: picomatch has no fixed release (4.0.7 is the newest and affected); minimatch and glob are fixed only in new majors that Expo’s CLI doesn’t use yet (still minimatch 10 in Expo 58.0.26); the esbuild one is inside drizzle-kit, where npm’s fix is a downgrade; `npm audit fix` refuses because it would replace Expo. All four are build-time only, reached only with our own file patterns. **Check again before the next release build** and upgrade then, within the locked versions.
 
 **Next step:** the battery test discussion; then release 1.0.1 with the fixes when the owner wants it; the owner’s feature additions and removals.
