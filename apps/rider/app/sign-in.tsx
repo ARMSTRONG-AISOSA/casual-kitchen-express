@@ -50,11 +50,15 @@ export default function SignIn() {
   return (
     <Screen
       footer={
-        <Button
-          label={busy ? "Signing in…" : "Sign in"}
-          onPress={signIn}
-          disabled={!user.trim() || !pass || busy}
-        />
+        <>
+          {/* Here, above the button, the message stays in sight when the keyboard is open. */}
+          {error ? <StateBanner kind="alert" label={error} /> : null}
+          <Button
+            label={busy ? "Signing in…" : "Sign in"}
+            onPress={signIn}
+            disabled={!user.trim() || !pass || busy}
+          />
+        </>
       }
     >
       <View style={{ alignItems: "center", marginTop: 36, marginBottom: 12 }}>
@@ -80,11 +84,6 @@ export default function SignIn() {
         returnKeyType="go"
         onSubmitEditing={signIn}
       />
-      {error ? (
-        <View style={{ marginTop: 12 }}>
-          <StateBanner kind="alert" label={error} />
-        </View>
-      ) : null}
       <T muted style={{ marginTop: 16 }}>
         Forgot your password? Ask your manager.
       </T>

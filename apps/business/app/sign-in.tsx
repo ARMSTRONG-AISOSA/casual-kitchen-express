@@ -1,7 +1,16 @@
 import { fontFamily, logos } from "@cke/brand-tokens";
 import { router } from "expo-router";
-import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import {
+  Keyboard,
+  KeyboardAvoidingView,
+  Pressable,
+  ScrollView,
+  type ScrollViewInstance,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { SvgXml } from "react-native-svg";
 import { api } from "../src/api";
 import { authClient, refreshCookie, signInError } from "../src/auth";
@@ -36,6 +45,19 @@ export default function SignIn() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const live = !!api && !!authClient;
+  // When the keyboard opens, the page shrinks above it and scrolls just far enough to show the
+  // error line and the Sign in button, so nobody has to close the keyboard to sign in.
+  const scroll = useRef<ScrollViewInstance>(null);
+  const spot = useRef({ card: 0, button: 0, view: 0 });
+  useEffect(() => {
+    const sub = Keyboard.addListener("keyboardDidShow", () =>
+      setTimeout(() => {
+        const { card, button, view } = spot.current;
+        scroll.current?.scrollTo({ y: Math.max(0, card + button + 16 - view), animated: true });
+      }, 120),
+    );
+    return () => sub.remove();
+  }, []);
   const staff = live
     ? LIVE_DEMO.map((p) => ({ id: p.username, ...p }))
     : s.people.filter((p) => p.username && p.role !== "rider" && p.active);
@@ -116,94 +138,107 @@ export default function SignIn() {
   const logo = t.mode === "dark" ? logos.logoHorizontalCharcoal : logos.logoHorizontalCream;
 
   return (
-    <ScrollView
-      contentContainerStyle={styles.wrap}
-      keyboardShouldPersistTaps="handled"
-      style={{ backgroundColor: t.bg }}
-    >
-      <View style={[styles.card, { backgroundColor: t.surface, borderColor: t.line }]}>
-        <SvgXml xml={logo.xml} height={40} width={40 * logo.ratio} />
-        <T v="title" style={{ marginTop: 16 }}>
-          Kitchen and business
-        </T>
-        <T muted style={{ marginTop: 4 }}>
-          Sign in with the username and password from your manager.
-        </T>
-        <Field
-          label="Username"
-          value={username}
-          onChangeText={(v) => (setUsername(v), setError(""))}
-          autoCapitalize="none"
-        />
-        <Field
-          label="Password"
-          value={password}
-          onChangeText={(v) => (setPassword(v), setError(""))}
-          secureTextEntry
-          returnKeyType="go"
-          onSubmitEditing={signIn}
-        />
-        {error ? (
-          <T v="small" color={t.danger} style={{ marginTop: 8 }}>
-            {error}
+    <KeyboardAvoidingView behavior="padding" style={{ flex: 1, backgroundColor: t.bg }}>
+      <ScrollView
+        ref={scroll}
+        contentContainerStyle={styles.wrap}
+        keyboardShouldPersistTaps="handled"
+        onLayout={(e) => (spot.current.view = e.nativeEvent.layout.height)}
+      >
+        <View
+          style={[styles.card, { backgroundColor: t.surface, borderColor: t.line }]}
+          onLayout={(e) => (spot.current.card = e.nativeEvent.layout.y)}
+        >
+          <SvgXml xml={logo.xml} height={40} width={40 * logo.ratio} />
+          <T v="title" style={{ marginTop: 16 }}>
+            Kitchen and business
           </T>
-        ) : null}
-        <Button
-          label={busy ? "Signing in…" : "Sign in"}
-          disabled={busy}
-          onPress={signIn}
-          style={{ marginTop: 16 }}
-        />
-        <T v="small" muted style={{ marginTop: 8 }}>
-          Forgot your password? Ask your manager.
-        </T>
-        <View style={[styles.or, { borderTopColor: t.line }]}>
-          <T v="label">Managers</T>
-          <Button
-            label="Continue with Google"
-            variant="ghost"
-            style={{ marginTop: 8 }}
-            disabled={busy}
-            onPress={() => (live ? void signInGoogle() : enter("M-001", "manager"))}
+          <T muted style={{ marginTop: 4 }}>
+            Sign in with the username and password from your manager.
+          </T>
+          <Field
+            label="Username"
+            value={username}
+            onChangeText={(v) => (setUsername(v), setError(""))}
+            autoCapitalize="none"
           />
-        </View>
-        {live && !__DEV__ ? null : (
-          <View style={[styles.or, { borderTopColor: t.line }]}>
-            <T v="label">Demo accounts</T>
-            <T v="small" muted>
-              {live
-                ? `Tap one to fill it in. The demo password is ${DEMO_PASSWORD}.`
-                : "Tap one to fill in the username. Any password works in the demo."}
-            </T>
-            <View style={styles.demo}>
-              {staff.map((p) => (
-                <Pressable
-                  key={p.id}
-                  onPress={() => {
-                    setUsername(p.username ?? "");
-                    setPassword(live ? DEMO_PASSWORD : "demo");
-                    setError("");
-                  }}
-                  accessibilityRole="button"
-                  style={[
-                    styles.demoBtn,
-                    {
-                      borderColor: t.line,
-                      backgroundColor: username === p.username ? t.chip : t.surface,
-                    },
-                  ]}
-                >
-                  <Text style={[styles.demoName, { color: t.text }]}>{p.name}</Text>
-                  <Text style={[styles.demoRole, { color: t.muted }]}>
-                    {ROLE_LABEL[p.role as Role]}, {p.username}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
+          <Field
+            label="Password"
+            value={password}
+            onChangeText={(v) => (setPassword(v), setError(""))}
+            secureTextEntry
+            returnKeyType="go"
+            onSubmitEditing={signIn}
+          />
+          <View
+            onLayout={(e) => {
+              const { y, height } = e.nativeEvent.layout;
+              spot.current.button = y + height;
+            }}
+          >
+            {error ? (
+              <T v="small" color={t.danger} style={{ marginTop: 8 }}>
+                {error}
+              </T>
+            ) : null}
+            <Button
+              label={busy ? "Signing in…" : "Sign in"}
+              disabled={busy}
+              onPress={signIn}
+              style={{ marginTop: 16 }}
+            />
           </View>
-        )}
-      </View>
-    </ScrollView>
+          <T v="small" muted style={{ marginTop: 8 }}>
+            Forgot your password? Ask your manager.
+          </T>
+          <View style={[styles.or, { borderTopColor: t.line }]}>
+            <T v="label">Managers</T>
+            <Button
+              label="Continue with Google"
+              variant="ghost"
+              style={{ marginTop: 8 }}
+              disabled={busy}
+              onPress={() => (live ? void signInGoogle() : enter("M-001", "manager"))}
+            />
+          </View>
+          {live && !__DEV__ ? null : (
+            <View style={[styles.or, { borderTopColor: t.line }]}>
+              <T v="label">Demo accounts</T>
+              <T v="small" muted>
+                {live
+                  ? `Tap one to fill it in. The demo password is ${DEMO_PASSWORD}.`
+                  : "Tap one to fill in the username. Any password works in the demo."}
+              </T>
+              <View style={styles.demo}>
+                {staff.map((p) => (
+                  <Pressable
+                    key={p.id}
+                    onPress={() => {
+                      setUsername(p.username ?? "");
+                      setPassword(live ? DEMO_PASSWORD : "demo");
+                      setError("");
+                    }}
+                    accessibilityRole="button"
+                    style={[
+                      styles.demoBtn,
+                      {
+                        borderColor: t.line,
+                        backgroundColor: username === p.username ? t.chip : t.surface,
+                      },
+                    ]}
+                  >
+                    <Text style={[styles.demoName, { color: t.text }]}>{p.name}</Text>
+                    <Text style={[styles.demoRole, { color: t.muted }]}>
+                      {ROLE_LABEL[p.role as Role]}, {p.username}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          )}
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
