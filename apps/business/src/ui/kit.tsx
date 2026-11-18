@@ -44,6 +44,8 @@ export function T({
   style,
   children,
   numberOfLines,
+  adjustsFontSizeToFit,
+  minimumFontScale,
 }: {
   v?: TV;
   muted?: boolean;
@@ -53,11 +55,16 @@ export function T({
   style?: StyleProp<TextStyle>;
   children: ReactNode;
   numberOfLines?: number;
+  /** Shrinks the text to fit one line (with numberOfLines), down to minimumFontScale. */
+  adjustsFontSizeToFit?: boolean;
+  minimumFontScale?: number;
 }) {
   const t = useTheme();
   return (
     <Text
       numberOfLines={numberOfLines}
+      adjustsFontSizeToFit={adjustsFontSizeToFit}
+      minimumFontScale={minimumFontScale}
       style={[
         type[v],
         { color: color ?? (muted ? t.muted : t.text) },

@@ -185,6 +185,8 @@ export function Shell({ children }: { children: ReactNode }) {
   const wide = width >= 900;
   // Room for the title, the pause switch, the person, and Switch person on one row.
   const roomy = width >= 1100;
+  // A phone: the content beside the rail is under 300 dp, so Switch person goes on the second row.
+  const phone = width < 600;
   const path = usePathname();
   const screen = path.split("/")[1] || "board";
   const role = myRole(s);
@@ -280,9 +282,12 @@ export function Shell({ children }: { children: ReactNode }) {
         trackColor={{ true: t.success, false: t.danger }}
         thumbColor="#FFFFFF"
       />
-      <T v="small" muted>
-        {nowClock()}
-      </T>
+      {/* A phone shows the time in its status bar, and the row has no room for it. */}
+      {phone ? null : (
+        <T v="small" muted>
+          {nowClock()}
+        </T>
+      )}
     </View>
   );
   const isKitchenScreen = KITCHEN_SCREENS.includes(screen);
@@ -428,7 +433,13 @@ export function Shell({ children }: { children: ReactNode }) {
             }}
           >
             <View style={styles.top}>
-              <T v="title" style={{ flexShrink: 0 }} numberOfLines={1}>
+              <T
+                v="title"
+                style={{ flexShrink: phone ? 1 : 0 }}
+                numberOfLines={1}
+                adjustsFontSizeToFit={phone}
+                minimumFontScale={0.75}
+              >
                 {TITLES[screen] ?? "CKE"}
               </T>
               {isManagerScreen && (!s.live || STILL_DEMO.has(screen)) ? (
@@ -457,14 +468,25 @@ export function Shell({ children }: { children: ReactNode }) {
                   </View>
                 ) : null}
               </Pressable>
-              {isKitchenScreen ? (
+              {isKitchenScreen && !phone ? (
                 <Button label="Switch person" variant="ghost" small onPress={signOut} />
               ) : null}
             </View>
-            {/* Narrow screens (a tablet in portrait) put the pause switch on its own row. */}
-            {showPause && !roomy ? <View style={styles.topRow2}>{pauseControl}</View> : null}
+            {/* Narrow screens (a tablet in portrait) put the pause switch on its own row; phones
+                put Switch person there too. */}
+            {(showPause && !roomy) || (isKitchenScreen && phone) ? (
+              <View style={[styles.topRow2, { alignItems: "center", flexWrap: "wrap", gap: 12 }]}>
+                {showPause && !roomy ? pauseControl : null}
+                {isKitchenScreen && phone ? (
+                  <View style={{ marginLeft: "auto" }}>
+                    <Button label="Switch person" variant="ghost" small onPress={signOut} />
+                  </View>
+                ) : null}
+              </View>
+            ) : null}
           </View>
-          <View style={{ flex: 1 }}>{children}</View>
+          {/* Keeps content clear of Android's navigation buttons on phones that show them. */}
+          <View style={{ flex: 1, paddingBottom: insets.bottom }}>{children}</View>
         </View>
 
         <Sheet visible={profile} onClose={() => setProfile(false)} title="Your profile">

@@ -1467,3 +1467,11 @@ Append a new dated entry after each work session. Never edit or delete earlier e
 - **Files:** `README.md`, `docs/architecture.md` (v0.61: 7.5, 16.1 item 4, the status line), this file.
 
 **Next step:** the cold start over mobile data on a real phone; the memory and CPU check on the next build; the owner backs up `~/cke-keys` and checks Search Console around 25 November.
+
+## [2026-11-18] GitGuardian alert checked; CKE Kitchen's top bar on phones
+
+**What was done:**
+- **GitGuardian alert:** the whole Git history checked for secrets. No real secret was ever committed: no `.env`, `.dev.vars`, `google-services.json`, signing key, or service-account file, and none of the formats for Google keys and client secrets, GitHub tokens, Neon passwords, or private keys. What a scanner can flag are values that are public on purpose: the shared demo staff password `cke-demo-2026` (in the README and the sign-in screen's demo hint, 18 November), the laptop-only Docker database address `postgres://cke:…@127.0.0.1:5432/cke` (scripts and `wrangler.jsonc`, since 12 November), test passwords in `apps/api/test`, and the Search Console tag. Nothing to rotate. In GitGuardian these can be marked as a test credential or a false positive.
+- **CKE Kitchen top bar on phones** (found by the owner on a Samsung Galaxy A07, 720 × 1600, about 384 dp wide, Android 16): beside the 96 dp rail the title, the profile photo, and Switch person didn't fit, so the photo was cut off and Switch person ran off the screen; Android's navigation buttons also covered the bottom of the content. **Fixed** in `apps/business/src/ui/shell.tsx` (and `kit.tsx`, so text can shrink to fit): under 600 dp wide, row 1 holds the title (shrinking to 75% if needed) and the photo, and row 2 holds the Taking orders switch on the Board (without the clock, which the status bar already shows) and Switch person on the right, wrapping to its own line when there's no room; the content now stops above the navigation buttons. Tablets are unchanged. Checked on the Samsung with the development build (Board, Walk-in, Sold out, and the bottom of Walk-in); the release 1.0.1 app was put back on the phone afterwards.
+
+**Next step:** ship the fix in the next release (1.0.2), together with the memory and CPU check on that build.
