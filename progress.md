@@ -1474,3 +1474,16 @@ Append a new dated entry after each work session. Never edit or delete earlier e
 **Build-tool advisories (owner said go ahead, 18 November 2026):** no safe upgrade exists yet: picomatch has no fixed release (4.0.7 is the newest and affected); minimatch and glob are fixed only in new majors that Expo’s CLI doesn’t use yet (still minimatch 10 in Expo 58.0.26); the esbuild one is inside drizzle-kit, where npm’s fix is a downgrade; `npm audit fix` refuses because it would replace Expo. All four are build-time only, reached only with our own file patterns. **Check again before the next release build** and upgrade then, within the locked versions.
 
 **Next step:** the battery test discussion; then release 1.0.1 with the fixes when the owner wants it; the owner’s feature additions and removals.
+
+## [2026-11-18] Search Console tag and search wording on the website; no more features planned
+
+**What was done:**
+- **Owner decision:** no further feature additions or removals; the owner is happy with what is built. The “feature additions and removals” step is dropped.
+- **Owner:** the Google sign-in consent screen is published.
+- **Search Console:** the owner’s verification tag (`google-site-verification`) added to Home’s head, for the owner to verify, then submit `sitemap.xml`.
+- **Search wording (WEB-08):** each page’s title and description now name what people search for (food delivery, Ugbowo, Benin City, UNIBEN, jollof rice, egusi soup, pounded yam) and fit Google’s lengths (titles about 60 characters, descriptions about 155). Home’s first line names Benin City and UNIBEN. The FAQ adds “Do you deliver to UNIBEN?” (the Ugbowo campus is in the delivery area) and carries schema.org FAQPage data built from the visible questions. Home’s Restaurant data adds the menu link, the campus as an area served, and fuller wording, still without the kitchen’s pin. The sitemap has last-changed dates. A site test checks the FAQ data. All 27 site tests pass.
+- No meta keywords tag: Google ignores it and Bing treats stuffing it as spam, so the words go in titles, headings, and text instead.
+
+**Files changed:** `apps/website/public/{index,about,app,faq}.html`, `apps/website/public/sitemap.xml`, `apps/website/tests/site.spec.ts`, `docs/architecture.md` (v0.59), `progress.md`.
+
+**Next step:** the owner verifies in Search Console and submits the sitemap, then imports into Bing; the owner creates the `cke-reset` GitHub token and stores it, then Claude tests the online Reset; the battery test discussion; release 1.0.1 when the owner wants it.

@@ -103,7 +103,13 @@ test("FAQ answers open natively", async ({ page }) => {
   const first = page.locator("details").first();
   await first.locator("summary").click();
   await expect(first).toHaveAttribute("open", "");
-  await expect(page.locator("details")).toHaveCount(13);
+  await expect(page.locator("details")).toHaveCount(14);
+  // The search engines' copy of the questions matches the page.
+  const ld = JSON.parse(
+    (await page.locator('script[type="application/ld+json"]').textContent()) ?? "{}",
+  );
+  expect(ld["@type"]).toBe("FAQPage");
+  expect(ld.mainEntity).toHaveLength(14);
 });
 
 test("the download shows the latest release and links straight to the app", async ({ page }) => {
