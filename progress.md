@@ -1487,3 +1487,12 @@ Append a new dated entry after each work session. Never edit or delete earlier e
 **Files changed:** `apps/website/public/{index,about,app,faq}.html`, `apps/website/public/sitemap.xml`, `apps/website/tests/site.spec.ts`, `docs/architecture.md` (v0.59), `progress.md`.
 
 **Next step:** the owner verifies in Search Console and submits the sitemap, then imports into Bing; the owner creates the `cke-reset` GitHub token and stores it, then Claude tests the online Reset; the battery test discussion; release 1.0.1 when the owner wants it.
+
+## [2026-11-18] Online Reset tested with the GitHub token; Google’s sitemap “Couldn’t fetch”
+
+**What was done:**
+- **Owner:** created the fine-grained token `cke-reset` (Actions read and write, this repository only, expires 18 November 2027) and stored it as the Worker secret `GITHUB_RESET_TOKEN`.
+- **Online Reset demo data tested:** the owner pressed it in the release business app (signed in with Google). GitHub job 44319577089 succeeded in 1 minute 54 seconds; the online `demo_reset` row says Done, no error, started by M-001, 4,266 orders. (An earlier press went to the laptop, from the tablet’s dev build, and didn’t test the token.)
+- **Search Console:** verified (HTML tag). Bing imported it and reads the sitemap. Google lists the sitemap as `/sitemap.xml`, which is right: the list shows paths relative to the URL-prefix property. Its status stays “Couldn’t fetch”, although the file returns 200 with `application/xml`, and the live URL test of Home passes. This is widely reported for `github.io` sites with no confirmed cause; Google (Mueller, October 2026) says a valid sitemap can show it when Google doesn’t have time for it or sees little need to crawl the site. It doesn’t stop pages being indexed. Workaround for a five-page site: Request indexing for each page in URL inspection. A custom domain fixed it for others (a decision for the owner, not taken).
+
+**Next step:** the owner requests indexing for the pages; recheck the sitemap status around 21 November; the battery test discussion; release 1.0.1 when the owner wants it.
