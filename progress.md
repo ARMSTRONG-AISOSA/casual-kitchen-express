@@ -136,7 +136,7 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and thr
 ## 7. Open items
 
 **For the owner (any time)**
-1. **Back up `~/cke-keys`** (the three app signing keys) to storage off the laptop that only the owner controls. Without them, future updates can’t install over the current apps.
+1. **`~/cke-keys` backed up** by the owner (19 November 2026). Keep that copy safe; without the keys, future updates can’t install over the current apps.
 2. **Search Console, about 25 November 2026:** check **Indexing → Pages** for which pages Google has added. The sitemap may keep saying “Couldn’t fetch”, a known problem with `github.io` sites (log of 18 November 2026); Bing reads it fine.
 3. **The GitHub token `cke-reset` expires on 18 November 2027.** GitHub emails a week before. Then make a new one the same way (Actions read and write, this repository only) and run `cd apps/api && NODE_OPTIONS=--network-family-autoselection-attempt-timeout=2000 npx wrangler secret put GITHUB_RESET_TOKEN`.
 4. **OpenFreeMap donation:** later, once a paid commercial project comes in (owner, 16 November 2026).
@@ -1484,9 +1484,9 @@ Append a new dated entry after each work session. Never edit or delete earlier e
 - **Release 1.0.2** (tag `v1.0.2` on b3a8270, marked latest): version code 3 in all three apps, so the update check (one release tag for all apps) never announces a version that has no APK. Built with `tools/release/build-apks.sh` (customer 41 minutes, rider 30, business 28). Checked: version 1.0.2 (code 3), arm64-v8a and armeabi-v7a only, the same signing keys as 1.0.1, the online API address and no laptop address in each bundle, and GitHub’s digests match `SHA256SUMS.txt`. Sizes: customer 83.7 MB, rider 58.9 MB, business 61.9 MB. Release notes in `~/cke-release/1.0.2/RELEASE-NOTES.md`.
 - **Update notice: verified.** All three 1.0.1 apps on the tablet showed “A new version is ready, Version 1.0.2 is on our release page.” 1.0.2 then installed over each with everyone still signed in, and showed no notice.
 - **Memory and CPU on the 1.0.2 release (owner’s yes, 18 November 2026),** tablet in portrait, the Business app through all 14 rail screens three times: 104 MB fresh, then 149, 145, and 150 MB (levels off, no leak); 11.9% of one core on average over a round; 2.4% on an idle open screen; 0% in the background for all three apps (business 149 MB, customer 124 MB, rider 86 MB). The same as 1.0.1.
-- **Not checked:** 1.0.2 on the Samsung itself, which had left wireless debugging by then; the same code was checked there with the development build on 18 November 2026. The owner can install it from the release page.
+- **On the Samsung Galaxy A07 (later the same morning):** the owner downloaded the three 1.0.2 APKs from the release page (checksums matched) and installed each over 1.0.1 while Claude watched over adb: Play Protect asked each time, then Installed, with no uninstall needed. The customer app stayed signed in and CKE Kitchen showed the new top bar (title and photo, then Taking orders and Switch person, no clock at 384 dp, content above the navigation buttons). The owner had already backed up `~/cke-keys`.
 - **Portfolio documents** (for the owner, outside the repository, in `~/cke-portfolio/`): `project-technology.md`, `app-dev-rules-and-tools.md`, `portfolio-project.md`.
 - **Stopped** the laptop API, the reset helper, and the three development servers; the tablet has the 1.0.2 release apps.
 - **Files:** `apps/business/src/ui/shell.tsx`, `apps/*/app.json`, `README.md`, `docs/architecture.md` v0.62, `docs/design.md` v0.44, this file.
 
-**Next step (when the project is picked up again):** follow 8.1 to restart; time the cold start over mobile data on a real phone; recheck the build-tool advisories before the next release; the owner backs up `~/cke-keys` and checks Search Console.
+**Next step (when the project is picked up again):** follow 8.1 to restart; time the cold start over mobile data on a real phone; recheck the build-tool advisories before the next release; the owner checks Search Console around 25 November.
