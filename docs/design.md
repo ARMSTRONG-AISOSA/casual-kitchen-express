@@ -1,6 +1,6 @@
 # CKE DESIGN
 
-**Document Status:** Draft v0.43. Records UI and UX decisions, design choices, page flows, and design libraries. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day).  
+**Document Status:** Draft v0.44. Records UI and UX decisions, design choices, page flows, and design libraries. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day).  
 **Related documents:** `Casual-Kitchen-Express.md` (business and brand, surface level), `architecture.md` (functions, features, data, technical decisions), and `list-of-areas.md` (delivery areas).
 
 ---
@@ -405,7 +405,7 @@ Menu photography follows the brand's photography direction. Images are shown in 
 | Account officer | Reports, Rider pay, Finance |
 | Manager | Board, Walk-in, Sold out, Alerts, then a Manager group: Dashboard, Orders, Riders, People, Menu, Rider pay, Reports, Finance, Settings, and Demo |
 
-The top bar shows the screen title, the Demo chip on manager screens, the signed-in person, and Switch person on kitchen screens. Tapping the person’s photo opens **Your profile**: their photo, name, role and staff ID, job, username or Google email, phone, and a Sign out button (the same cash-up check as the rail’s Sign out). A person who opens the app lands on their first item (the Board, Alerts, or Reports). Choosing a rail item switches to that screen rather than stacking it on the last one, so screens left behind don’t stay open and use memory. The tablet’s back button on a rail screen goes to the person’s first item, and from there it leaves the app; on a task screen (a ticket, an order, a person, an item) it goes back to its list. On a narrow screen (a tablet in portrait, under 1100 dp wide), the Board’s pause switch and clock move to a second row so nothing overlaps the person and Switch person.
+The top bar shows the screen title, the Demo chip on manager screens, the signed-in person, and Switch person on kitchen screens. Tapping the person’s photo opens **Your profile**: their photo, name, role and staff ID, job, username or Google email, phone, and a Sign out button (the same cash-up check as the rail’s Sign out). A person who opens the app lands on their first item (the Board, Alerts, or Reports). Choosing a rail item switches to that screen rather than stacking it on the last one, so screens left behind don’t stay open and use memory. The tablet’s back button on a rail screen goes to the person’s first item, and from there it leaves the app; on a task screen (a ticket, an order, a person, an item) it goes back to its list. On a narrow screen (a tablet in portrait, under 1100 dp wide), the Board’s pause switch and clock move to a second row so nothing overlaps the person and Switch person. On a phone (under 600 dp wide, beside the 96 dp rail), the first row holds the title, which shrinks to 75% if needed, and the person’s photo. The second row holds the pause switch (on the Board) and Switch person on the right, which wraps to its own line when there is no room. The clock is hidden only at 425 dp wide or less, where the phone’s status bar shows the time. Screen content stops above Android’s navigation buttons (release 1.0.2).
 
 ### 6.4 Kitchen screen inventory
 
@@ -756,6 +756,7 @@ Every design question is now decided. Anything that needs checking is listed in 
 
 | Version | Change |
 |---|---|
+| 0.44 | 19 November 2026: the Business app’s top bar on phones, and content kept clear of the navigation buttons (6.3, release 1.0.2). |
 | 0.43 | 18 November 2026: the website’s search wording and the FAQ’s UNIBEN question (8.4, 8.7); the sign-in screens keep the error and the Sign in button above the keyboard (rider and business). |
 | 0.42 | 17 November 2026 (night): contrast checked in all three apps; five colour pairs fixed (3.6). |
 | 0.41 | 17 November 2026 (later): Demo controls gains Reset demo data under Reset: a sheet explaining what goes back to the start, a tick box (“I understand everything goes back to the start”), then Reset everything; a progress card shows the step (1 of 5 and its name) or why it stopped; the practice buttons wait while it runs, and every app reloads when it finishes (the customer’s basket starts again, since the menu is rebuilt). |

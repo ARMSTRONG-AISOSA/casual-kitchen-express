@@ -30,7 +30,7 @@ A new version installs over the old one, and you stay signed in. The apps tell y
 
 ## Tested on a real device
 
-Release 1.0.1, tested on 18 November 2026 on a budget Android tablet (Unisoc T310, 4 GB of memory, Android 12), using the release APKs.
+Release 1.0.1, tested on 18 November 2026 on a budget Android tablet (Unisoc T310, 4 GB of memory, Android 12), using the release APKs. Memory and CPU were checked again on release 1.0.2 (19 November 2026), with the same results.
 
 | Check | Result |
 |---|---|

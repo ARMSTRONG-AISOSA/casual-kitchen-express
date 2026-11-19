@@ -2,8 +2,8 @@
 
 The working memory for Casual Kitchen Express (CKE). Read this first, then the documents it points to. The top half (sections 1 to 8) is the current state; the **Log** at the bottom is append-only history.
 
-**Last updated:** 18 November 2026 (release 1.0.1, the README and the GitHub About box, and the documents brought up to date)
-**Stage:** **built and released.** All three apps, the API, and the website are online. Release **1.0.0** went out on GitHub Releases on 18 November 2026 and **1.0.1** (keyboard and rider tracking fixes) the same day. The owner wants **no further features** (18 November 2026). The battery test passed on 18 November 2026. What is left: the cold-start timing on a real phone (16.1), the memory and CPU check on the next build, and upkeep.
+**Last updated:** 19 November 2026 (release 1.0.2, the memory and CPU check on it, and the project paused for upkeep later)
+**Stage:** **built and released.** All three apps, the API, and the website are online. Release **1.0.0** went out on GitHub Releases on 18 November 2026 and **1.0.1** (keyboard and rider tracking fixes) the same day, and **1.0.2** (the Business app’s top bar on phones) on 19 November 2026. The owner wants **no further features** (18 November 2026). The battery test passed on 18 November 2026. What is left: the cold-start timing on a real phone (16.1), and upkeep. Paused on 19 November 2026, to be revisited and maintained later.
 
 ---
 
@@ -129,7 +129,7 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and thr
 | API and database | Hono on Cloudflare Workers with Better Auth, Durable Objects for the live connection and the demo simulator, Neon Postgres through Hyperdrive (caching off), photos in Workers KV, Expo push, a role check on every route, and three months of seeded demo history (about 4,266 orders). 45 of 45 API tests pass. |
 | Website | Five pages on GitHub Pages (Home, About, App, FAQ, Privacy) with the light and dark switch, the release’s version, size, and checksum on the App page, search wording, schema.org Restaurant and FAQ data, the sitemap, and Google Search Console and Bing set up. 27 site checks pass. |
 | Checks (16.1) | All done except the cold start over mobile data on a real phone. Memory and CPU on the release builds: no leaks, no crashes, 0% in the background. One order end to end through all three apps, with location pinging, passed (18 November 2026). Battery: passed, about 0.5% an hour for the whole tablet over a two-hour delivery (18 November 2026). |
-| Releases | **1.0.0** and **1.0.1** on GitHub Releases: three signed APKs each (arm64-v8a and armeabi-v7a), checksums, and release notes. Signing keys in `~/cke-keys` (outside the repository). |
+| Releases | **1.0.0**, **1.0.1**, and **1.0.2** (latest) on GitHub Releases: three signed APKs each (arm64-v8a and armeabi-v7a), checksums, and release notes. Signing keys in `~/cke-keys` (outside the repository). |
 
 ---
 
@@ -150,7 +150,7 @@ Everything is **simulated**: payments, refunds, delivery, rider payouts, and thr
 - **Development builds use the laptop’s API:** the Business and customer apps’ `.env` point at `http://localhost:8787` (Google only returns to `localhost`), which needs `adb reverse tcp:8787 tcp:8787` after every adb connect. Release builds use the online API.
 
 **Notes**
-- **Next build:** the memory and CPU check on the release builds (owner, 18 November 2026), and the update notice seen from the older version.
+- **Each release:** offer the memory and CPU check on the release build (13.1, only with the owner’s yes), and check the update notice from the previous version.
 - **Build-tool advisories:** four moderate `npm audit` findings (picomatch, minimatch, glob, esbuild in drizzle-kit), all in laptop build tools, none in the apps or the API. No safe upgrade existed on 18 November 2026; the owner chose to leave them for a later version. Check again before the next release.
 - **This laptop and Node.js:** Node tools that reach Cloudflare (Wrangler) need `NODE_OPTIONS="--network-family-autoselection-attempt-timeout=2000"`.
 - **Tests and `dev:lan` share local state:** stop the API’s `dev:lan` before `npm run test --workspace @cke/api`.
@@ -174,7 +174,7 @@ Every build step is done. The order followed `architecture.md` 16, adjusted by t
 | 6 | The screens connected to the API, the map, push, and riders’ location | **Done** (15 and 16 November) |
 | 7 | Capacity, batching, and the demo simulator | **Done** (16 November) |
 | 8 | Website | **Done** (16 November; online 17 November) |
-| 9 | Reports, rider pay, Finance, polish, the 16.1 checks, deploy, and release APKs | **Done** (17 and 18 November): online 17 November; release 1.0.0 and 1.0.1 on 18 November. Left: the cold start on a real phone. |
+| 9 | Reports, rider pay, Finance, polish, the 16.1 checks, deploy, and release APKs | **Done** (17 and 18 November): online 17 November; release 1.0.0 and 1.0.1 on 18 November, 1.0.2 on 19 November. Left: the cold start on a real phone. |
 
 ### 8.1 Resuming after a break
 
@@ -1475,3 +1475,18 @@ Append a new dated entry after each work session. Never edit or delete earlier e
 - **CKE Kitchen top bar on phones** (found by the owner on a Samsung Galaxy A07, 720 × 1600, about 384 dp wide, Android 16): beside the 96 dp rail the title, the profile photo, and Switch person didn't fit, so the photo was cut off and Switch person ran off the screen; Android's navigation buttons also covered the bottom of the content. **Fixed** in `apps/business/src/ui/shell.tsx` (and `kit.tsx`, so text can shrink to fit): under 600 dp wide, row 1 holds the title (shrinking to 75% if needed) and the photo, and row 2 holds the Taking orders switch on the Board (without the clock, which the status bar already shows) and Switch person on the right, wrapping to its own line when there's no room; the content now stops above the navigation buttons. Tablets are unchanged. Checked on the Samsung with the development build (Board, Walk-in, Sold out, and the bottom of Walk-in); the release 1.0.1 app was put back on the phone afterwards.
 
 **Next step:** ship the fix in the next release (1.0.2), together with the memory and CPU check on that build.
+
+## [2026-11-19] Release 1.0.2, its memory and CPU check, and paused
+
+**What was done:**
+- **Owner decisions:** build 1.0.2 for the Business app’s phone top bar; keep the clock on phones and hide it only at 425 dp wide or less; then wrap up, and revisit and maintain the project later.
+- **Clock:** hidden only when the screen is 425 dp wide or less (the Samsung Galaxy A07 is about 384 dp, so it is hidden there); every other phone and tablet keeps it.
+- **Release 1.0.2** (tag `v1.0.2` on b3a8270, marked latest): version code 3 in all three apps, so the update check (one release tag for all apps) never announces a version that has no APK. Built with `tools/release/build-apks.sh` (customer 41 minutes, rider 30, business 28). Checked: version 1.0.2 (code 3), arm64-v8a and armeabi-v7a only, the same signing keys as 1.0.1, the online API address and no laptop address in each bundle, and GitHub’s digests match `SHA256SUMS.txt`. Sizes: customer 83.7 MB, rider 58.9 MB, business 61.9 MB. Release notes in `~/cke-release/1.0.2/RELEASE-NOTES.md`.
+- **Update notice: verified.** All three 1.0.1 apps on the tablet showed “A new version is ready, Version 1.0.2 is on our release page.” 1.0.2 then installed over each with everyone still signed in, and showed no notice.
+- **Memory and CPU on the 1.0.2 release (owner’s yes, 18 November 2026),** tablet in portrait, the Business app through all 14 rail screens three times: 104 MB fresh, then 149, 145, and 150 MB (levels off, no leak); 11.9% of one core on average over a round; 2.4% on an idle open screen; 0% in the background for all three apps (business 149 MB, customer 124 MB, rider 86 MB). The same as 1.0.1.
+- **Not checked:** 1.0.2 on the Samsung itself, which had left wireless debugging by then; the same code was checked there with the development build on 18 November 2026. The owner can install it from the release page.
+- **Portfolio documents** (for the owner, outside the repository, in `~/cke-portfolio/`): `project-technology.md`, `app-dev-rules-and-tools.md`, `portfolio-project.md`.
+- **Stopped** the laptop API, the reset helper, and the three development servers; the tablet has the 1.0.2 release apps.
+- **Files:** `apps/business/src/ui/shell.tsx`, `apps/*/app.json`, `README.md`, `docs/architecture.md` v0.62, `docs/design.md` v0.44, this file.
+
+**Next step (when the project is picked up again):** follow 8.1 to restart; time the cold start over mobile data on a real phone; recheck the build-tool advisories before the next release; the owner backs up `~/cke-keys` and checks Search Console.

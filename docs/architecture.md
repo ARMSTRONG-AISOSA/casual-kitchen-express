@@ -1,6 +1,6 @@
 # CKE ARCHITECTURE
 
-**Document Status:** Draft v0.61. Records the functions, features, and decisions for the apps and the website. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day with the backend foundation in progress), and again on 14 November 2026 after sign-in was built.  
+**Document Status:** Draft v0.62. Records the functions, features, and decisions for the apps and the website. Reviewed end to end on 11 November 2026, and twice on 12 November 2026 (after the new staff roles and Finance were added, and at the end of the day with the backend foundation in progress), and again on 14 November 2026 after sign-in was built.  
 **Related documents:** `Casual-Kitchen-Express.md` (business and brand, surface level), `design.md` (UI/UX decisions and page flows), and `list-of-areas.md` (delivery areas).
 
 ---
@@ -1082,7 +1082,7 @@ The website uses **no packages**. It is plain HTML, CSS, and JavaScript.
 
 **Changed on 12 November 2026 (owner decision): frontend first.** The app screens are built first on demo data held in each app, so the owner can see and review them. The customer app came first, then the rider app, then the Kitchen and Business app (all three built on demo data by 12 November 2026). The backend foundation (step 1) is built: the database, catalog, soup rotation, photos, and sign-in with roles (14 November 2026). Orders and statuses come next. The seed script (step 2) follows, and then each app’s demo data is replaced with real API calls. The rest of the order is unchanged. `progress.md` section 8 has the step-by-step status.
 
-**Status, 18 November 2026:** every step is done. Release **1.0.0** (all three apps) went out on GitHub Releases on 18 November 2026, and release **1.0.1** the same day with the keyboard and rider tracking fixes. The battery test passed on the test tablet on 18 November 2026 (7.5); timing the cold start over mobile data on a real phone is what is left of 16.1.
+**Status, 18 November 2026:** every step is done. Release **1.0.0** (all three apps) went out on GitHub Releases on 18 November 2026, release **1.0.1** the same day with the keyboard and rider tracking fixes, and release **1.0.2** on 19 November 2026 with the Business app’s top bar on phones. The battery test passed on the test tablet on 18 November 2026 (7.5); timing the cold start over mobile data on a real phone is what is left of 16.1.
 
 **Platform:** every step targets Android first. iOS is added later.
 
@@ -1114,7 +1114,7 @@ These checks were either not possible during planning or depend on the live setu
 10. A quick check that Android 10 and above suits the target users' phones. **Done 18 November 2026:** in Nigeria, Android 10 to 15 make up about 81% of Android phones and tablets (Statcounter, June 2026: 13 at 17.7%, 12 at 16.5%, 11 at 13%, 14 at 12.4%, 15 at 11.7%, 10 at 9.7%), plus Android 16. Android 10 and above stays.
 11. The seed script's own checks (18.3), including the separate online and walk-in hours. **Done 15 November 2026:** built into `scripts/seed-history.ts`; they all pass.
 12. The delivery boundary polygon, drawn from map pins from Uselu to Oluku Market. **Done 16 November 2026:** from the owner’s pins (4.7, `list-of-areas.md` 1).
-13. The performance targets (13) and the contrast ratios in `design.md` (3.2 and 3.9), in the design tools. **Mostly done 18 November 2026:** contrast, all 60 pairs pass (design.md 3.6). Memory and CPU on the release builds (tablet with a Unisoc T310 and 4 GB, like a budget phone, about 40 minutes of tapping through every app): no leaks (memory levels off at 104 to 154 MB), no crashes, 9 to 14% of one core while in use, 0% in the background, and screens drawing in 12 to 16 ms (taps answer well inside 100 ms); opening a screen costs a few slow frames (up to about 40 ms). An idle open screen uses about 3% of one core, the framework’s baseline, not app code. Still to time: the cold start over mobile data on a real phone.
+13. The performance targets (13) and the contrast ratios in `design.md` (3.2 and 3.9), in the design tools. **Mostly done 18 November 2026:** contrast, all 60 pairs pass (design.md 3.6). Memory and CPU on the release builds (tablet with a Unisoc T310 and 4 GB, like a budget phone, about 40 minutes of tapping through every app): no leaks (memory levels off at 104 to 154 MB), no crashes, 9 to 14% of one core while in use, 0% in the background, and screens drawing in 12 to 16 ms (taps answer well inside 100 ms); opening a screen costs a few slow frames (up to about 40 ms). An idle open screen uses about 3% of one core, the framework’s baseline, not app code. Still to time: the cold start over mobile data on a real phone. **Re-checked on release 1.0.2 (19 November 2026, the Business app through every screen three times):** memory 104 MB fresh, then 149, 145, and 150 MB (no leak); 11.9% of one core on average while in use, 2.4% on an idle open screen, and 0% in the background for all three apps. The update notice was seen in all three 1.0.1 apps, and 1.0.2 installed over them with everyone still signed in.
 14. Tool support for Node.js 24 LTS and JDK 17 with Expo SDK 58. **Done 18 November 2026:** the three signed release APKs built with Node.js 24.19.0 and OpenJDK 17.0.21.
 15. Before installing, re-check each locked version in section 15 for security advisories.
 
@@ -1237,6 +1237,7 @@ A seed script fills the database with **three months** of history (owner decisio
 
 | Version | Change |
 |---|---|
+| 0.62 | 19 November 2026: release 1.0.2 (status), and the memory, CPU, and update notice checks on it (16.1 item 13). |
 | 0.61 | 18 November 2026 (night, later): the battery and heat result (7.5, 16.1 item 4): passed on the test tablet over a two-hour delivery. |
 | 0.60 | 18 November 2026 (night): documents brought up to date after release: every built feature marked **Built** (release 1.0.0), the build order’s status, 16.1 items 5 (consent screen published) and 9 (install flow), the update notice as built, Workers KV in the overview and the limits table, and the Android coverage note in 17.1. |
 | 0.59 | 18 November 2026 (evening): WEB-08 search titles, descriptions, the FAQ’s UNIBEN question and FAQPage data, sitemap dates, and the Search Console tag. |
