@@ -187,6 +187,8 @@ export function Shell({ children }: { children: ReactNode }) {
   const roomy = width >= 1100;
   // A phone: the content beside the rail is under 300 dp, so Switch person goes on the second row.
   const phone = width < 600;
+  // Only the smallest phones (425 dp wide or less) have no room for the clock beside the switch.
+  const tiny = width <= 425;
   const path = usePathname();
   const screen = path.split("/")[1] || "board";
   const role = myRole(s);
@@ -282,8 +284,8 @@ export function Shell({ children }: { children: ReactNode }) {
         trackColor={{ true: t.success, false: t.danger }}
         thumbColor="#FFFFFF"
       />
-      {/* A phone shows the time in its status bar, and the row has no room for it. */}
-      {phone ? null : (
+      {/* The smallest phones show the time in the status bar, and the row has no room for it. */}
+      {tiny ? null : (
         <T v="small" muted>
           {nowClock()}
         </T>
